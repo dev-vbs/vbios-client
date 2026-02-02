@@ -212,7 +212,7 @@ export const passkeyApi = {
       signature: string;
       userHandle?: string;
     };
-  }) => api.post<{ data: { id: string } }>('/passkey/auth/public', data),
+  }) => api.post<{ data: { id: string } }>('/user/passkey/auth/public', data),
   // }) => api.post<{ data: { id: string } }>('/user/auth/passkey', data),
 };
 
