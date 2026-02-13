@@ -393,10 +393,12 @@ function AppContent() {
 }
 
 function App() {
+  const basePath = config.SHM_BASE_PATH && config.SHM_BASE_PATH !== '/' ? config.SHM_BASE_PATH : undefined;
+  
   return (
     <MantineProvider theme={theme} defaultColorScheme="auto">
       <Notifications position="top-right" />
-      <BrowserRouter>
+      <BrowserRouter basename={basePath}>
         <AppContent />
       </BrowserRouter>
     </MantineProvider>

@@ -188,10 +188,37 @@ export interface PasskeyAuthOptions {
 }
 
 export const passkeyApi = {
-  list: () => api.get<{ data: { credentials: PasskeyCredential[]; enabled: boolean } }>('/user/passkey'),
-  rename: (credentialId: string, name: string) => api.post('/user/passkey', { credential_id: credentialId, name }),
-  delete: (credentialId: string) => api.delete('/user/passkey?credential_id=' + encodeURIComponent(credentialId)),
-  registerOptions: () => api.get<{ data: PasskeyRegisterOptions }>('/user/passkey/register'),
+  // new version api
+  // list: () => api.get<{ data: { credentials: PasskeyCredential[]; enabled: boolean } }>('/user/passkey'),
+  // rename: (credentialId: string, name: string) => api.post('/user/passkey', { credential_id: credentialId, name }),
+  // delete: (credentialId: string) => api.delete('/user/passkey/delete' + encodeURIComponent(credentialId)),
+  // registerOptions: () => api.get<{ data: PasskeyRegisterOptions }>('/user/passkey/register'),
+  // registerComplete: (data: {
+  //   credential_id: string;
+  //   rawId: string;
+  //   response: {
+  //     clientDataJSON: string;
+  //     attestationObject: string;
+  //   };
+  //   name?: string;   
+  // }) => api.post('/user/passkey/register', data),
+  // authOptionsPublic: () => api.get<{ data: PasskeyAuthOptions }>('/user/auth/passkey', {}),
+  // authPublic: (data: {
+  //   credential_id: string;
+  //   rawId: string;
+  //   response: {
+  //     clientDataJSON: string;
+  //     authenticatorData: string;
+  //     signature: string;
+  //     userHandle?: string;
+  //   };
+  // }) => api.post<{ data: { id: string } }>('/user/auth/passkey', data),
+
+  // old version api
+  list: () => api.get<{ data: { credentials: PasskeyCredential[]; enabled: boolean } }>('/user/passkey/list'),
+  rename: (credentialId: string, name: string) => api.post('/user/passkey/rename', { credential_id: credentialId, name }),
+  delete: (credentialId: string) => api.post('/user/passkey/delete', { credential_id: credentialId }),
+  registerOptions: () => api.post<{ data: PasskeyRegisterOptions }>('/user/passkey/register/options'),
   registerComplete: (data: {
     credential_id: string;
     rawId: string;
@@ -200,8 +227,7 @@ export const passkeyApi = {
       attestationObject: string;
     };
     name?: string;
-  }) => api.post('/user/passkey/register', data),
-  // authOptionsPublic: () => api.get<{ data: PasskeyAuthOptions }>('/user/auth/passkey', {}),
+  }) => api.post('/user/passkey/register/complete', data),
   authOptionsPublic: () => api.post<{ data: PasskeyAuthOptions }>('/user/passkey/auth/options/public', {}),
   authPublic: (data: {
     credential_id: string;
@@ -213,7 +239,6 @@ export const passkeyApi = {
       userHandle?: string;
     };
   }) => api.post<{ data: { id: string } }>('/user/passkey/auth/public', data),
-  // }) => api.post<{ data: { id: string } }>('/user/auth/passkey', data),
 };
 
 export const ticketApi = {
@@ -252,11 +277,17 @@ export interface OtpSetupResponse {
 }
 
 export const otpApi = {
-  status: () => api.get<{ data: OtpStatus }>('/user/otp'),
+  // status: () => api.get<{ data: OtpStatus }>('/user/otp'),
+  // setup: () => api.post<{ data: OtpSetupResponse }>('/user/otp/setup'),
+  // enable: (token: string) => api.put('/user/otp', { token }),
+  // disable: (token: string) => api.delete('/user/otp', { params: { token } }),
+  // verify: (token: string) => api.post('/user/otp', { token }),
+
+  status: () => api.get<{ data: OtpStatus }>('/user/otp/status'),
   setup: () => api.post<{ data: OtpSetupResponse }>('/user/otp/setup'),
-  enable: (token: string) => api.put('/user/otp', { token }),
-  disable: (token: string) => api.delete('/user/otp', { params: { token } }),
-  verify: (token: string) => api.post('/user/otp', { token }),
+  enable: (token: string) => api.post('/user/otp/enable', { token }),
+  disable: (token: string) => api.post('/user/otp/disable', { token }),
+  verify: (token: string) => api.post('/user/otp/verify', { token }),
 };
 
 export interface PasswordAuthStatus {
@@ -266,7 +297,11 @@ export interface PasswordAuthStatus {
 }
 
 export const passwordAuthApi = {
-  status: () => api.get<{ data: PasswordAuthStatus }>('/user/password-auth'),
-  disable: () => api.delete('/user/password-auth'),
-  enable: () => api.post('/user/password-auth'),
+  // status: () => api.get<{ data: PasswordAuthStatus }>('/user/password-auth'),
+  // disable: () => api.delete('/user/password-auth'),
+  // enable: () => api.post('/user/password-auth'),
+  
+  status: () => api.get<{ data: PasswordAuthStatus }>('/user/password-auth/status'),
+  disable: () => api.post('/user/password-auth/disable'),
+  enable: () => api.post('/user/password-auth/enable'),
 };
