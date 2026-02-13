@@ -13,7 +13,7 @@ import { auth } from './api/client';
 import { getCookie, removeCookie, parseAndSavePartnerId, parseAndSaveSessionId } from './api/cookie';
 import { config } from './config';
 import LanguageSwitcher from './components/LanguageSwitcher';
-import { isInsideTelegramWebApp } from './hooks/useTelegramWebApp';
+import { useTelegramWebApp } from './hooks/useTelegramWebApp';
 
 parseAndSaveSessionId();
 parseAndSavePartnerId();
@@ -191,9 +191,13 @@ function AppContent() {
   const location = useLocation();
   const navigate = useNavigate();
   const { user, isAuthenticated, isLoading, setUser, setIsLoading, logout } = useStore();
+  const { isInsideTelegramWebApp } = useTelegramWebApp();
   const [isTelegramWebApp] = useState(isInsideTelegramWebApp);
   const isMobile = useMediaQuery('(max-width: 768px)');
   const { t } = useTranslation();
+  
+  const hasTelegramWebAppAuth = isInsideTelegramWebApp && config.TELEGRAM_WEBAPP_AUTH_ENABLE === 'true';
+  const hasTelegramWebAppAutoAuth = hasTelegramWebAppAuth && config.TELEGRAM_WEBAPP_AUTO_AUTH_ENABLE === 'true';
 
   const handleSupportLink = () => {
     if (config.SUPPORT_LINK) {
@@ -332,6 +336,7 @@ function AppContent() {
             </ActionIcon> }
             <LanguageSwitcher />
             <ThemeToggle />
+            {!hasTelegramWebAppAutoAuth && (
             <ActionIcon
               onClick={logout}
               variant="default"
@@ -340,6 +345,7 @@ function AppContent() {
             >
               <IconLogout size={18} />
             </ActionIcon>
+          )}
           </Group>
         </Group>
       </AppShell.Header>
