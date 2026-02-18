@@ -1,5 +1,5 @@
 import { useState, useEffect } from 'react';
-import { Card, Text, Stack, Group, Badge, Button, Loader, Center, Paper, Title, Table, Pagination, Box, LoadingOverlay } from '@mantine/core';
+import { Card, Text, Stack, Group, Badge, Button, Loader, Center, Paper, Title, Table, Pagination, LoadingOverlay } from '@mantine/core';
 import { IconCreditCard, IconPlus } from '@tabler/icons-react';
 import { useTranslation } from 'react-i18next';
 import { api } from '../api/client';

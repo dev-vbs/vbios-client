@@ -4,5 +4,7 @@ window.__APP_CONFIG__ = {
   TELEGRAM_BOT_AUTH_ENABLE: "false",
   TELEGRAM_WEBAPP_AUTH_ENABLE: "false",
   TELEGRAM_WEBAPP_PROFILE: "",
-  SUPPORT_LINK: ""
+  SUPPORT_LINK: "",
+  OTP_ENABLE: "true",
+  PASSKEY_ENABLE: "true"
 };

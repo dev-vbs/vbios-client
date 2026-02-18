@@ -259,7 +259,7 @@
     "verifyError": "Failed to verify code"
   },
   "passkey": {
-    "title": "Passkey",
+    "title": "Authorization via Passkey",
     "description": "Passkey allows you to sign in using fingerprint, Face ID, or device PIN",
     "enabled": "Enabled",
     "add": "Add",

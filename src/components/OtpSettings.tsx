@@ -6,6 +6,7 @@ import { notifications } from '@mantine/notifications';
 import { useTranslation } from 'react-i18next';
 import { otpApi, OtpStatus, OtpSetupResponse } from '../api/client';
 import QrModal from './QrModal';
+import { config } from '../config';
 
 interface OtpSettingsProps {
   embedded?: boolean;
@@ -41,6 +42,10 @@ export default function OtpSettings({ embedded = false }: OtpSettingsProps) {
   };
 
   useEffect(() => {
+    if (config.OTP_ENABLE !== 'true') {
+      setLoading(false);
+      return;
+    }
     loadStatus();
   }, []);
 

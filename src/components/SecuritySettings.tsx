@@ -8,6 +8,10 @@ import PasskeySettings from './PasskeySettings';
 import OtpSettings from './OtpSettings';
 import PasswordAuthSettings from './PasswordAuthSettings';
 import { useTelegramWebApp } from '../hooks/useTelegramWebApp';
+import { config } from '../config';
+
+const otpEnabled = config.OTP_ENABLE === 'true';
+const passkeyEnabled = config.PASSKEY_ENABLE === 'true';
 
 export default function SecuritySettings() {
   const { t } = useTranslation();
@@ -55,11 +59,11 @@ export default function SecuritySettings() {
 
         <Stack gap="lg">
 
-          <OtpSettings embedded />
+          {otpEnabled && <OtpSettings embedded />}
 
-          {hasTelegramWidget && (
+          {hasTelegramWidget && passkeyEnabled && (
             <>
-              <Divider />
+              {otpEnabled && <Divider />}
 
               <PasskeySettings embedded />
 

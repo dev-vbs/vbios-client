@@ -7,6 +7,8 @@ interface AppConfig {
   TELEGRAM_WEBAPP_PROFILE: string;
   SUPPORT_LINK: string;
   SHM_BASE_PATH: string;
+  OTP_ENABLE: string;
+  PASSKEY_ENABLE: string;
 }
 
 declare global {
@@ -27,6 +29,8 @@ function getConfig(): AppConfig {
     TELEGRAM_WEBAPP_PROFILE: runtimeConfig?.TELEGRAM_WEBAPP_PROFILE || import.meta.env.VITE_TELEGRAM_WEBAPP_PROFILE || '',
     SUPPORT_LINK: runtimeConfig?.SUPPORT_LINK || import.meta.env.VITE_SUPPORT_LINK || '',
     SHM_BASE_PATH: runtimeConfig?.SHM_BASE_PATH || import.meta.env.VITE_SHM_BASE_PATH || '/',
+    OTP_ENABLE: runtimeConfig?.OTP_ENABLE || import.meta.env.VITE_OTP_ENABLE || 'true',
+    PASSKEY_ENABLE: runtimeConfig?.PASSKEY_ENABLE || import.meta.env.VITE_PASSKEY_ENABLE || 'true',
   };
 }
 

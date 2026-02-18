@@ -5,6 +5,7 @@ import { notifications } from '@mantine/notifications';
 import { useTranslation } from 'react-i18next';
 import { passkeyApi, PasskeyCredential } from '../api/client';
 import ConfirmModal from './ConfirmModal';
+import { config } from '../config';
 
 function base64UrlToArrayBuffer(base64url: string): ArrayBuffer {
   const base64 = base64url.replace(/-/g, '+').replace(/_/g, '/');
@@ -58,6 +59,10 @@ export default function PasskeySettings({ embedded = false }: PasskeySettingsPro
   };
 
   useEffect(() => {
+    if (config.PASSKEY_ENABLE !== 'true') {
+      setLoading(false);
+      return;
+    }
     if (isWebAuthnSupported) {
       loadCredentials();
     } else {

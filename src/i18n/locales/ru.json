@@ -259,7 +259,7 @@
     "verifyError": "Не удалось подтвердить код"
   },
   "passkey": {
-    "title": "Passkey",
+    "title": "Авторизация через Passkey",
     "description": "Passkey позволяет входить в аккаунт с помощью отпечатка пальца, Face ID или PIN-кода устройства",
     "enabled": "Включено",
     "add": "Добавить",
