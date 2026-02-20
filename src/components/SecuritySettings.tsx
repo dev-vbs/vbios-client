@@ -71,6 +71,8 @@ export default function SecuritySettings() {
             <>
               <PasskeySettings embedded />
 
+              <Divider />
+
               <PasswordAuthSettings embedded />
             </>
           )}
