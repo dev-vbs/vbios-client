@@ -110,10 +110,11 @@ function ServiceDetail({ service, onDelete, onChangeTariff }: ServiceDetailProps
     setDownloading(true);
     try {
       const blob = new Blob([storageData], { type: 'application/octet-stream' });
+      const prefix = config.VPN_STORAGE_PREFIX ? config.VPN_STORAGE_PREFIX : 'vpn';
       const url = URL.createObjectURL(blob);
       const a = document.createElement('a');
       a.href = url;
-      a.download = `vpn${service.user_service_id}.conf`;
+      a.download = `${prefix}${service.user_service_id}.conf`;
       document.body.appendChild(a);
       a.click();
       document.body.removeChild(a);
@@ -766,15 +767,6 @@ export default function Services() {
 
   const groupedServices = services.reduce((acc, service) => {
     const category = normalizeCategory(service.service.category);
-
-    if (config.VISIBLE_CATEGORIES) {
-      const visibleCategories = config.VISIBLE_CATEGORIES.split(',').map(c => c.trim().toLowerCase());
-      const rawCategory = service.service.category.toLowerCase();
-      const normalizedCategory = category.toLowerCase();
-      if (!visibleCategories.includes(rawCategory) && !visibleCategories.includes(normalizedCategory)) {
-        return acc;
-      }
-    }
 
     if (!acc[category]) {
       acc[category] = [];
