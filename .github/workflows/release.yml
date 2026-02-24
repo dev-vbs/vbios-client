@@ -81,19 +81,19 @@ jobs:
         EOF
         cat public/version.json
 
-    - name: Build and push client image
+    - name: Build and push client-2 image
       uses: docker/build-push-action@v5
       with:
         context: .
         platforms: linux/amd64,linux/arm64
         push: true
-        target: client
+        target: client-2
         tags: |
-          ${{ env.IMAGE_NAME }}-client:${{ steps.version.outputs.tag }}
-          ${{ steps.version.outputs.push_latest == 'true' && format('{0}-client:{1}', env.IMAGE_NAME, steps.version.outputs.minor) || format('{0}-client:skip-minor-{1}', env.IMAGE_NAME, steps.version.outputs.rev) }}
-          ${{ steps.version.outputs.push_latest == 'true' && format('{0}-client:latest', env.IMAGE_NAME) || format('{0}-client:skip-latest-{1}', env.IMAGE_NAME, steps.version.outputs.rev) }}
-        cache-from: type=gha,scope=client
-        cache-to: type=gha,mode=max,scope=client
+          ${{ env.IMAGE_NAME }}-client-2:${{ steps.version.outputs.tag }}
+          ${{ steps.version.outputs.push_latest == 'true' && format('{0}-client-2:{1}', env.IMAGE_NAME, steps.version.outputs.minor) || format('{0}-client-2:skip-minor-{1}', env.IMAGE_NAME, steps.version.outputs.rev) }}
+          ${{ steps.version.outputs.push_latest == 'true' && format('{0}-client-2:latest', env.IMAGE_NAME) || format('{0}-client-2:skip-latest-{1}', env.IMAGE_NAME, steps.version.outputs.rev) }}
+        cache-from: type=gha,scope=client-2
+        cache-to: type=gha,mode=max,scope=client-2
 
     - name: Create GitHub Release
       uses: softprops/action-gh-release@v1
@@ -104,8 +104,8 @@ jobs:
         body: |
           ## Docker Image Built
 
-          ### client Image
-          - `${{ env.IMAGE_NAME }}-client:${{ steps.version.outputs.tag }}`${{ steps.version.outputs.push_latest == 'true' && format('\n          - `{0}-client:{1}`', env.IMAGE_NAME, steps.version.outputs.minor) || '' }}${{ steps.version.outputs.push_latest == 'true' && format('\n          - `{0}-client:latest`', env.IMAGE_NAME) || '' }}
+          ### client-2 Image
+          - `${{ env.IMAGE_NAME }}-client-2:${{ steps.version.outputs.tag }}`${{ steps.version.outputs.push_latest == 'true' && format('\n          - `{0}-client:{1}`', env.IMAGE_NAME, steps.version.outputs.minor) || '' }}${{ steps.version.outputs.push_latest == 'true' && format('\n          - `{0}-client:latest`', env.IMAGE_NAME) || '' }}
 
           **Version:** `${{ steps.version.outputs.version_string }}`
           **Git Revision:** `${{ steps.version.outputs.rev }}`
