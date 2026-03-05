@@ -1,15 +1,15 @@
 import '@mantine/core/styles.css';
 import '@mantine/notifications/styles.css';
-import { useEffect } from 'react';
-import { MantineProvider, createTheme, AppShell, Group, Text, ActionIcon, useMantineColorScheme, useComputedColorScheme, Center, Loader, Box, Button } from '@mantine/core';
-import { Notifications } from '@mantine/notifications';
+import { useEffect, useState } from 'react';
+import { MantineProvider, createTheme, AppShell, Group, Text, ActionIcon, useMantineColorScheme, useComputedColorScheme, Center, Loader, Box, Button, Modal, TextInput, Stack } from '@mantine/core';
+import { Notifications, notifications } from '@mantine/notifications';
 import { useMediaQuery } from '@mantine/hooks';
 import { BrowserRouter, Routes, Route, Link, useLocation, useNavigate } from 'react-router-dom';
 import { IconSun, IconMoon, IconLogout, IconHeadset } from '@tabler/icons-react';
 import { useTranslation } from 'react-i18next';
 import { useStore } from './store/useStore';
 import { NAV_ITEMS } from './constants/navigation';
-import { auth } from './api/client';
+import { auth, userEmailApi } from './api/client';
 import { getCookie, removeCookie, parseAndSavePartnerId, parseAndSaveSessionId } from './api/cookie';
 import { config } from './config';
 import LanguageSwitcher from './components/LanguageSwitcher';
@@ -199,9 +199,70 @@ function BottomNavigation() {
 function AppContent() {
   const location = useLocation();
   const navigate = useNavigate();
-  const { user, isAuthenticated, isLoading, setUser, setIsLoading, logout } = useStore();
+  const { user, userEmail, setUserEmail, isAuthenticated, isLoading, setUser, setIsLoading, logout } = useStore();
   const isMobile = useMediaQuery('(max-width: 768px)');
   const { t } = useTranslation();
+  const [globalEmailModalOpen, setGlobalEmailModalOpen] = useState(false);
+  const [globalEmailInput, setGlobalEmailInput] = useState('');
+  const [globalEmailSaving, setGlobalEmailSaving] = useState(false);
+
+  const isValidEmail = (email: string) => {
+    return /^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(email);
+  };
+
+  const handleGlobalSaveEmail = async () => {
+    const email = globalEmailInput.trim();
+    if (userEmail && email === userEmail) {
+      notifications.show({
+        title: t('common.error'),
+        message: t('profile.isCurrentEmail'),
+        color: 'red',
+      });
+      return;
+    }
+
+    setGlobalEmailSaving(true);
+    try {
+      const response = await userEmailApi.setEmail(email);
+      const data = response.data?.data;
+      if (Array.isArray(data) && data[0]?.msg && data[0].msg !== 'Successful') {
+        const errorMap: Record<string, string> = {
+          'is not email': t('profile.invalidEmail'),
+          'Email mismatch. Use the email shown in your profile.': t('profile.emailMismatch'),
+        };
+        notifications.show({
+          title: t('common.error'),
+          message: errorMap[data[0].msg] || data[0].msg,
+          color: 'red',
+        });
+        return;
+      }
+      setUserEmail(email);
+      notifications.show({
+        title: t('common.success'),
+        message: t('profile.emailSaved'),
+        color: 'green',
+      });
+      setGlobalEmailModalOpen(false);
+    } catch {
+      notifications.show({
+        title: t('common.error'),
+        message: t('profile.emailSaveError'),
+        color: 'red',
+      });
+    } finally {
+      setGlobalEmailSaving(false);
+    }
+  };
+
+  useEffect(() => {
+    if (config.EMAIL_REQUIRED === 'true' && user && !userEmail) {
+      setGlobalEmailInput('');
+      setGlobalEmailModalOpen(true);
+    } else {
+      setGlobalEmailModalOpen(false);
+    }
+  }, [user, userEmail]);
 
   const handleSupportLink = () => {
     if (config.SUPPORT_LINK) {
@@ -265,8 +326,18 @@ function AppContent() {
       try {
         const response = await auth.getCurrentUser();
         const responseData = response.data.data;
-        const userData = Array.isArray(responseData) ? responseData[0] : responseData;
+        const userData: any = Array.isArray(responseData) ? responseData[0] : responseData;
         setUser(userData);
+        try {
+          const emailResp = await userEmailApi.getEmail();
+          const emailData = emailResp.data.data;
+          const emailObj = Array.isArray(emailData) ? emailData[0] : emailData;
+          if (emailObj && emailObj.email) {
+            setUserEmail(emailObj.email);
+          }
+        } catch {
+          setUserEmail(null);
+        }
       } catch {
         removeCookie();
       } finally {
@@ -289,21 +360,62 @@ function AppContent() {
     return <Login />;
   }
 
+  const emailRequiredModal = (
+    <Modal
+      opened={globalEmailModalOpen}
+      onClose={() => {
+        if (config.EMAIL_REQUIRED === 'true' && !userEmail) return;
+        setGlobalEmailModalOpen(false);
+      }}
+      title={t('profile.linkEmail')}
+      closeOnClickOutside={!(config.EMAIL_REQUIRED === 'true' && !userEmail)}
+      closeOnEscape={!(config.EMAIL_REQUIRED === 'true' && !userEmail)}
+      withCloseButton={!(config.EMAIL_REQUIRED === 'true' && !userEmail)}
+    >
+      <Stack gap="md">
+        <TextInput
+          label={t('profile.emailAddress')}
+          placeholder="example@email.com"
+          withAsterisk
+          error={!isValidEmail(globalEmailInput)}
+          type="email"
+          value={globalEmailInput}
+          onChange={(e) => setGlobalEmailInput(e.target.value)}
+          onKeyDown={(e) => e.key === 'Enter' && handleGlobalSaveEmail()}
+        />
+        <Text size="xs" c="dimmed">
+          {t('profile.emailHint')}
+        </Text>
+        <Group justify="flex-end">
+          <Button variant="light" onClick={() => setGlobalEmailModalOpen(false)} disabled={config.EMAIL_REQUIRED === 'true' && !userEmail}>
+            {t('common.cancel')}
+          </Button>
+          <Button onClick={handleGlobalSaveEmail} loading={globalEmailSaving} disabled={!isValidEmail(globalEmailInput)}>
+            {t('common.save')}
+          </Button>
+        </Group>
+      </Stack>
+    </Modal>
+  );
+
   if (isTelegramWebApp || isMobile) {
     return (
-      <Box style={{ minHeight: '100vh', paddingBottom: 100 }}>
+      <>
+        {emailRequiredModal}
+        <Box style={{ minHeight: '100vh', paddingBottom: 100 }}>
           <WebAppHeader />
           <Box px="md">
             <Routes>
-            <Route path="/services" element={<Services />} />
-            <Route path="/payments" element={<Payments />} />
-            <Route path="/withdrawals" element={<Withdrawals />} />
-            <Route path="/" element={<Profile />} />
-            <Route path="*" element={<NotFound />} />
-          </Routes>
+              <Route path="/services" element={<Services />} />
+              <Route path="/payments" element={<Payments />} />
+              <Route path="/withdrawals" element={<Withdrawals />} />
+              <Route path="/" element={<Profile />} />
+              <Route path="*" element={<NotFound />} />
+            </Routes>
+          </Box>
+          <BottomNavigation />
         </Box>
-        <BottomNavigation />
-      </Box>
+      </>
     );
   }
 
@@ -311,90 +423,93 @@ function AppContent() {
   const appShellOffset = `max(0px, calc(50% - ${appShellMaxWidth / 2}px))`;
 
   return (
-    <AppShell
-      header={{ height: 60 }}
-      padding="md"
-      styles={{
-        header: {
-          left: appShellOffset,
-          right: appShellOffset,
-          borderBottom: 0,
-          opacity: 100,
-        },
-        main: {
-          paddingLeft: `calc(var(--app-shell-padding) + var(--app-shell-navbar-offset, 0px) + ${appShellOffset})`,
-          paddingRight: `calc(var(--app-shell-padding) + ${appShellOffset})`,
-        },
-      }}
-    >
-      <AppShell.Header>
-        <Group h="100%" px="md" justify="space-between" wrap="nowrap">
-          <Group>
-            <Text
-              size="lg"
-              fw={700}
-              onClick={() => navigate('/')}
-              style={{ cursor: 'pointer' }}
-              visibleFrom={config.APP_NAME.length > 10 ? 'sm' : undefined}
-            >
-              {config.APP_NAME}
-            </Text>
+    <>
+      {emailRequiredModal}
+      <AppShell
+        header={{ height: 60 }}
+        padding="md"
+        styles={{
+          header: {
+            left: appShellOffset,
+            right: appShellOffset,
+            borderBottom: 0,
+            opacity: 100,
+          },
+          main: {
+            paddingLeft: `calc(var(--app-shell-padding) + var(--app-shell-navbar-offset, 0px) + ${appShellOffset})`,
+            paddingRight: `calc(var(--app-shell-padding) + ${appShellOffset})`,
+          },
+        }}
+      >
+        <AppShell.Header>
+          <Group h="100%" px="md" justify="space-between" wrap="nowrap">
+            <Group>
+              <Text
+                size="lg"
+                fw={700}
+                onClick={() => navigate('/')}
+                style={{ cursor: 'pointer' }}
+                visibleFrom={config.APP_NAME.length > 10 ? 'sm' : undefined}
+              >
+                {config.APP_NAME}
+              </Text>
+            </Group>
+            <Group gap="xs" visibleFrom="sm" wrap="nowrap">
+              {NAV_ITEMS.map((item) => {
+                const Icon = item.icon;
+                const isActive = location.pathname === item.path;
+                return (
+                  <Button
+                    key={item.path}
+                    component={Link}
+                    to={item.path}
+                    leftSection={<Icon size={16} />}
+                    variant={isActive ? 'light' : 'subtle'}
+                    size="xs"
+                    radius="md"
+                  >
+                    {t(item.labelKey)}
+                  </Button>
+                );
+              })}
+            </Group>
+            <Group>
+              <Text size="sm" style={{ cursor: 'pointer' }} onClick={() => navigate('/')}>{user?.login}</Text>
+              { config.SUPPORT_LINK &&  <ActionIcon
+                onClick={handleSupportLink}
+                variant="subtle"
+                size="lg"
+                color="blue"
+              >
+              <IconHeadset size={20} />
+              </ActionIcon> }
+              <LanguageSwitcher />
+              <ThemeToggle />
+              {!hasTelegramWebAppAutoAuth && (
+              <ActionIcon
+                onClick={logout}
+                variant="default"
+                size="lg"
+                aria-label="Logout"
+              >
+                <IconLogout size={18} />
+              </ActionIcon>
+            )}
+            </Group>
           </Group>
-          <Group gap="xs" visibleFrom="sm" wrap="nowrap">
-            {NAV_ITEMS.map((item) => {
-              const Icon = item.icon;
-              const isActive = location.pathname === item.path;
-              return (
-                <Button
-                  key={item.path}
-                  component={Link}
-                  to={item.path}
-                  leftSection={<Icon size={16} />}
-                  variant={isActive ? 'light' : 'subtle'}
-                  size="xs"
-                  radius="md"
-                >
-                  {t(item.labelKey)}
-                </Button>
-              );
-            })}
-          </Group>
-          <Group>
-            <Text size="sm" style={{ cursor: 'pointer' }} onClick={() => navigate('/')}>{user?.login}</Text>
-            { config.SUPPORT_LINK &&  <ActionIcon
-              onClick={handleSupportLink}
-              variant="subtle"
-              size="lg"
-              color="blue"
-            >
-            <IconHeadset size={20} />
-            </ActionIcon> }
-            <LanguageSwitcher />
-            <ThemeToggle />
-            {!hasTelegramWebAppAutoAuth && (
-            <ActionIcon
-              onClick={logout}
-              variant="default"
-              size="lg"
-              aria-label="Logout"
-            >
-              <IconLogout size={18} />
-            </ActionIcon>
-          )}
-          </Group>
-        </Group>
-      </AppShell.Header>
+        </AppShell.Header>
 
-      <AppShell.Main>
-        <Routes>
-          <Route path="/services" element={<Services />} />
-          <Route path="/payments" element={<Payments />} />
-          <Route path="/withdrawals" element={<Withdrawals />} />
-          <Route path="/" element={<Profile />} />
-          <Route path="*" element={<NotFound />} />
-        </Routes>
-      </AppShell.Main>
-    </AppShell>
+        <AppShell.Main>
+          <Routes>
+            <Route path="/services" element={<Services />} />
+            <Route path="/payments" element={<Payments />} />
+            <Route path="/withdrawals" element={<Withdrawals />} />
+            <Route path="/" element={<Profile />} />
+            <Route path="*" element={<NotFound />} />
+          </Routes>
+        </AppShell.Main>
+      </AppShell>
+    </>
   );
 }
 

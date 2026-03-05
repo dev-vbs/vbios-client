@@ -9,6 +9,7 @@ import PayModal from '../components/PayModal';
 import PromoModal from '../components/PromoModal';
 import SecuritySettings from '../components/security/SecuritySettings';
 import { useStore } from '../store/useStore';
+import { config } from '../config';
 
 const RESEND_COOLDOWN_MS = 3 * 60 * 1000;
 const RESEND_STORAGE_KEY = 'email_verify_last_sent';
@@ -46,7 +47,7 @@ interface ForecastData {
 }
 
 export default function Profile() {
-  const { telegramPhoto } = useStore();
+  const { telegramPhoto, setUserEmail } = useStore();
   const [profile, setProfile] = useState<UserProfile | null>(null);
   const [loading, setLoading] = useState(true);
   const [editing, setEditing] = useState(false);
@@ -61,7 +62,7 @@ export default function Profile() {
   const [emailModalOpen, setEmailModalOpen] = useState(false);
   const [emailInput, setEmailInput] = useState('');
   const [emailSaving, setEmailSaving] = useState(false);
-  const [userEmail, setUserEmail] = useState<string | null>(null);
+  const [profileEmail, setProfileEmail] = useState<string | null>(null);
   const [emailVerified, setEmailVerified] = useState(0);
   const [verifyModalOpen, setVerifyModalOpen] = useState(false);
   const [verifyCode, setVerifyCode] = useState('');
@@ -135,7 +136,10 @@ export default function Profile() {
         const emailResponse = await userEmailApi.getEmail();
         const responseData = emailResponse.data.data;
         const data = Array.isArray(responseData) ? responseData[0] : responseData;
-        setUserEmail(data.email || null);
+        setProfileEmail(data.email || null);
+        if (setUserEmail) {
+          setUserEmail(data.email || null);
+        }
         setEmailVerified(data.email_verified || 0 );
       } catch {
       } finally {
@@ -169,7 +173,10 @@ export default function Profile() {
     const profileData = profileResponse.data.data;
     const data = Array.isArray(profileData) ? profileData[0] : profileData;
     setProfile(data);
-    setUserEmail(data.email || null);
+    setProfileEmail(data.email || null);
+    if (setUserEmail) {
+      setUserEmail(data.email || null);
+    }
     setEmailVerified(data.email_verified || 0 );
   };
 
@@ -201,7 +208,7 @@ export default function Profile() {
   };
 
   const openEmailModal = () => {
-    setEmailInput(userEmail || '');
+    setEmailInput(profileEmail || '');
     setEmailModalOpen(true);
   };
 
@@ -222,7 +229,7 @@ export default function Profile() {
   const handleSaveEmail = async () => {
     const email = emailInput.trim();
 
-    if (email === userEmail) {
+    if (email === profileEmail) {
       notifications.show({
         title: t('common.error'),
         message: t('profile.isCurrentEmail'),
@@ -245,7 +252,11 @@ export default function Profile() {
         return;
       }
 
-      setUserEmail(email || null);
+      setProfileEmail(email || null);
+      if (setUserEmail) {
+        setUserEmail(email);
+      }
+
       setEmailModalOpen(false);
       notifications.show({
         title: t('common.success'),
@@ -264,13 +275,38 @@ export default function Profile() {
     }
   };
 
+  const handleDeleteEmail = async () => {
+    setEmailSaving(true);
+    try {
+      await userEmailApi.deleteEmail();
+      setProfileEmail(null);
+      if (setUserEmail) {
+        setUserEmail(null);
+      }
+      notifications.show({
+        title: t('common.success'),
+        message: t('common.success'),
+        color: 'green',
+      });
+      setEmailModalOpen(false);
+    } catch {
+      notifications.show({
+        title: t('common.error'),
+        message: t('common.error'),
+        color: 'red',
+      });
+    } finally {
+      setEmailSaving(false);
+    }
+  };
+
   const handleSendVerifyCode = async () => {
-    if (!userEmail) return;
+    if (!profileEmail) return;
     if (resendCooldown > 0) return;
 
     setVerifySending(true);
     try {
-      const response = await userEmailApi.sendVerifyCode(userEmail);
+      const response = await userEmailApi.sendVerifyCode(profileEmail);
       const data = response.data?.data;
 
       if (Array.isArray(data) && data[0]?.msg && data[0].msg !== 'Verification code sent') {
@@ -508,7 +544,7 @@ export default function Profile() {
             <Group justify="space-between" mb="md">
               <Text fw={500}>Email</Text>
                 <Group gap="xs">
-                  {userEmail && !emailVerified && (
+                  {profileEmail && !emailVerified && (
                     <Button
                       variant="light"
                       size="xs"
@@ -523,15 +559,15 @@ export default function Profile() {
                     </Button>
                   )}
                   <Button variant="light" size="xs" onClick={openEmailModal}>
-                    {userEmail ? t('profile.change') : t('profile.link')}
+                    {profileEmail ? t('profile.change') : t('profile.link')}
                   </Button>
                 </Group>
             </Group>
             <Group>
               <IconMail size={24} color={emailVerified ? '#22c55e' : '#666'} />
-              {userEmail ? (
+              {profileEmail ? (
                 <div>
-                  <Text size="sm">{userEmail}</Text>
+                  <Text size="sm">{profileEmail}</Text>
                   <Text size="xs" c={emailVerified ? 'green' : 'orange'}>
                     {emailVerified ? t('profile.emailVerified') : t('profile.emailNotVerified')}
                   </Text>
@@ -619,8 +655,16 @@ export default function Profile() {
 
       <Modal
         opened={emailModalOpen}
-        onClose={() => setEmailModalOpen(false)}
+        onClose={() => {
+          if (config.EMAIL_REQUIRED === 'true' && !profileEmail) {
+            return;
+          }
+          setEmailModalOpen(false);
+        }}
         title={t('profile.linkEmail')}
+        closeOnClickOutside={!(config.EMAIL_REQUIRED === 'true' && !profileEmail)}
+        closeOnEscape={!(config.EMAIL_REQUIRED === 'true' && !profileEmail)}
+        withCloseButton={!(config.EMAIL_REQUIRED === 'true' && !profileEmail)}
       >
         <Stack gap="md">
           {profile && isValidEmail(profile.login) && (
@@ -642,7 +686,10 @@ export default function Profile() {
             {t('profile.emailHint')}
           </Text>
           <Group justify="flex-end">
-            <Button variant="light" onClick={() => setEmailModalOpen(false)}>
+            <Button color="red" onClick={() => handleDeleteEmail()}  disabled={!profileEmail}>
+              {t('common.delete')}
+            </Button>
+            <Button variant="light" onClick={() => setEmailModalOpen(false)} disabled={ config.EMAIL_REQUIRED === 'true' && !profileEmail }>
               {t('common.cancel')}
             </Button>
             <Button onClick={handleSaveEmail} loading={emailSaving} disabled={!isValidEmail(emailInput)}>
@@ -659,7 +706,7 @@ export default function Profile() {
       >
         <Stack gap="md">
           <Text size="sm">
-            {t('profile.verifyEmailDescription', { email: userEmail })}
+            {t('profile.verifyEmailDescription', { email: profileEmail })}
           </Text>
           <TextInput
             label={t('profile.verifyCode')}
