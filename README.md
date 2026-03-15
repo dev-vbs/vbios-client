@@ -63,6 +63,7 @@ services:
 | `ALLOW_SERVICE_DELETE` | Разрешить пользователю удалять услугу | true |
 | `ALLOW_SERVICE_CHANGE` | Разрешить пользователю сменить услугу | true |
 | `ALLOW_SERVICE_CHANGE_FORCE` | Разрешить сменить услугу сразу (не спрашивая пользователя) | false |
+| `ALLOW_TELEGRAM_PIN` | Разрешить привязку аккаунта Telegram | true |
 
 ### Telegram Widget
 Для работы с авторизацией через Telegram Widget нужно в астройках бота  который указан в `TELGRAM_BOT_NAME` указать домен на котором расположена ваше приложение `shm-client`

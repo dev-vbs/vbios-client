@@ -123,13 +123,15 @@ export default function Profile() {
     if (!profile) return;
 
     const loadExtras = async () => {
-      setTelegramLoading(true);
-      try {
-        const telegramResponse = await telegramApi.getSettings();
-        setTelegramUsername(telegramResponse.data.username || null);
-      } catch {
-      } finally {
-        setTelegramLoading(false);
+      if ( config.ALLOW_TELEGRAM_PIN === 'true') {
+        setTelegramLoading(true);
+        try {
+          const telegramResponse = await telegramApi.getSettings();
+          setTelegramUsername(telegramResponse.data.username || null);
+        } catch {
+        } finally {
+          setTelegramLoading(false);
+        }
       }
 
       try {
@@ -583,6 +585,8 @@ export default function Profile() {
         </Grid.Col>
       </Grid>
 
+    { config.ALLOW_TELEGRAM_PIN === 'true' && (
+      <>
       <Card withBorder radius="md" p="lg">
         <Group justify="space-between" mb="md">
           <Text fw={500}>{t('profile.telegram')}</Text>
@@ -607,7 +611,7 @@ export default function Profile() {
             <Text size="sm" c="dimmed">{t('profile.telegramNotLinked')}</Text>
           )}
         </Group>
-          {telegramLoading ? (
+          { telegramLoading ? (
             <Skeleton width="70%" mt={10} height={16} />
           ) : (
             <Text size="xs" c="dimmed" mt="md">
@@ -615,6 +619,8 @@ export default function Profile() {
             </Text>
           )}
       </Card>
+      </>
+    )}
 
       <SecuritySettings />
 

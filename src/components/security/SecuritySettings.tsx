@@ -12,7 +12,7 @@ import { useTelegramWebApp } from '../../hooks/useTelegramWebApp';
 import { config } from '../../config';
 
 const otpEnabled = config.OTP_ENABLE === 'true';
-const passkeyEnabled = config.PASSKEY_ENABLE === 'true';
+const passkeyEnabled = config.PASSKEY_AUTH_DISABLED === 'false' && config.PASSKEY_ENABLE === 'true';
 
 export default function SecuritySettings() {
   const { t } = useTranslation();

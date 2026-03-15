@@ -23,6 +23,7 @@ interface AppConfig {
   ALLOW_SERVICE_DELETE: string;
   ALLOW_SERVICE_CHANGE: string;
   ALLOW_SERVICE_CHANGE_FORCE: string;
+  ALLOW_TELEGRAM_PIN: string;
 }
 
 declare global {
@@ -59,6 +60,7 @@ function getConfig(): AppConfig {
     ALLOW_SERVICE_DELETE: runtimeConfig?.ALLOW_SERVICE_DELETE || import.meta.env.VITE_ALLOW_SERVICE_DELETE || 'true',
     ALLOW_SERVICE_CHANGE: runtimeConfig?.ALLOW_SERVICE_CHANGE || import.meta.env.VITE_ALLOW_SERVICE_CHANGE || 'true',
     ALLOW_SERVICE_CHANGE_FORCE: runtimeConfig?.ALLOW_SERVICE_CHANGE_FORCE || import.meta.env.VITE_ALLOW_SERVICE_CHANGE_FORCE || 'false',
+    ALLOW_TELEGRAM_PIN: runtimeConfig?.ALLOW_TELEGRAM_PIN || import.meta.env.VITE_ALLOW_TELEGRAM_PIN || 'false',
   };
 }
 
