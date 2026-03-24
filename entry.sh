@@ -17,9 +17,18 @@ if [ ! -z "$SHM_BASE_PATH" ] && [ "$SHM_BASE_PATH" != "/" ]; then
     sed -i "s|#proxy_cookie_path;|proxy_cookie_path / $SHM_BASE_PATH;|" /etc/nginx/conf.d/default.conf
 fi
 
+if [ ! -z "$APP_NAME" ]; then
+    sed -i "s|<title>.*</title>|<title>${APP_NAME}</title>|" /app/index.html
+fi
+
+if [ ! -z "$APP_DESCRIPTION" ]; then
+    sed -i "s|<meta name=\"description\" content=\".*\" />|<meta name=\"description\" content=\"${APP_DESCRIPTION}\" />|" /app/index.html
+fi
+
 cat > "/app/config.js" << EOF
 window.__APP_CONFIG__ = {
   APP_NAME: "${APP_NAME:-SHM Client}",
+  APP_DESCRIPTION: "${APP_DESCRIPTION:-}",
   TELEGRAM_BOT_NAME: "${TELEGRAM_BOT_NAME:-}",
   TELEGRAM_BOT_AUTH_ENABLE: "${TELEGRAM_BOT_AUTH_ENABLE:-false}",
   TELEGRAM_BOT_AUTH_PROFILE: "${TELEGRAM_BOT_AUTH_PROFILE:-}",

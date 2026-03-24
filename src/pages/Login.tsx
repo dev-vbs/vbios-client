@@ -437,6 +437,9 @@ export default function Login() {
             <div style={{ flex: 1, display: 'flex', justifyContent: 'flex-end' }}>
               <LanguageSwitcher />
             </div>
+            { config.APP_DESCRIPTION && (
+              <Text size="sm" c="dimmed" ta="center" style={{ flex: 'auto' }}>{config.APP_DESCRIPTION}</Text>
+            )}
           </Group>
           <Text size="sm" c="dimmed" ta="center">
               {mode === 'login' ? t('auth.loginTitle') : t('auth.registerTitle')}

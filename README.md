@@ -42,6 +42,7 @@ services:
 | `SHM_HOST` | Альтернатива SHM_URL | - |
 | `SHM_BASE_PATH` | Базовый путь (например `/cabinet`) | `/` |
 | `APP_NAME` | Название приложения | `SHM Client` |
+| `APP_DESCRIPTION` | Описание приложения | Powerful and flexible client for SHM |
 | `TELEGRAM_BOT_NAME` | Username Telegram бота (без @) s| - |
 | `TELEGRAM_BOT_AUTH_ENABLE` | Включить авторизацию через Telegram виджет | `false` |
 | `TELEGRAM_BOT_AUTH_PROFILE` | Название бота (профиля) в SHM | `telegram_bot` |
