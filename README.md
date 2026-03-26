@@ -17,21 +17,15 @@
 
 ```yaml
 services:
-#   admin:
-#     ...
   client:
     image: danuk/shm-client-2:latest
-    pull_policy: always
-    restart: always
     ports:
-      - "8082:80"
+      - "3001:80"
     environment:
-      - SHM_URL=http://api
-      - APP_NAME=My Service
-    depends_on:
-      - api
-#   mysql:
-#     ....
+      SHM_URL: "https://api.mydomain.com"
+      APP_NAME: "My Company"
+      APP_DESCRIPTION: "My Company Description"
+    restart: unless-stopped
 ```
 
 ### Переменные окружения

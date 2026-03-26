@@ -1,13 +1,10 @@
 services:
   shm-client:
-    build:
-      context: .
-      dockerfile: Dockerfile
+    image: danuk/shm-client-2:latest
     ports:
       - "3001:80"
     environment:
-      - SHM_URL=http://api
-      - APP_NAME=My Company
-    depends_on:
-      - api
+      SHM_URL: "https://api.mydomain.com"
+      APP_NAME: "My Company"
+      APP_DESCRIPTION: "My Company Description"
     restart: unless-stopped
