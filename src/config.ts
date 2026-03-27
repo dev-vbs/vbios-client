@@ -61,6 +61,12 @@ interface AppConfig {
   ANDROID_PROXY_URL_SCHEMA: string;
   CAPTCHA_ENABLED: string;
   ORDER_SORTING: string;
+    // Добавленные MT_PROXY поля
+  MT_PROXY_ENABLED: string;
+  MT_PROXY_IP: string;
+  MT_PROXY_PORT: string;
+  MT_PROXY_SECRET: string;
+  MT_PROXY_LINK: string;
 }
 
 declare global {
@@ -135,6 +141,12 @@ function getConfig(): AppConfig {
     IOS_PROXY_URL_SCHEMA: runtimeConfig?.IOS_PROXY_URL_SCHEMA || import.meta.env.VITE_IOS_PROXY_URL_SCHEMA || '',
     ANDROID_PROXY_URL_SCHEMA: runtimeConfig?.ANDROID_PROXY_URL_SCHEMA || import.meta.env.VITE_ANDROID_PROXY_URL_SCHEMA || '',
     CAPTCHA_ENABLED: runtimeConfig?.CAPTCHA_ENABLED || import.meta.env.VITE_CAPTCHA_ENABLED || 'false',
+        // Добавленные MT_PROXY поля с значениями по умолчанию
+    MT_PROXY_ENABLED: runtimeConfig?.MT_PROXY_ENABLED || import.meta.env.VITE_MT_PROXY_ENABLED || 'false',
+    MT_PROXY_IP: runtimeConfig?.MT_PROXY_IP || import.meta.env.VITE_MT_PROXY_IP || '',
+    MT_PROXY_PORT: runtimeConfig?.MT_PROXY_PORT || import.meta.env.VITE_MT_PROXY_PORT || '',
+    MT_PROXY_SECRET: runtimeConfig?.MT_PROXY_SECRET || import.meta.env.VITE_MT_PROXY_SECRET || '',
+    MT_PROXY_LINK: runtimeConfig?.MT_PROXY_LINK || import.meta.env.VITE_MT_PROXY_LINK || '',
 
   };
 }
