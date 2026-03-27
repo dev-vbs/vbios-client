@@ -117,17 +117,31 @@ jobs:
 
           MESSAGE="${{ steps.format_message.outputs.message }}"
 
-          # Отправка сообщения в Telegram
-          RESPONSE=$(curl -s -X POST \
-            "https://api.telegram.org/bot${TELEGRAM_BOT_TOKEN}/sendMessage" \
-            -H "Content-Type: application/json" \
-            -d "{
-              \"chat_id\": \"${TELEGRAM_CHAT_ID}\",
-              \"message_thread_id\": \"${TELEGRAM_THREAD_ID}\",
-              \"text\": \"${MESSAGE}\",
-              \"disable_notification\": true,
-              \"disable_web_page_preview\": true
-            }")
+          # Build JSON payload without message_thread_id if it's empty
+          if [ -z "$TELEGRAM_THREAD_ID" ]; then
+            # Send without thread ID
+            RESPONSE=$(curl -s -X POST \
+              "https://api.telegram.org/bot${TELEGRAM_BOT_TOKEN}/sendMessage" \
+              -H "Content-Type: application/json" \
+              -d "{
+                \"chat_id\": \"${TELEGRAM_CHAT_ID}\",
+                \"text\": \"${MESSAGE}\",
+                \"disable_notification\": true,
+                \"disable_web_page_preview\": true
+              }")
+          else
+            # Send with thread ID
+            RESPONSE=$(curl -s -X POST \
+              "https://api.telegram.org/bot${TELEGRAM_BOT_TOKEN}/sendMessage" \
+              -H "Content-Type: application/json" \
+              -d "{
+                \"chat_id\": \"${TELEGRAM_CHAT_ID}\",
+                \"message_thread_id\": ${TELEGRAM_THREAD_ID},
+                \"text\": \"${MESSAGE}\",
+                \"disable_notification\": true,
+                \"disable_web_page_preview\": true
+              }")
+          fi
 
           # Проверка успешной отправки сообщения
           if echo "$RESPONSE" | grep -q '"ok":true'; then
