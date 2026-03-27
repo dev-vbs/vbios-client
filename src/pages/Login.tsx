@@ -2,7 +2,8 @@ import { useEffect, useRef, useState } from 'react';
 import { 
   Card, Text, Stack, Button, ActionIcon, TextInput, PasswordInput, 
   Divider, Title, Center, Modal, Group, Loader, useMantineColorScheme, 
-  useComputedColorScheme, Grid, Paper, Tooltip, Box
+  useComputedColorScheme, Grid, Paper, Tooltip, Box, Badge, 
+  ThemeIcon, Skeleton, Transition, ScrollArea
 } from '@mantine/core';
 import { useForm, isEmail, hasLength } from '@mantine/form';
 import { 
@@ -10,7 +11,8 @@ import {
   IconShieldLock, IconBrandTelegram, IconMailForward, IconLock, 
   IconMoon, IconSun, IconServer, IconExternalLink, IconCopy, 
   IconEye, IconEyeOff, IconRefresh, IconQrcode, IconCircleCheck, 
-  IconX, IconClock, IconAlertCircle, IconRocket
+  IconX, IconClock, IconAlertCircle, IconRocket, IconWifi, 
+  IconNetwork, IconPlugConnected, IconCheck, IconArrowRight
 } from '@tabler/icons-react';
 import { notifications } from '@mantine/notifications';
 import { useTranslation } from 'react-i18next';
@@ -61,8 +63,8 @@ function ThemeToggle() {
   );
 }
 
-// Ping Icon Component
-const PingIcon = ({ size = 18, color = 'currentColor' }: { size?: number; color?: string }) => (
+// Animated Ping Icon
+const PingIcon = ({ size = 18, color = 'currentColor', animated = false }: { size?: number; color?: string; animated?: boolean }) => (
   <svg
     width={size}
     height={size}
@@ -72,6 +74,7 @@ const PingIcon = ({ size = 18, color = 'currentColor' }: { size?: number; color?
     strokeWidth="2"
     strokeLinecap="round"
     strokeLinejoin="round"
+    className={animated ? 'animate-pulse' : ''}
   >
     <path d="M3 12h3l3-9 3 18 3-9h3" />
     <path d="M21 12h-2" />
@@ -125,40 +128,31 @@ export default function Login() {
     secret: '',
     link: ''
   });
+  const [mtProxyModalOpen, setMtProxyModalOpen] = useState(false);
   const [secretVisible, setSecretVisible] = useState(false);
   const [qrModalOpen, setQrModalOpen] = useState(false);
   const [pingLoading, setPingLoading] = useState(false);
   const [pingValue, setPingValue] = useState<string>('-- ms');
+  const [pingHistory, setPingHistory] = useState<number[]>([]);
 
-  // Load MTProxy config from window or config
+  // Load MTProxy config
   useEffect(() => {
     try {
-      // Try to get from window config first (if available)
       const windowConfig = (window as any).__APP_CONFIG__;
-      if (windowConfig) {
-        setMtProxy({
-          enabled: windowConfig.MT_PROXY_ENABLED === 'true',
-          ip: windowConfig.MT_PROXY_IP || '',
-          port: windowConfig.MT_PROXY_PORT || '',
-          secret: windowConfig.MT_PROXY_SECRET || '',
-          link: windowConfig.MT_PROXY_LINK || ''
-        });
-      } else {
-        // Fallback to config
-        setMtProxy({
-          enabled: config.MT_PROXY_ENABLED === 'true',
-          ip: config.MT_PROXY_IP || '',
-          port: config.MT_PROXY_PORT || '',
-          secret: config.MT_PROXY_SECRET || '',
-          link: config.MT_PROXY_LINK || ''
-        });
-      }
+      const source = windowConfig || config;
+      setMtProxy({
+        enabled: source.MT_PROXY_ENABLED === 'true',
+        ip: source.MT_PROXY_IP || '',
+        port: source.MT_PROXY_PORT || '',
+        secret: source.MT_PROXY_SECRET || '',
+        link: source.MT_PROXY_LINK || ''
+      });
     } catch (error) {
       console.error('Failed to load MTProxy config:', error);
     }
   }, []);
 
-  // Check proxy ping
+  // Check proxy ping with history
   const checkProxyPing = async () => {
     if (!mtProxy.enabled || !mtProxy.ip || !mtProxy.port) return;
     
@@ -182,15 +176,8 @@ export default function Login() {
       const pingTime = Date.now() - startTime;
       
       if (pingTime < 5000) {
-        if (pingTime < 100) {
-          setPingValue(`${pingTime} ms`);
-        } else if (pingTime < 300) {
-          setPingValue(`${pingTime} ms`);
-        } else if (pingTime < 800) {
-          setPingValue(`${pingTime} ms`);
-        } else {
-          setPingValue(`${pingTime} ms`);
-        }
+        setPingValue(`${pingTime} ms`);
+        setPingHistory(prev => [...prev.slice(-4), pingTime]);
       } else {
         setPingValue('таймаут');
       }
@@ -201,29 +188,30 @@ export default function Login() {
     }
   };
 
-  // Get ping status
+  // Get ping status with quality indicator
   const getPingStatus = () => {
     if (pingValue === '-- ms' || pingValue === '...') {
-      return { color: 'gray', text: 'Не проверено', icon: IconClock };
+      return { color: 'gray', text: 'Не проверено', icon: IconClock, quality: 0 };
     }
     if (pingValue === 'таймаут') {
-      return { color: 'red', text: 'Таймаут', icon: IconX };
+      return { color: 'red', text: 'Таймаут', icon: IconX, quality: 0 };
     }
     if (pingValue === 'ошибка') {
-      return { color: 'red', text: 'Ошибка', icon: IconAlertCircle };
+      return { color: 'red', text: 'Ошибка', icon: IconAlertCircle, quality: 0 };
     }
     
     const ms = parseInt(pingValue);
-    if (ms < 100) return { color: 'green', text: 'Отлично', icon: IconCircleCheck };
-    if (ms < 300) return { color: 'teal', text: 'Хорошо', icon: IconRocket };
-    if (ms < 800) return { color: 'orange', text: 'Средне', icon: IconClock };
-    return { color: 'red', text: 'Медленно', icon: IconAlertCircle };
+    if (ms < 100) return { color: 'green', text: 'Отлично', icon: IconCircleCheck, quality: 100 };
+    if (ms < 300) return { color: 'teal', text: 'Хорошо', icon: IconRocket, quality: 75 };
+    if (ms < 800) return { color: 'orange', text: 'Средне', icon: IconClock, quality: 50 };
+    return { color: 'red', text: 'Медленно', icon: IconAlertCircle, quality: 25 };
   };
 
-  // Check proxy ping on component mount if MTProxy is enabled
   useEffect(() => {
     if (mtProxy.enabled && mtProxy.ip && mtProxy.port) {
       checkProxyPing();
+      const interval = setInterval(checkProxyPing, 30000);
+      return () => clearInterval(interval);
     }
   }, [mtProxy.enabled, mtProxy.ip, mtProxy.port]);
 
@@ -604,44 +592,62 @@ export default function Login() {
     }
   };
 
+  // Average ping from history
+  const avgPing = pingHistory.length > 0 
+    ? Math.round(pingHistory.reduce((a, b) => a + b, 0) / pingHistory.length) 
+    : 0;
+
   return (
-    <Box pos="relative" mih="100vh" style={{ display: 'flex', alignItems: 'center', justifyContent: 'center' }}>
+    <Box pos="relative" mih="100vh" style={{ display: 'flex', alignItems: 'center', justifyContent: 'center', background: 'var(--mantine-color-body)' }}>
       <Center style={{ minHeight: '80vh', padding: '20px' }}>
-        <Card withBorder radius="md" p="xl" w={400}>
+        <Card withBorder radius="xl" p="xl" w={420} shadow="lg">
           <Stack gap="lg">
             <Group justify="space-between" align="center">
               <div style={{ flex: 1, display: 'flex', justifyContent: 'flex-start' }}>
                 <ThemeToggle />
               </div>
               <Group gap="xs" align="center" style={{ flex: 'auto', justifyContent: 'center' }}>
-                {config.LOGO_URL && (
+                {config.LOGO_URL ? (
                   <img
                     src={config.LOGO_URL}
                     alt=""
-                    style={{ height: 28, width: 28, objectFit: 'contain', flexShrink: 0 }}
+                    style={{ height: 32, width: 32, objectFit: 'contain', flexShrink: 0 }}
                   />
+                ) : (
+                  <ThemeIcon size={32} radius="md" variant="gradient" gradient={{ from: 'blue', to: 'violet' }}>
+                    <IconNetwork size={18} />
+                  </ThemeIcon>
                 )}
-                <Title order={2} ta="center">{config.APP_NAME}</Title>
+                <Title order={2} ta="center" variant="gradient" gradient={{ from: 'blue', to: 'violet' }}>
+                  {config.APP_NAME}
+                </Title>
               </Group>
               <div style={{ flex: 1, display: 'flex', justifyContent: 'flex-end' }}>
                 <LanguageSwitcher />
               </div>
             </Group>
+            
             {config.APP_DESCRIPTION && (
-              <Text size="sm" c="dimmed" ta="center" style={{ flex: 'auto' }}>{config.APP_DESCRIPTION}</Text>
+              <Text size="sm" c="dimmed" ta="center">{config.APP_DESCRIPTION}</Text>
             )}
-            <Text size="sm" c="dimmed" ta="center">
+            
+            <Divider />
+            
+            <Text size="sm" fw={500} ta="center" c="dimmed">
               {mode === 'login' ? t('auth.loginTitle') : t('auth.registerTitle')}
             </Text>
 
             {hasTelegramWebAppAuth && !showLoginForm && (
               <>
                 <Button
-                  color="blue"
+                  variant="gradient"
+                  gradient={{ from: 'blue', to: 'cyan' }}
                   leftSection={<IconBrandTelegram size={18} />}
                   onClick={handleTelegramWebAppAuth}
                   fullWidth
                   loading={loading}
+                  radius="xl"
+                  size="md"
                 >
                   {t('auth.loginWithTelegram')}
                 </Button>
@@ -652,6 +658,7 @@ export default function Login() {
                   variant="light"
                   onClick={() => setShowLoginForm(true)}
                   fullWidth
+                  radius="xl"
                 >
                   {t('auth.useLoginPassword')}
                 </Button>
@@ -684,6 +691,7 @@ export default function Login() {
                         autoComplete="email"
                         name="email"
                         type="email"
+                        radius="md"
                         {...form.getInputProps('login')}
                       />
                     ) : (
@@ -692,6 +700,7 @@ export default function Login() {
                         placeholder={t('auth.loginPlaceholder')}
                         autoComplete="username"
                         name="username"
+                        radius="md"
                         {...form.getInputProps('login')}
                       />
                     )}
@@ -700,6 +709,7 @@ export default function Login() {
                       placeholder={t('auth.passwordPlaceholder')}
                       autoComplete={mode === 'login' ? 'current-password' : 'new-password'}
                       name="password"
+                      radius="md"
                       {...form.getInputProps('password')}
                     />
                     {mode === 'register' && (
@@ -708,6 +718,7 @@ export default function Login() {
                         placeholder={t('auth.confirmPasswordPlaceholder')}
                         autoComplete="new-password"
                         name="confirm-password"
+                        radius="md"
                         {...form.getInputProps('confirmPassword')}
                       />
                     )}
@@ -721,16 +732,21 @@ export default function Login() {
                           value={captchaAnswer}
                           onChange={(e) => setCaptchaAnswer(e.target.value.replace(/\D/g, ''))}
                           disabled={!captcha}
+                          radius="md"
                         />
-                        <Button variant="subtle" size="compact-sm" px={8} onClick={fetchCaptcha} title={t('auth.captchaRefresh')}>
+                        <ActionIcon variant="light" size="lg" onClick={fetchCaptcha} title={t('auth.captchaRefresh')}>
                           ↻
-                        </Button>
+                        </ActionIcon>
                       </Group>
                     )}
                     <Button
                       type="submit"
                       leftSection={mode === 'login' ? <IconLogin size={18} /> : <IconUserPlus size={18} />}
                       loading={loading}
+                      radius="xl"
+                      size="md"
+                      variant="gradient"
+                      gradient={{ from: 'blue', to: 'violet' }}
                     >
                       {mode === 'login' ? t('auth.login') : t('auth.register')}
                     </Button>
@@ -740,6 +756,7 @@ export default function Login() {
                         leftSection={<IconFingerprint size={18} />}
                         loading={passkeyLoading}
                         onClick={handlePasskeyAuth}
+                        radius="xl"
                       >
                         {t('passkey.loginWithPasskey')}
                       </Button>
@@ -783,6 +800,7 @@ export default function Login() {
                       onClick={handleTelegramWebAppAuth}
                       fullWidth
                       loading={loading}
+                      radius="xl"
                     >
                       {t('auth.loginWithTelegram')}
                     </Button>
@@ -793,123 +811,204 @@ export default function Login() {
           </Stack>
         </Card>
 
-        {/* MTProxy Block */}
+        {/* Floating MTProxy Button */}
         {mtProxy.enabled && mtProxy.ip && mtProxy.port && mtProxy.secret && (
-          <Card 
-            withBorder 
-            radius="xl" 
-            p="lg" 
-            style={{ 
-              position: 'fixed',
-              bottom: 24,
-              left: 24,
-              width: 400,
-              zIndex: 100,
-              backgroundColor: 'var(--mantine-color-body)',
-              boxShadow: 'var(--mantine-shadow-md)'
-            }}
-          >
-            <Group justify="space-between" mb="md">
-              <Group gap="xs">
-                <IconServer size={24} color="#0088cc" />
-                <Text fw={600} size="lg">MTProxy подключение</Text>
+          <Transition mounted={true} transition="slide-up" duration={400}>
+            {(styles) => (
+              <Button
+                onClick={() => setMtProxyModalOpen(true)}
+                style={{
+                  ...styles,
+                  position: 'fixed',
+                  bottom: 24,
+                  left: 24,
+                  zIndex: 100,
+                }}
+                leftSection={<IconPlugConnected size={18} />}
+                radius="xl"
+                size="md"
+                variant="light"
+                color="blue"
+              >
+                MTProxy
+                <Badge size="xs" color={pingStatus.color} ml={8} circle />
+              </Button>
+            )}
+          </Transition>
+        )}
+      </Center>
+
+      {/* MTProxy Modal */}
+      <Modal
+        opened={mtProxyModalOpen}
+        onClose={() => setMtProxyModalOpen(false)}
+        title={
+          <Group gap="xs">
+            <IconServer size={24} color="#0088cc" />
+            <Text fw={700} size="lg">MTProxy Подключение</Text>
+          </Group>
+        }
+        size="lg"
+        centered
+        radius="xl"
+        padding="lg"
+      >
+        <ScrollArea h={500}>
+          <Stack gap="lg">
+            {/* Status Card */}
+            <Paper withBorder p="md" radius="xl" bg={pingStatus.color === 'green' ? 'green.0' : pingStatus.color === 'red' ? 'red.0' : undefined}>
+              <Group justify="space-between" align="center">
+                <Group gap="md">
+                  <ThemeIcon size={48} radius="xl" color={pingStatus.color} variant="light">
+                    <pingStatus.icon size={28} />
+                  </ThemeIcon>
+                  <div>
+                    <Text size="xs" c="dimmed" tt="uppercase" fw={600}>Статус соединения</Text>
+                    <Text fw={700} size="xl" c={pingStatus.color}>{pingStatus.text}</Text>
+                    <Group gap="xs" mt={4}>
+                      <Text size="sm">Пинг: <Text component="span" fw={700}>{pingValue}</Text></Text>
+                      {avgPing > 0 && (
+                        <Text size="xs" c="dimmed">(средний: {avgPing} ms)</Text>
+                      )}
+                    </Group>
+                  </div>
+                </Group>
+                <Tooltip label="Проверить задержку">
+                  <ActionIcon 
+                    variant="light" 
+                    onClick={checkProxyPing}
+                    loading={pingLoading}
+                    size="lg"
+                    radius="xl"
+                  >
+                    <IconRefresh size={20} />
+                  </ActionIcon>
+                </Tooltip>
               </Group>
-              {mtProxy.link && (
-                <Button
-                  component="a"
-                  href={mtProxy.link}
-                  target="_blank"
-                  variant="light"
-                  size="xs"
-                  radius="xl"
-                  leftSection={<IconExternalLink size={14} />}
-                >
-                  Открыть в Telegram
-                </Button>
-              )}
-            </Group>
-            
-            <Grid>
-              <Grid.Col span={{ base: 12, md: 6 }}>
-                <Stack gap="sm">
-                  <Paper withBorder p="sm" radius="lg">
-                    <Group justify="space-between">
-                      <Text size="sm" fw={500}>Сервер:</Text>
-                      <Group gap="xs">
-                        <Text size="sm" c="dimmed" style={{ fontFamily: 'monospace' }}>{mtProxy.ip}:{mtProxy.port}</Text>
-                        <ActionIcon 
-                          size="sm" 
-                          variant="subtle" 
-                          onClick={() => {
-                            clipboard.copy(`${mtProxy.ip}:${mtProxy.port}`);
-                            notifications.show({
-                              title: t('common.success'),
-                              message: 'Сервер скопирован',
-                              color: 'green',
-                            });
-                          }}
-                        >
-                          <IconCopy size={14} />
-                        </ActionIcon>
-                      </Group>
-                    </Group>
-                  </Paper>
-                  <Paper withBorder p="sm" radius="lg">
-                    <Group justify="space-between">
-                      <Text size="sm" fw={500}>Секрет:</Text>
-                      <Group gap="xs">
-                        <Text size="sm" c="dimmed" style={{ fontFamily: 'monospace' }}>
-                          {secretVisible ? mtProxy.secret : '••••••••••••••••••••••••••••••••'}
-                        </Text>
-                        <ActionIcon size="sm" variant="subtle" onClick={() => setSecretVisible(!secretVisible)}>
-                          {secretVisible ? <IconEyeOff size={14} /> : <IconEye size={14} />}
-                        </ActionIcon>
-                        <ActionIcon 
-                          size="sm" 
-                          variant="subtle" 
-                          onClick={() => {
-                            clipboard.copy(mtProxy.secret);
-                            notifications.show({
-                              title: t('common.success'),
-                              message: 'Секрет скопирован',
-                              color: 'green',
-                            });
-                          }}
-                        >
-                          <IconCopy size={14} />
-                        </ActionIcon>
-                      </Group>
-                    </Group>
-                  </Paper>
-                </Stack>
-              </Grid.Col>
-              <Grid.Col span={{ base: 12, md: 6 }}>
-                <Paper withBorder p="sm" radius="lg">
-                  <Group justify="space-between" align="center">
-                    <Group gap="xs">
-                      <PingIcon size={18} color={`var(--mantine-color-${pingStatus.color}-6)`} />
-                      <Text size="sm" fw={500}>Пинг:</Text>
-                      <Text size="sm" c={pingStatus.color} fw={600}>{pingValue}</Text>
-                    </Group>
-                    <Tooltip label="Проверить задержку">
-                      <ActionIcon 
-                        variant="light" 
-                        onClick={checkProxyPing}
-                        loading={pingLoading}
-                      >
-                        <IconRefresh size={16} />
-                      </ActionIcon>
+              
+              {pingHistory.length > 0 && (
+                <Group gap={4} mt="md" justify="center">
+                  {pingHistory.map((ping, idx) => (
+                    <Tooltip key={idx} label={`${ping} ms`}>
+                      <div 
+                        style={{ 
+                          width: 30, 
+                          height: Math.min(40, ping / 10 + 10), 
+                          background: ping < 100 ? '#22c55e' : ping < 300 ? '#14b89e' : ping < 800 ? '#f59e0b' : '#ef4444',
+                          borderRadius: 4,
+                          transition: 'all 0.3s'
+                        }} 
+                      />
                     </Tooltip>
+                  ))}
+                </Group>
+              )}
+            </Paper>
+
+            <Divider label="Параметры подключения" labelPosition="center" />
+
+            {/* Connection Details */}
+            <Grid>
+              <Grid.Col span={6}>
+                <Paper withBorder p="md" radius="lg">
+                  <Group justify="space-between" mb="xs">
+                    <Group gap="xs">
+                      <IconWifi size={18} color="var(--mantine-color-blue-6)" />
+                      <Text fw={600} size="sm">Сервер</Text>
+                    </Group>
+                    <Badge color="blue" variant="light" radius="xl">Основной</Badge>
                   </Group>
-                  <Text size="xs" c="dimmed" mt={8}>
-                    Статус: {pingStatus.text}
-                  </Text>
+                  <Group justify="space-between" align="flex-end">
+                    <Text size="lg" fw={700} style={{ fontFamily: 'monospace' }}>{mtProxy.ip}</Text>
+                    <Text size="lg" fw={700} style={{ fontFamily: 'monospace' }}>:{mtProxy.port}</Text>
+                    <ActionIcon 
+                      variant="subtle" 
+                      onClick={() => {
+                        clipboard.copy(`${mtProxy.ip}:${mtProxy.port}`);
+                        notifications.show({ title: 'Готово', message: 'Сервер скопирован', color: 'green' });
+                      }}
+                    >
+                      <IconCopy size={16} />
+                    </ActionIcon>
+                  </Group>
+                </Paper>
+              </Grid.Col>
+              
+              <Grid.Col span={6}>
+                <Paper withBorder p="md" radius="lg">
+                  <Group justify="space-between" mb="xs">
+                    <Group gap="xs">
+                      <IconShieldLock size={18} color="var(--mantine-color-violet-6)" />
+                      <Text fw={600} size="sm">Секретный ключ</Text>
+                    </Group>
+                    <ActionIcon size="sm" variant="subtle" onClick={() => setSecretVisible(!secretVisible)}>
+                      {secretVisible ? <IconEyeOff size={14} /> : <IconEye size={14} />}
+                    </ActionIcon>
+                  </Group>
+                  <Group justify="space-between" align="flex-end">
+                    <Text size="sm" style={{ fontFamily: 'monospace' }} fw={500}>
+                      {secretVisible ? mtProxy.secret : '••••••••••••••••••••••••••••••••'}
+                    </Text>
+                    <ActionIcon 
+                      variant="subtle" 
+                      onClick={() => {
+                        clipboard.copy(mtProxy.secret);
+                        notifications.show({ title: 'Готово', message: 'Секрет скопирован', color: 'green' });
+                      }}
+                    >
+                      <IconCopy size={16} />
+                    </ActionIcon>
+                  </Group>
                 </Paper>
               </Grid.Col>
             </Grid>
-            
-            <Divider my="md" />
-            
+
+            {/* QR Code Section */}
+            <Paper withBorder p="md" radius="lg" bg="gray.0" style={{ background: 'var(--mantine-color-gray-0)' }}>
+              <Group justify="space-between" align="center" mb="md">
+                <Group gap="xs">
+                  <IconQrcode size={20} />
+                  <Text fw={600}>Быстрое подключение</Text>
+                </Group>
+                <Badge color="teal" variant="light">Рекомендуется</Badge>
+              </Group>
+              
+              <Grid align="center">
+                <Grid.Col span="auto">
+                  <Center>
+                    <Card withBorder p="md" style={{ background: 'white' }} radius="lg">
+                      <QRCodeSVG value={connectionString} size={150} level="H" includeMargin />
+                    </Card>
+                  </Center>
+                </Grid.Col>
+                <Grid.Col span={6}>
+                  <Stack gap="sm">
+                    <Text size="sm" fw={500}>Сканируйте QR код:</Text>
+                    <Text size="xs" c="dimmed">
+                      1. Откройте Telegram на телефоне<br />
+                      2. Нажмите на иконку QR-кода в поиске<br />
+                      3. Наведите камеру на этот код
+                    </Text>
+                    <Button 
+                      variant="light" 
+                      leftSection={<IconCopy size={16} />} 
+                      onClick={() => {
+                        clipboard.copy(connectionString);
+                        notifications.show({ title: 'Готово', message: 'Строка подключения скопирована', color: 'green' });
+                      }} 
+                      size="xs"
+                      radius="xl"
+                    >
+                      Скопировать ссылку
+                    </Button>
+                  </Stack>
+                </Grid.Col>
+              </Grid>
+            </Paper>
+
+            <Divider />
+
+            {/* Connection Actions */}
             <Group grow>
               <Button
                 component="a"
@@ -919,22 +1018,31 @@ export default function Login() {
                 variant="filled"
                 color="blue"
                 radius="xl"
+                size="md"
               >
-                Подключиться через Telegram
+                Подключиться в Telegram
               </Button>
               <Button
                 variant="light"
-                onClick={() => setQrModalOpen(true)}
+                onClick={() => {
+                  setQrModalOpen(true);
+                  setMtProxyModalOpen(false);
+                }}
                 leftSection={<IconQrcode size={18} />}
                 radius="xl"
               >
                 Показать QR код
               </Button>
             </Group>
-          </Card>
-        )}
-      </Center>
 
+            <Text size="xs" c="dimmed" ta="center">
+              MTProxy обеспечивает безопасное и быстрое подключение к сервису через Telegram
+            </Text>
+          </Stack>
+        </ScrollArea>
+      </Modal>
+
+      {/* Existing Modals */}
       <Modal
         opened={showOtp}
         onClose={() => {
@@ -948,6 +1056,7 @@ export default function Login() {
           </Group>
         }
         centered
+        radius="xl"
       >
         <Stack gap="md">
           <Text size="sm" c="dimmed">{t('otp.verifyDescription')}</Text>
@@ -958,18 +1067,22 @@ export default function Login() {
             onChange={(e) => setOtpToken(e.target.value.replace(/\D/g, '').slice(0, 8))}
             maxLength={8}
             autoFocus
+            radius="md"
           />
           <Group justify="flex-end" gap="sm">
             <Button variant="default" onClick={() => {
               setShowOtp(false);
               setOtpToken('');
-            }}>
+            }} radius="xl">
               {t('common.cancel')}
             </Button>
             <Button
               onClick={handleOtpSubmit}
               loading={loading}
               disabled={!otpToken}
+              radius="xl"
+              variant="gradient"
+              gradient={{ from: 'blue', to: 'violet' }}
             >
               {t('otp.verify')}
             </Button>
@@ -985,6 +1098,7 @@ export default function Login() {
         }}
         title={t('auth.resetPasswordTitle')}
         centered
+        radius="xl"
       >
         <Stack gap="md">
           <Text size="sm" c="dimmed">{t('auth.resetPasswordDescription')}</Text>
@@ -994,12 +1108,13 @@ export default function Login() {
             value={loginOrEmail}
             onChange={(e) => setLoginOrEmail(e.target.value)}
             autoFocus
+            radius="md"
           />
           <Group justify="flex-end" gap="sm">
             <Button variant="default" onClick={() => {
               setShowResetPassword(false);
               setResetLoading(false);
-            }}>
+            }} radius="xl">
               {t('common.cancel')}
             </Button>
             <Button
@@ -1007,6 +1122,9 @@ export default function Login() {
               onClick={handleResetPassword}
               loading={resetLoading}
               disabled={!loginOrEmail}
+              radius="xl"
+              variant="gradient"
+              gradient={{ from: 'blue', to: 'violet' }}
             >
               {t('auth.resetPasswordSend')}
             </Button>
@@ -1029,6 +1147,7 @@ export default function Login() {
           </Group>
         }
         centered
+        radius="xl"
       >
         <Stack gap="md">
           <Text size="sm" c="dimmed">{t('auth.newPasswordDescription')}</Text>
@@ -1038,12 +1157,14 @@ export default function Login() {
             value={newPasswordData.password}
             onChange={(e) => setNewPasswordData({ ...newPasswordData, password: e.target.value })}
             autoFocus
+            radius="md"
           />
           <PasswordInput
             label={t('auth.confirmNewPasswordLabel')}
             placeholder={t('auth.confirmPasswordPlaceholder')}
             value={newPasswordData.confirmPassword}
             onChange={(e) => setNewPasswordData({ ...newPasswordData, confirmPassword: e.target.value })}
+            radius="md"
           />
           <Group justify="flex-end" gap="sm">
             <Button variant="default" onClick={() => {
@@ -1051,7 +1172,7 @@ export default function Login() {
               removeResetTokenCookie();
               setResetToken(null);
               setNewPasswordData({ password: '', confirmPassword: '' });
-            }}>
+            }} radius="xl">
               {t('common.cancel')}
             </Button>
             <Button
@@ -1059,6 +1180,9 @@ export default function Login() {
               onClick={handleNewPasswordSubmit}
               loading={resetLoading}
               disabled={!newPasswordData.password || !newPasswordData.confirmPassword}
+              radius="xl"
+              variant="gradient"
+              gradient={{ from: 'blue', to: 'violet' }}
             >
               {t('auth.resetPasswordButton')}
             </Button>
@@ -1076,7 +1200,7 @@ export default function Login() {
         radius="xl"
       >
         <Stack align="center" gap="md">
-          <Card withBorder p="md" style={{ background: 'white' }} radius="xl">
+          <Card withBorder p="xl" style={{ background: 'white' }} radius="xl">
             <QRCodeSVG value={connectionString} size={250} level="H" includeMargin />
           </Card>
           <Text size="sm" ta="center">
@@ -1088,7 +1212,7 @@ export default function Login() {
             onClick={() => {
               clipboard.copy(connectionString);
               notifications.show({ 
-                title: t('common.success'), 
+                title: 'Готово', 
                 message: 'Строка подключения скопирована', 
                 color: 'green' 
               });
@@ -1122,6 +1246,7 @@ export default function Login() {
           leftSection={<IconHeadset size={20} />}
           radius="xl"
           size="md"
+          variant="light"
         >
           {t('common.support')}
         </Button>
