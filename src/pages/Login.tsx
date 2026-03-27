@@ -3,16 +3,17 @@ import {
   Card, Text, Stack, Button, ActionIcon, TextInput, PasswordInput, 
   Divider, Title, Center, Modal, Group, Loader, useMantineColorScheme, 
   useComputedColorScheme, Grid, Paper, Tooltip, Box, Badge, 
-  ThemeIcon, Transition, ScrollArea
+  ThemeIcon, Transition, ScrollArea, Container, Flex, 
+  Skeleton, RingProgress, SimpleGrid, CloseButton
 } from '@mantine/core';
 import { useForm, isEmail, hasLength } from '@mantine/form';
 import { 
   IconLogin, IconUserPlus, IconHeadset, IconFingerprint, 
   IconShieldLock, IconBrandTelegram, IconMailForward, IconLock, 
-  IconMoon, IconSun, IconServer, IconCopy, 
+  IconMoon, IconSun, IconServer, IconCopy, IconCheck,
   IconEye, IconEyeOff, IconRefresh, IconQrcode, IconCircleCheck, 
   IconX, IconClock, IconAlertCircle, IconRocket, IconWifi, 
-  IconNetwork, IconPlugConnected
+  IconNetwork, IconPlugConnected, IconArrowRight, IconExternalLink
 } from '@tabler/icons-react';
 import { notifications } from '@mantine/notifications';
 import { useTranslation } from 'react-i18next';
@@ -56,6 +57,7 @@ function ThemeToggle() {
       onClick={() => setColorScheme(computedColorScheme === 'light' ? 'dark' : 'light')}
       variant="default"
       size="lg"
+      radius="xl"
       aria-label="Toggle color scheme"
     >
       {computedColorScheme === 'light' ? <IconMoon size={18} /> : <IconSun size={18} />}
@@ -73,12 +75,6 @@ interface MTProxyConfig {
 
 export default function Login() {
   const [mode, setMode] = useState<'login' | 'register'>('login');
-  useEffect(() => {
-    const params = new URLSearchParams(location.search);
-    if (params.has('register')) {
-      setMode('register');
-    }
-  }, [location.search]);
   const [loading, setLoading] = useState(false);
   const [passkeyLoading, setPasskeyLoading] = useState(false);
   const [loginOrEmail, setLoginOrEmail] = useState('');
@@ -114,6 +110,8 @@ export default function Login() {
   const [pingLoading, setPingLoading] = useState(false);
   const [pingValue, setPingValue] = useState<string>('-- ms');
   const [pingHistory, setPingHistory] = useState<number[]>([]);
+  const { colorScheme } = useMantineColorScheme();
+  const isDark = colorScheme === 'dark';
 
   // Load MTProxy config
   useEffect(() => {
@@ -171,20 +169,20 @@ export default function Login() {
   // Get ping status with quality indicator
   const getPingStatus = () => {
     if (pingValue === '-- ms' || pingValue === '...') {
-      return { color: 'gray', text: 'Не проверено', icon: IconClock, quality: 0 };
+      return { color: 'gray', text: 'Не проверено', icon: IconClock, quality: 0, gradient: 'gray' };
     }
     if (pingValue === 'таймаут') {
-      return { color: 'red', text: 'Таймаут', icon: IconX, quality: 0 };
+      return { color: 'red', text: 'Таймаут', icon: IconX, quality: 0, gradient: 'red' };
     }
     if (pingValue === 'ошибка') {
-      return { color: 'red', text: 'Ошибка', icon: IconAlertCircle, quality: 0 };
+      return { color: 'red', text: 'Ошибка', icon: IconAlertCircle, quality: 0, gradient: 'red' };
     }
     
     const ms = parseInt(pingValue);
-    if (ms < 100) return { color: 'green', text: 'Отлично', icon: IconCircleCheck, quality: 100 };
-    if (ms < 300) return { color: 'teal', text: 'Хорошо', icon: IconRocket, quality: 75 };
-    if (ms < 800) return { color: 'orange', text: 'Средне', icon: IconClock, quality: 50 };
-    return { color: 'red', text: 'Медленно', icon: IconAlertCircle, quality: 25 };
+    if (ms < 100) return { color: 'green', text: 'Отлично', icon: IconCircleCheck, quality: 100, gradient: 'teal' };
+    if (ms < 300) return { color: 'teal', text: 'Хорошо', icon: IconRocket, quality: 75, gradient: 'cyan' };
+    if (ms < 800) return { color: 'orange', text: 'Средне', icon: IconClock, quality: 50, gradient: 'orange' };
+    return { color: 'red', text: 'Медленно', icon: IconAlertCircle, quality: 25, gradient: 'red' };
   };
 
   useEffect(() => {
@@ -572,39 +570,45 @@ export default function Login() {
     }
   };
 
-  // Average ping from history
   const avgPing = pingHistory.length > 0 
     ? Math.round(pingHistory.reduce((a, b) => a + b, 0) / pingHistory.length) 
     : 0;
 
   return (
-    <Box pos="relative" mih="100vh" style={{ display: 'flex', alignItems: 'center', justifyContent: 'center', background: 'var(--mantine-color-body)' }}>
-      <Center style={{ minHeight: '80vh', padding: '20px' }}>
-        <Card withBorder radius="xl" p="xl" w={420} shadow="lg">
+    <Box style={{ minHeight: '100vh', background: isDark ? 'var(--mantine-color-dark-8)' : 'var(--mantine-color-gray-0)' }}>
+      <Container size="xs" py={80}>
+        {/* Main Login Card */}
+        <Card 
+          withBorder 
+          radius="xl" 
+          p="xl" 
+          shadow="lg"
+          style={{
+            background: isDark ? 'var(--mantine-color-dark-6)' : 'white',
+            transition: 'all 0.3s ease'
+          }}
+        >
           <Stack gap="lg">
+            {/* Header */}
             <Group justify="space-between" align="center">
-              <div style={{ flex: 1, display: 'flex', justifyContent: 'flex-start' }}>
-                <ThemeToggle />
-              </div>
-              <Group gap="xs" align="center" style={{ flex: 'auto', justifyContent: 'center' }}>
+              <ThemeToggle />
+              <Group gap="xs" align="center">
                 {config.LOGO_URL ? (
                   <img
                     src={config.LOGO_URL}
                     alt=""
-                    style={{ height: 32, width: 32, objectFit: 'contain', flexShrink: 0 }}
+                    style={{ height: 36, width: 36, objectFit: 'contain' }}
                   />
                 ) : (
-                  <ThemeIcon size={32} radius="md" variant="gradient" gradient={{ from: 'blue', to: 'violet' }}>
-                    <IconNetwork size={18} />
+                  <ThemeIcon size={40} radius="xl" variant="gradient" gradient={{ from: 'blue', to: 'violet' }}>
+                    <IconNetwork size={22} />
                   </ThemeIcon>
                 )}
-                <Title order={2} ta="center" c="blue.6">
+                <Title order={1} size="h2" variant="gradient" gradient={{ from: 'blue', to: 'violet' }}>
                   {config.APP_NAME}
                 </Title>
               </Group>
-              <div style={{ flex: 1, display: 'flex', justifyContent: 'flex-end' }}>
-                <LanguageSwitcher />
-              </div>
+              <LanguageSwitcher />
             </Group>
             
             {config.APP_DESCRIPTION && (
@@ -613,21 +617,22 @@ export default function Login() {
             
             <Divider />
             
-            <Text size="sm" fw={500} ta="center" c="dimmed">
-              {mode === 'login' ? t('auth.loginTitle') : t('auth.registerTitle')}
+            <Text fw={600} ta="center" size="lg">
+              {mode === 'login' ? t('auth.welcomeBack') || 'Добро пожаловать!' : t('auth.createAccount') || 'Создать аккаунт'}
             </Text>
 
+            {/* Telegram Auth Options */}
             {hasTelegramWebAppAuth && !showLoginForm && (
               <>
                 <Button
                   variant="gradient"
                   gradient={{ from: 'blue', to: 'cyan' }}
-                  leftSection={<IconBrandTelegram size={18} />}
+                  leftSection={<IconBrandTelegram size={20} />}
                   onClick={handleTelegramWebAppAuth}
                   fullWidth
                   loading={loading}
                   radius="xl"
-                  size="md"
+                  size="lg"
                 >
                   {t('auth.loginWithTelegram')}
                 </Button>
@@ -639,6 +644,7 @@ export default function Login() {
                   onClick={() => setShowLoginForm(true)}
                   fullWidth
                   radius="xl"
+                  size="md"
                 >
                   {t('auth.useLoginPassword')}
                 </Button>
@@ -660,83 +666,82 @@ export default function Login() {
               </>
             )}
 
+            {/* Login/Register Form */}
             {(!hasTelegramWebAppAuth || showLoginForm) && (
               <>
                 <form onSubmit={handleSubmit}>
-                  <Stack gap="sm">
-                    {mode === 'register' && requireEmailRegister ? (
-                      <TextInput
-                        label={t('auth.emailLabel')}
-                        placeholder={t('auth.emailPlaceholder')}
-                        autoComplete="email"
-                        name="email"
-                        type="email"
-                        radius="md"
-                        {...form.getInputProps('login')}
-                      />
-                    ) : (
-                      <TextInput
-                        label={t('auth.loginLabel')}
-                        placeholder={t('auth.loginPlaceholder')}
-                        autoComplete="username"
-                        name="username"
-                        radius="md"
-                        {...form.getInputProps('login')}
-                      />
-                    )}
+                  <Stack gap="md">
+                    <TextInput
+                      label={mode === 'register' && requireEmailRegister ? t('auth.emailLabel') : t('auth.loginLabel')}
+                      placeholder={mode === 'register' && requireEmailRegister ? t('auth.emailPlaceholder') : t('auth.loginPlaceholder')}
+                      autoComplete={mode === 'register' && requireEmailRegister ? 'email' : 'username'}
+                      radius="md"
+                      size="md"
+                      leftSection={mode === 'register' && requireEmailRegister ? <IconMailForward size={18} /> : <IconUserPlus size={18} />}
+                      {...form.getInputProps('login')}
+                    />
+                    
                     <PasswordInput
                       label={t('auth.passwordLabel')}
                       placeholder={t('auth.passwordPlaceholder')}
                       autoComplete={mode === 'login' ? 'current-password' : 'new-password'}
-                      name="password"
                       radius="md"
+                      size="md"
+                      leftSection={<IconLock size={18} />}
                       {...form.getInputProps('password')}
                     />
+                    
                     {mode === 'register' && (
                       <PasswordInput
                         label={t('auth.confirmPasswordLabel')}
                         placeholder={t('auth.confirmPasswordPlaceholder')}
                         autoComplete="new-password"
-                        name="confirm-password"
                         radius="md"
+                        size="md"
+                        leftSection={<IconLock size={18} />}
                         {...form.getInputProps('confirmPassword')}
                       />
                     )}
-                    {mode === 'register' && config.CAPTCHA_ENABLED === 'true' && (
+                    
+                    {mode === 'register' && config.CAPTCHA_ENABLED === 'true' && captcha && (
                       <Group gap="xs" align="flex-end">
                         <TextInput
                           style={{ flex: 1 }}
                           label={t('auth.captchaLabel')}
-                          description={captcha ? `${captcha.question} = ?` : '…'}
+                          description={`${captcha.question} = ?`}
                           placeholder={t('auth.captchaPlaceholder')}
                           value={captchaAnswer}
                           onChange={(e) => setCaptchaAnswer(e.target.value.replace(/\D/g, ''))}
-                          disabled={!captcha}
                           radius="md"
+                          size="md"
                         />
-                        <ActionIcon variant="light" size="lg" onClick={fetchCaptcha} title={t('auth.captchaRefresh')}>
-                          ↻
+                        <ActionIcon variant="light" size="lg" onClick={fetchCaptcha} title={t('auth.captchaRefresh')} radius="md">
+                          <IconRefresh size={18} />
                         </ActionIcon>
                       </Group>
                     )}
+                    
                     <Button
                       type="submit"
                       leftSection={mode === 'login' ? <IconLogin size={18} /> : <IconUserPlus size={18} />}
                       loading={loading}
                       radius="xl"
-                      size="md"
+                      size="lg"
                       variant="gradient"
                       gradient={{ from: 'blue', to: 'violet' }}
+                      fullWidth
                     >
                       {mode === 'login' ? t('auth.login') : t('auth.register')}
                     </Button>
-                    {mode === 'login' && isWebAuthnSupported && hasTelegramWidget && config.PASSKEY_AUTH_DISABLED === 'false' && (
+                    
+                    {mode === 'login' && isWebAuthnSupported && config.PASSKEY_AUTH_DISABLED === 'false' && (
                       <Button
                         variant="light"
                         leftSection={<IconFingerprint size={18} />}
                         loading={passkeyLoading}
                         onClick={handlePasskeyAuth}
                         radius="xl"
+                        size="md"
                       >
                         {t('passkey.loginWithPasskey')}
                       </Button>
@@ -744,27 +749,44 @@ export default function Login() {
                   </Stack>
                 </form>
 
-                <Text size="sm" ta="center">
+                <Flex gap="xs" justify="center" wrap="wrap">
                   {mode === 'login' ? (
                     <>
-                      {t('auth.noAccount')}{' '}
-                      <Text component="span" c="blue" style={{ cursor: 'pointer' }} onClick={() => { setMode('register'); form.clearErrors(); }}>
+                      <Text size="sm" c="dimmed">{t('auth.noAccount')}</Text>
+                      <Text 
+                        component="span" 
+                        variant="gradient" 
+                        gradient={{ from: 'blue', to: 'violet' }}
+                        style={{ cursor: 'pointer', fontWeight: 600 }}
+                        onClick={() => { setMode('register'); form.clearErrors(); }}
+                      >
                         {t('auth.register')}
                       </Text>
                     </>
                   ) : (
                     <>
-                      {t('auth.hasAccount')}{' '}
-                      <Text component="span" c="blue" style={{ cursor: 'pointer' }} onClick={() => { setMode('login'); form.clearErrors(); }}>
+                      <Text size="sm" c="dimmed">{t('auth.hasAccount')}</Text>
+                      <Text 
+                        component="span" 
+                        variant="gradient" 
+                        gradient={{ from: 'blue', to: 'violet' }}
+                        style={{ cursor: 'pointer', fontWeight: 600 }}
+                        onClick={() => { setMode('login'); form.clearErrors(); }}
+                      >
                         {t('auth.login')}
                       </Text>
                     </>
                   )}
-                </Text>
+                </Flex>
 
                 {mode === 'login' && (
                   <Text size="sm" ta="center">
-                    <Text component="span" c="blue" style={{ cursor: 'pointer' }} onClick={() => setShowResetPassword(true)}>
+                    <Text 
+                      component="span" 
+                      c="blue" 
+                      style={{ cursor: 'pointer' }} 
+                      onClick={() => setShowResetPassword(true)}
+                    >
                       {t('auth.forgotPassword')}
                     </Text>
                   </Text>
@@ -797,86 +819,116 @@ export default function Login() {
             {(styles) => (
               <Button
                 onClick={() => setMtProxyModalOpen(true)}
-                style={{
-                  ...styles,
-                  position: 'fixed',
-                  bottom: 24,
-                  left: 24,
-                  zIndex: 100,
-                }}
+                style={styles}
+                pos="fixed"
+                bottom={24}
+                left={24}
+                zIndex={100}
                 leftSection={<IconPlugConnected size={18} />}
                 radius="xl"
                 size="md"
                 variant="light"
                 color="blue"
+                shadow="md"
               >
-                MTProxy
+                Прокси для TELEGRAM
                 <Badge size="xs" color={pingStatus.color} ml={8} circle />
               </Button>
             )}
           </Transition>
         )}
-      </Center>
+      </Container>
 
-      {/* MTProxy Modal */}
+      {/* MTProxy Modal - Enhanced Design */}
       <Modal
         opened={mtProxyModalOpen}
         onClose={() => setMtProxyModalOpen(false)}
         title={
-          <Group gap="xs">
-            <IconServer size={24} color="#0088cc" />
-            <Text fw={700} size="lg">MTProxy Подключение</Text>
+          <Group gap="sm">
+            <ThemeIcon size={32} radius="xl" variant="gradient" gradient={{ from: 'blue', to: 'violet' }}>
+              <IconServer size={18} />
+            </ThemeIcon>
+            <Text fw={700} size="xl" variant="gradient" gradient={{ from: 'blue', to: 'violet' }}>
+              Телеграм прокси Подключение
+            </Text>
           </Group>
         }
         size="lg"
         centered
         radius="xl"
-        padding="lg"
+        padding="xl"
+        overlayProps={{ blur: 3 }}
       >
-        <ScrollArea h={500}>
+        <ScrollArea h={550}>
           <Stack gap="lg">
-            {/* Status Card */}
-            <Paper withBorder p="md" radius="xl" bg={pingStatus.color === 'green' ? 'green.0' : pingStatus.color === 'red' ? 'red.0' : undefined}>
-              <Group justify="space-between" align="center">
-                <Group gap="md">
-                  <ThemeIcon size={48} radius="xl" color={pingStatus.color} variant="light">
-                    <pingStatus.icon size={28} />
-                  </ThemeIcon>
+            {/* Status Card with Ring Progress */}
+            <Paper 
+              withBorder 
+              p="xl" 
+              radius="xl" 
+              style={{
+                background: `linear-gradient(135deg, ${isDark ? 'var(--mantine-color-dark-7)' : 'white'}, ${pingStatus.color === 'green' ? 'rgba(34, 197, 94, 0.05)' : pingStatus.color === 'red' ? 'rgba(239, 68, 68, 0.05)' : 'rgba(59, 130, 246, 0.05)'})`
+              }}
+            >
+              <SimpleGrid cols={{ base: 1, sm: 2 }} spacing="xl">
+                <Group gap="lg">
+                  <RingProgress
+                    size={100}
+                    thickness={8}
+                    roundCaps
+                    sections={[{ value: pingStatus.quality, color: pingStatus.color }]}
+                    label={
+                      <Center>
+                        <pingStatus.icon size={32} color={`var(--mantine-color-${pingStatus.color}-6)`} />
+                      </Center>
+                    }
+                  />
                   <div>
                     <Text size="xs" c="dimmed" tt="uppercase" fw={600}>Статус соединения</Text>
-                    <Text fw={700} size="xl" c={pingStatus.color}>{pingStatus.text}</Text>
+                    <Text fw={800} size="xxl" c={pingStatus.color} style={{ fontSize: 28 }}>
+                      {pingStatus.text}
+                    </Text>
                     <Group gap="xs" mt={4}>
-                      <Text size="sm">Пинг: <Text component="span" fw={700}>{pingValue}</Text></Text>
+                      <Badge color={pingStatus.color} variant="light" radius="xl">
+                        Пинг: {pingValue}
+                      </Badge>
                       {avgPing > 0 && (
-                        <Text size="xs" c="dimmed">(средний: {avgPing} ms)</Text>
+                        <Badge variant="light" radius="xl">
+                          Средний: {avgPing} ms
+                        </Badge>
                       )}
                     </Group>
                   </div>
                 </Group>
-                <Tooltip label="Проверить задержку">
-                  <ActionIcon 
-                    variant="light" 
-                    onClick={checkProxyPing}
-                    loading={pingLoading}
-                    size="lg"
-                    radius="xl"
-                  >
-                    <IconRefresh size={20} />
-                  </ActionIcon>
-                </Tooltip>
-              </Group>
+                
+                <Group justify="flex-end" align="flex-start">
+                  <Tooltip label="Проверить задержку">
+                    <ActionIcon 
+                      variant="gradient"
+                      gradient={{ from: 'blue', to: 'violet' }}
+                      onClick={checkProxyPing}
+                      loading={pingLoading}
+                      size="lg"
+                      radius="xl"
+                    >
+                      <IconRefresh size={20} />
+                    </ActionIcon>
+                  </Tooltip>
+                </Group>
+              </SimpleGrid>
               
               {pingHistory.length > 0 && (
-                <Group gap={4} mt="md" justify="center">
+                <Group gap={6} mt="lg" justify="center">
                   {pingHistory.map((ping, idx) => (
                     <Tooltip key={idx} label={`${ping} ms`}>
                       <div 
                         style={{ 
-                          width: 30, 
-                          height: Math.min(40, ping / 10 + 10), 
+                          width: 40, 
+                          height: Math.min(60, ping / 5 + 20), 
                           background: ping < 100 ? '#22c55e' : ping < 300 ? '#14b89e' : ping < 800 ? '#f59e0b' : '#ef4444',
-                          borderRadius: 4,
-                          transition: 'all 0.3s'
+                          borderRadius: 8,
+                          transition: 'all 0.3s ease',
+                          cursor: 'pointer'
                         }} 
                       />
                     </Tooltip>
@@ -888,102 +940,97 @@ export default function Login() {
             <Divider label="Параметры подключения" labelPosition="center" />
 
             {/* Connection Details */}
-            <Grid>
-              <Grid.Col span={6}>
-                <Paper withBorder p="md" radius="lg">
-                  <Group justify="space-between" mb="xs">
-                    <Group gap="xs">
-                      <IconWifi size={18} color="var(--mantine-color-blue-6)" />
-                      <Text fw={600} size="sm">Сервер</Text>
-                    </Group>
-                    <Badge color="blue" variant="light" radius="xl">Основной</Badge>
+            <SimpleGrid cols={{ base: 1, sm: 2 }} spacing="md">
+              <Paper withBorder p="md" radius="lg">
+                <Group justify="space-between" mb="sm">
+                  <Group gap="xs">
+                    <IconWifi size={18} color="var(--mantine-color-blue-6)" />
+                    <Text fw={600} size="sm">Сервер</Text>
                   </Group>
-                  <Group justify="space-between" align="flex-end">
-                    <Text size="lg" fw={700} style={{ fontFamily: 'monospace' }}>{mtProxy.ip}</Text>
-                    <Text size="lg" fw={700} style={{ fontFamily: 'monospace' }}>:{mtProxy.port}</Text>
-                    <ActionIcon 
-                      variant="subtle" 
-                      onClick={() => {
-                        clipboard.copy(`${mtProxy.ip}:${mtProxy.port}`);
-                        notifications.show({ title: 'Готово', message: 'Сервер скопирован', color: 'green' });
-                      }}
-                    >
-                      <IconCopy size={16} />
-                    </ActionIcon>
-                  </Group>
-                </Paper>
-              </Grid.Col>
+                  <Badge color="blue" variant="light" radius="xl">Основной</Badge>
+                </Group>
+                <Group justify="space-between" align="flex-end">
+                  <Text size="lg" fw={700} style={{ fontFamily: 'monospace' }}>{mtProxy.ip}</Text>
+                  <Text size="lg" fw={700} style={{ fontFamily: 'monospace' }}>:{mtProxy.port}</Text>
+                  <ActionIcon 
+                    variant="subtle" 
+                    onClick={() => {
+                      clipboard.copy(`${mtProxy.ip}:${mtProxy.port}`);
+                      notifications.show({ title: 'Готово', message: 'Сервер скопирован', color: 'green', icon: <IconCheck size={16} /> });
+                    }}
+                  >
+                    <IconCopy size={16} />
+                  </ActionIcon>
+                </Group>
+              </Paper>
               
-              <Grid.Col span={6}>
-                <Paper withBorder p="md" radius="lg">
-                  <Group justify="space-between" mb="xs">
-                    <Group gap="xs">
-                      <IconShieldLock size={18} color="var(--mantine-color-violet-6)" />
-                      <Text fw={600} size="sm">Секретный ключ</Text>
-                    </Group>
-                    <ActionIcon size="sm" variant="subtle" onClick={() => setSecretVisible(!secretVisible)}>
-                      {secretVisible ? <IconEyeOff size={14} /> : <IconEye size={14} />}
-                    </ActionIcon>
+              <Paper withBorder p="md" radius="lg">
+                <Group justify="space-between" mb="sm">
+                  <Group gap="xs">
+                    <IconShieldLock size={18} color="var(--mantine-color-violet-6)" />
+                    <Text fw={600} size="sm">Секретный ключ</Text>
                   </Group>
-                  <Group justify="space-between" align="flex-end">
-                    <Text size="sm" style={{ fontFamily: 'monospace' }} fw={500}>
-                      {secretVisible ? mtProxy.secret : '••••••••••••••••••••••••••••••••'}
-                    </Text>
-                    <ActionIcon 
-                      variant="subtle" 
-                      onClick={() => {
-                        clipboard.copy(mtProxy.secret);
-                        notifications.show({ title: 'Готово', message: 'Секрет скопирован', color: 'green' });
-                      }}
-                    >
-                      <IconCopy size={16} />
-                    </ActionIcon>
-                  </Group>
-                </Paper>
-              </Grid.Col>
-            </Grid>
+                  <ActionIcon size="sm" variant="subtle" onClick={() => setSecretVisible(!secretVisible)}>
+                    {secretVisible ? <IconEyeOff size={14} /> : <IconEye size={14} />}
+                  </ActionIcon>
+                </Group>
+                <Group justify="space-between" align="flex-end">
+                  <Text size="sm" style={{ fontFamily: 'monospace' }} fw={500}>
+                    {secretVisible ? mtProxy.secret : '••••••••••••••••••••••••••••••••'}
+                  </Text>
+                  <ActionIcon 
+                    variant="subtle" 
+                    onClick={() => {
+                      clipboard.copy(mtProxy.secret);
+                      notifications.show({ title: 'Готово', message: 'Секрет скопирован', color: 'green', icon: <IconCheck size={16} /> });
+                    }}
+                  >
+                    <IconCopy size={16} />
+                  </ActionIcon>
+                </Group>
+              </Paper>
+            </SimpleGrid>
 
             {/* QR Code Section */}
-            <Paper withBorder p="md" radius="lg" bg="gray.0" style={{ background: 'var(--mantine-color-gray-0)' }}>
-              <Group justify="space-between" align="center" mb="md">
+            <Paper withBorder p="xl" radius="xl" bg={isDark ? 'var(--mantine-color-dark-7)' : 'var(--mantine-color-gray-0)'}>
+              <Group justify="space-between" align="center" mb="lg">
                 <Group gap="xs">
-                  <IconQrcode size={20} />
-                  <Text fw={600}>Быстрое подключение</Text>
+                  <ThemeIcon size={32} radius="xl" color="teal" variant="light">
+                    <IconQrcode size={18} />
+                  </ThemeIcon>
+                  <Text fw={700} size="lg">Быстрое подключение</Text>
                 </Group>
-                <Badge color="teal" variant="light">Рекомендуется</Badge>
+                <Badge color="teal" variant="filled" radius="xl">Рекомендуется</Badge>
               </Group>
               
-              <Grid align="center">
-                <Grid.Col span="auto">
-                  <Center>
-                    <Card withBorder p="md" style={{ background: 'white' }} radius="lg">
-                      <QRCodeSVG value={connectionString} size={150} level="H" includeMargin />
-                    </Card>
-                  </Center>
-                </Grid.Col>
-                <Grid.Col span={6}>
-                  <Stack gap="sm">
-                    <Text size="sm" fw={500}>Сканируйте QR код:</Text>
-                    <Text size="xs" c="dimmed">
-                      1. Откройте Telegram на телефоне<br />
-                      2. Нажмите на иконку QR-кода в поиске<br />
-                      3. Наведите камеру на этот код
-                    </Text>
-                    <Button 
-                      variant="light" 
-                      leftSection={<IconCopy size={16} />} 
-                      onClick={() => {
-                        clipboard.copy(connectionString);
-                        notifications.show({ title: 'Готово', message: 'Строка подключения скопирована', color: 'green' });
-                      }} 
-                      size="xs"
-                      radius="xl"
-                    >
-                      Скопировать ссылку
-                    </Button>
-                  </Stack>
-                </Grid.Col>
-              </Grid>
+              <SimpleGrid cols={{ base: 1, sm: 2 }} spacing="xl" align="center">
+                <Center>
+                  <Card withBorder p="md" style={{ background: 'white' }} radius="lg">
+                    <QRCodeSVG value={connectionString} size={180} level="H" includeMargin />
+                  </Card>
+                </Center>
+                <Stack gap="sm">
+                  <Text fw={600}>Сканируйте QR код:</Text>
+                  <Text size="sm" c="dimmed">
+                    • Откройте Telegram на телефоне<br />
+                    • Нажмите на иконку QR-кода в поиске<br />
+                    • Наведите камеру на этот код
+                  </Text>
+                  <Button 
+                    variant="light" 
+                    leftSection={<IconCopy size={16} />} 
+                    onClick={() => {
+                      clipboard.copy(connectionString);
+                      notifications.show({ title: 'Готово', message: 'Строка подключения скопирована', color: 'green', icon: <IconCheck size={16} /> });
+                    }} 
+                    size="sm"
+                    radius="xl"
+                    fullWidth
+                  >
+                    Скопировать ссылку
+                  </Button>
+                </Stack>
+              </SimpleGrid>
             </Paper>
 
             <Divider />
@@ -995,10 +1042,10 @@ export default function Login() {
                 href={mtProxy.link}
                 target="_blank"
                 leftSection={<IconBrandTelegram size={18} />}
-                variant="filled"
-                color="blue"
+                variant="gradient"
+                gradient={{ from: 'blue', to: 'cyan' }}
                 radius="xl"
-                size="md"
+                size="lg"
               >
                 Подключиться в Telegram
               </Button>
@@ -1010,19 +1057,20 @@ export default function Login() {
                 }}
                 leftSection={<IconQrcode size={18} />}
                 radius="xl"
+                size="lg"
               >
                 Показать QR код
               </Button>
             </Group>
 
             <Text size="xs" c="dimmed" ta="center">
-              MTProxy обеспечивает безопасное и быстрое подключение к сервису через Telegram
+              Телеграм прокси обеспечивает безопасное и быстрое подключение к сервису через Telegram
             </Text>
           </Stack>
         </ScrollArea>
       </Modal>
 
-      {/* Existing Modals */}
+      {/* OTP Modal */}
       <Modal
         opened={showOtp}
         onClose={() => {
@@ -1032,29 +1080,31 @@ export default function Login() {
         title={
           <Group gap="xs">
             <IconShieldLock size={20} />
-            <Text fw={500}>{t('otp.title')}</Text>
+            <Text fw={600}>Подтверждение входа</Text>
           </Group>
         }
         centered
         radius="xl"
       >
         <Stack gap="md">
-          <Text size="sm" c="dimmed">{t('otp.verifyDescription')}</Text>
+          <Text size="sm" c="dimmed">Введите код подтверждения из приложения аутентификации</Text>
           <TextInput
-            label={t('otp.enterCode')}
+            label="Код подтверждения"
             placeholder="000000"
             value={otpToken}
             onChange={(e) => setOtpToken(e.target.value.replace(/\D/g, '').slice(0, 8))}
             maxLength={8}
             autoFocus
             radius="md"
+            size="lg"
+            leftSection={<IconLock size={18} />}
           />
           <Group justify="flex-end" gap="sm">
-            <Button variant="default" onClick={() => {
+            <Button variant="light" onClick={() => {
               setShowOtp(false);
               setOtpToken('');
             }} radius="xl">
-              {t('common.cancel')}
+              Отмена
             </Button>
             <Button
               onClick={handleOtpSubmit}
@@ -1064,38 +1114,40 @@ export default function Login() {
               variant="gradient"
               gradient={{ from: 'blue', to: 'violet' }}
             >
-              {t('otp.verify')}
+              Подтвердить
             </Button>
           </Group>
         </Stack>
       </Modal>
 
+      {/* Reset Password Modal */}
       <Modal
         opened={showResetPassword}
         onClose={() => {
           setShowResetPassword(false);
           setResetLoading(false);
         }}
-        title={t('auth.resetPasswordTitle')}
+        title="Восстановление пароля"
         centered
         radius="xl"
       >
         <Stack gap="md">
-          <Text size="sm" c="dimmed">{t('auth.resetPasswordDescription')}</Text>
+          <Text size="sm" c="dimmed">Введите ваш логин или email для получения ссылки на восстановление</Text>
           <TextInput
-            label={t('auth.loginOrEmail')}
-            placeholder={t('auth.loginOrEmailPlaceholder')}
+            label="Логин или Email"
+            placeholder="username@example.com"
             value={loginOrEmail}
             onChange={(e) => setLoginOrEmail(e.target.value)}
             autoFocus
             radius="md"
+            size="lg"
           />
           <Group justify="flex-end" gap="sm">
-            <Button variant="default" onClick={() => {
+            <Button variant="light" onClick={() => {
               setShowResetPassword(false);
               setResetLoading(false);
             }} radius="xl">
-              {t('common.cancel')}
+              Отмена
             </Button>
             <Button
               leftSection={<IconMailForward size={16} />}
@@ -1106,12 +1158,13 @@ export default function Login() {
               variant="gradient"
               gradient={{ from: 'blue', to: 'violet' }}
             >
-              {t('auth.resetPasswordSend')}
+              Отправить
             </Button>
           </Group>
         </Stack>
       </Modal>
 
+      {/* New Password Modal */}
       <Modal
         opened={showNewPasswordForm}
         onClose={() => {
@@ -1120,40 +1173,37 @@ export default function Login() {
           setResetToken(null);
           setNewPasswordData({ password: '', confirmPassword: '' });
         }}
-        title={
-          <Group gap="xs">
-            <IconLock size={20} />
-            <Text fw={500}>{t('auth.newPasswordTitle')}</Text>
-          </Group>
-        }
+        title="Создание нового пароля"
         centered
         radius="xl"
       >
         <Stack gap="md">
-          <Text size="sm" c="dimmed">{t('auth.newPasswordDescription')}</Text>
+          <Text size="sm" c="dimmed">Введите новый пароль для вашей учетной записи</Text>
           <PasswordInput
-            label={t('auth.newPasswordLabel')}
-            placeholder={t('auth.passwordPlaceholder')}
+            label="Новый пароль"
+            placeholder="Минимум 6 символов"
             value={newPasswordData.password}
             onChange={(e) => setNewPasswordData({ ...newPasswordData, password: e.target.value })}
             autoFocus
             radius="md"
+            size="lg"
           />
           <PasswordInput
-            label={t('auth.confirmNewPasswordLabel')}
-            placeholder={t('auth.confirmPasswordPlaceholder')}
+            label="Подтверждение пароля"
+            placeholder="Повторите пароль"
             value={newPasswordData.confirmPassword}
             onChange={(e) => setNewPasswordData({ ...newPasswordData, confirmPassword: e.target.value })}
             radius="md"
+            size="lg"
           />
           <Group justify="flex-end" gap="sm">
-            <Button variant="default" onClick={() => {
+            <Button variant="light" onClick={() => {
               setShowNewPasswordForm(false);
               removeResetTokenCookie();
               setResetToken(null);
               setNewPasswordData({ password: '', confirmPassword: '' });
             }} radius="xl">
-              {t('common.cancel')}
+              Отмена
             </Button>
             <Button
               leftSection={<IconLock size={16} />}
@@ -1164,7 +1214,7 @@ export default function Login() {
               variant="gradient"
               gradient={{ from: 'blue', to: 'violet' }}
             >
-              {t('auth.resetPasswordButton')}
+              Сохранить
             </Button>
           </Group>
         </Stack>
@@ -1179,9 +1229,9 @@ export default function Login() {
         centered 
         radius="xl"
       >
-        <Stack align="center" gap="md">
+        <Stack align="center" gap="lg">
           <Card withBorder p="xl" style={{ background: 'white' }} radius="xl">
-            <QRCodeSVG value={connectionString} size={250} level="H" includeMargin />
+            <QRCodeSVG value={connectionString} size={280} level="H" includeMargin />
           </Card>
           <Text size="sm" ta="center">
             Отсканируйте QR код в Telegram для быстрого подключения
@@ -1191,42 +1241,40 @@ export default function Login() {
             leftSection={<IconCopy size={16} />} 
             onClick={() => {
               clipboard.copy(connectionString);
-              notifications.show({ 
-                title: 'Готово', 
-                message: 'Строка подключения скопирована', 
-                color: 'green' 
-              });
+              notifications.show({ title: 'Готово', message: 'Строка подключения скопирована', color: 'green' });
             }} 
             fullWidth 
             radius="xl"
+            size="lg"
           >
             Скопировать строку подключения
           </Button>
         </Stack>
       </Modal>
 
+      {/* Verifying Modal */}
       {verifyingToken && (
         <Modal opened={true} onClose={() => {}} withCloseButton={false} centered>
-          <Stack align="center" gap="md">
-            <Loader />
-            <Text>{t('auth.verifyingToken')}</Text>
+          <Stack align="center" gap="md" py="xl">
+            <Loader size="xl" />
+            <Text>Проверка токена восстановления...</Text>
           </Stack>
         </Modal>
       )}
 
+      {/* Support Button */}
       {config.SUPPORT_LINK && (
         <Button
           onClick={handleSupportLink}
-          style={{
-            position: 'fixed',
-            bottom: 24,
-            right: 24,
-            zIndex: 200,
-          }}
+          pos="fixed"
+          bottom={24}
+          right={24}
+          zIndex={200}
           leftSection={<IconHeadset size={20} />}
           radius="xl"
           size="md"
           variant="light"
+          shadow="md"
         >
           {t('common.support')}
         </Button>
