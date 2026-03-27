@@ -129,8 +129,6 @@ export default function Login() {
   const [qrModalOpen, setQrModalOpen] = useState(false);
   const [pingLoading, setPingLoading] = useState(false);
   const [pingValue, setPingValue] = useState<string>('-- ms');
-  const { colorScheme } = useMantineColorScheme();
-  const isDark = colorScheme === 'dark';
 
   // Load MTProxy config from window or config
   useEffect(() => {
@@ -231,7 +229,6 @@ export default function Login() {
 
   const connectionString = mtProxy.link || `tg://proxy?server=${mtProxy.ip}&port=${mtProxy.port}&secret=${mtProxy.secret}`;
   const pingStatus = getPingStatus();
-  const PingStatusIcon = pingStatus.icon;
 
   const form = useForm({
     mode: 'controlled',
