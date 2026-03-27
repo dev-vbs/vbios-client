@@ -3,16 +3,16 @@ import {
   Card, Text, Stack, Button, ActionIcon, TextInput, PasswordInput, 
   Divider, Title, Center, Modal, Group, Loader, useMantineColorScheme, 
   useComputedColorScheme, Grid, Paper, Tooltip, Box, Badge, 
-  ThemeIcon, Skeleton, Transition, ScrollArea
+  ThemeIcon, Transition, ScrollArea
 } from '@mantine/core';
 import { useForm, isEmail, hasLength } from '@mantine/form';
 import { 
   IconLogin, IconUserPlus, IconHeadset, IconFingerprint, 
   IconShieldLock, IconBrandTelegram, IconMailForward, IconLock, 
-  IconMoon, IconSun, IconServer, IconExternalLink, IconCopy, 
+  IconMoon, IconSun, IconServer, IconCopy, 
   IconEye, IconEyeOff, IconRefresh, IconQrcode, IconCircleCheck, 
   IconX, IconClock, IconAlertCircle, IconRocket, IconWifi, 
-  IconNetwork, IconPlugConnected, IconCheck, IconArrowRight
+  IconNetwork, IconPlugConnected
 } from '@tabler/icons-react';
 import { notifications } from '@mantine/notifications';
 import { useTranslation } from 'react-i18next';
@@ -64,7 +64,7 @@ function ThemeToggle() {
 }
 
 // Animated Ping Icon
-const PingIcon = ({ size = 18, color = 'currentColor', animated = false }: { size?: number; color?: string; animated?: boolean }) => (
+const AnimatedPingIcon = ({ size = 18, color = 'currentColor', animated = false }: { size?: number; color?: string; animated?: boolean }) => (
   <svg
     width={size}
     height={size}
@@ -618,7 +618,7 @@ export default function Login() {
                     <IconNetwork size={18} />
                   </ThemeIcon>
                 )}
-                <Title order={2} ta="center" variant="gradient" gradient={{ from: 'blue', to: 'violet' }}>
+                <Title order={2} ta="center" c="blue.6">
                   {config.APP_NAME}
                 </Title>
               </Group>
