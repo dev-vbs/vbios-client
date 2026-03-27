@@ -582,10 +582,10 @@ export default function Login() {
           withBorder 
           radius="xl" 
           p="xl" 
-          shadow="lg"
           style={{
             background: isDark ? 'var(--mantine-color-dark-6)' : 'white',
-            transition: 'all 0.3s ease'
+            transition: 'all 0.3s ease',
+            boxShadow: 'var(--mantine-shadow-lg)'
           }}
         >
           <Stack gap="lg">
@@ -823,7 +823,6 @@ export default function Login() {
                 size="md"
                 variant="light"
                 color="blue"
-                shadow="md"
               >
                 Прокси для TELEGRAM
                 <Badge size="xs" color={pingStatus.color} ml={8} circle />
@@ -1265,7 +1264,6 @@ export default function Login() {
           radius="xl"
           size="md"
           variant="light"
-          shadow="md"
         >
           {t('common.support')}
         </Button>
