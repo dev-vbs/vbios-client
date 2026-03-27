@@ -1,7 +1,18 @@
 import { useState, useEffect, useRef } from 'react';
 import { useNavigate } from 'react-router-dom';
-import { Card, Timeline, Text, Stack, Group, Badge, Button, Divider, Modal, ActionIcon, Loader, Center, Paper, Title, Tabs, Code, Tooltip, Accordion, Box, Select, NumberInput, Pagination } from '@mantine/core';
-import { IconQrcode, IconCopy, IconCheck, IconDownload, IconRefresh, IconTrash, IconPlus, IconPlayerStop, IconExchange, IconCreditCard, IconWallet, IconDeviceMobileCog } from '@tabler/icons-react';
+import {
+  Card, Text, Stack, Group, Badge, Button, Divider, Modal, ActionIcon,
+  Loader, Center, Paper, Tabs, Code, Tooltip, Accordion, Box,
+  Select, NumberInput, Pagination, ThemeIcon, SimpleGrid, Container,
+  useMantineColorScheme
+} from '@mantine/core';
+import {
+  IconQrcode, IconCopy, IconCheck, IconDownload, IconRefresh,
+  IconTrash, IconPlus, IconPlayerStop, IconExchange, IconCreditCard,
+  IconWallet, IconDeviceMobileCog, IconServer, IconCircleCheck,
+  IconX, IconClock, IconAlertCircle, IconExternalLink, IconDiamond,
+  IconCalendar
+} from '@tabler/icons-react';
 import { useDisclosure, useClipboard } from '@mantine/hooks';
 import { useTranslation } from 'react-i18next';
 import { api, servicesApi, userApi } from '../api/client';
@@ -60,6 +71,15 @@ const statusColors: Record<string, string> = {
   'INIT': 'gray',
 };
 
+const statusIcons: Record<string, any> = {
+  'ACTIVE': IconCircleCheck,
+  'NOT PAID': IconClock,
+  'BLOCK': IconX,
+  'PROGRESS': IconRefresh,
+  'ERROR': IconAlertCircle,
+  'INIT': IconClock,
+};
+
 function normalizeCategory(category: string): string {
   const proxyCategories = new Set(config.PROXY_CATEGORY.split(','));
   const vpnCategories = new Set(config.VPN_CATEGORY.split(','));
@@ -67,7 +87,7 @@ function normalizeCategory(category: string): string {
   if (proxyCategories.has(category)) {
     return 'proxy';
   }
-  if ( vpnCategories.has(category) ) {
+  if (vpnCategories.has(category)) {
     return 'vpn';
   }
 
@@ -104,6 +124,8 @@ function ServiceDetail({ service, onDelete, onChangeTariff }: ServiceDetailProps
   const [downloading, setDownloading] = useState(false);
   const { t, i18n } = useTranslation();
   const clipboard = useClipboard({ timeout: 1000 });
+  const { colorScheme } = useMantineColorScheme();
+  const isDark = colorScheme === 'dark';
 
   const [forecastTotal, setForecastTotal] = useState<number | null>(null);
   const [forecastLoading, setForecastLoading] = useState(false);
@@ -127,6 +149,19 @@ function ServiceDetail({ service, onDelete, onChangeTariff }: ServiceDetailProps
       a.click();
       document.body.removeChild(a);
       URL.revokeObjectURL(url);
+      notifications.show({
+        title: t('common.success'),
+        message: t('services.configDownloaded'),
+        color: 'green',
+        icon: <IconCircleCheck size={16} />
+      });
+    } catch {
+      notifications.show({
+        title: t('common.error'),
+        message: t('services.configDownloadError'),
+        color: 'red',
+        icon: <IconX size={16} />
+      });
     } finally {
       setDownloading(false);
     }
@@ -201,17 +236,17 @@ function ServiceDetail({ service, onDelete, onChangeTariff }: ServiceDetailProps
           credentials: 'include',
         });
         if (response.status === 200 || response.status === 204) {
-          notifications.show({ title: t('common.success'), message: t('payments.paymentSuccess'), color: 'green' });
+          notifications.show({ title: t('common.success'), message: t('payments.paymentSuccess'), color: 'green', icon: <IconCircleCheck size={16} /> });
           onDelete?.();
         } else {
           const data = await response.json().catch(() => ({}));
-          notifications.show({ title: t('common.error'), message: data.msg_ru || data.msg || t('payments.paymentError'), color: 'red' });
+          notifications.show({ title: t('common.error'), message: data.msg_ru || data.msg || t('payments.paymentError'), color: 'red', icon: <IconX size={16} /> });
         }
       } else {
         window.open(paySystem.shm_url + payAmount, '_blank');
       }
     } catch {
-      notifications.show({ title: t('common.error'), message: t('payments.paymentError'), color: 'red' });
+      notifications.show({ title: t('common.error'), message: t('payments.paymentError'), color: 'red', icon: <IconX size={16} /> });
     } finally {
       setPaying(false);
     }
@@ -225,6 +260,7 @@ function ServiceDetail({ service, onDelete, onChangeTariff }: ServiceDetailProps
         title: t('common.success'),
         message: t('services.serviceDeleted'),
         color: 'green',
+        icon: <IconCircleCheck size={16} />
       });
       setConfirmDelete(false);
       onDelete?.();
@@ -233,6 +269,7 @@ function ServiceDetail({ service, onDelete, onChangeTariff }: ServiceDetailProps
         title: t('common.error'),
         message: t('services.serviceDeleteError'),
         color: 'red',
+        icon: <IconX size={16} />
       });
     } finally {
       setDeleting(false);
@@ -247,6 +284,7 @@ function ServiceDetail({ service, onDelete, onChangeTariff }: ServiceDetailProps
         title: t('common.success'),
         message: t('services.serviceStopped'),
         color: 'green',
+        icon: <IconCircleCheck size={16} />
       });
       setConfirmStop(false);
       onDelete?.();
@@ -255,6 +293,7 @@ function ServiceDetail({ service, onDelete, onChangeTariff }: ServiceDetailProps
         title: t('common.error'),
         message: t('services.serviceStopError'),
         color: 'red',
+        icon: <IconX size={16} />
       });
     } finally {
       setStopping(false);
@@ -263,7 +302,7 @@ function ServiceDetail({ service, onDelete, onChangeTariff }: ServiceDetailProps
 
   const handleConfigure = () => {
     const link = subscriptionUrl;
-    if ( link ) {
+    if (link) {
       const tgWebApp = window.Telegram?.WebApp;
       if (tgWebApp && isTelegramWebApp) {
         tgWebApp.openLink(link);
@@ -272,7 +311,6 @@ function ServiceDetail({ service, onDelete, onChangeTariff }: ServiceDetailProps
       }
     }
   };
-
 
   function detectPlatform(): string {
     const ua = navigator.userAgent;
@@ -287,7 +325,7 @@ function ServiceDetail({ service, onDelete, onChangeTariff }: ServiceDetailProps
   const handleOpenUrlSchema = () => {
     const urlSchema = config[`${detectPlatform()}_PROXY_URL_SCHEMA` as keyof typeof config];
     const link = `${urlSchema}${subscriptionUrl}`;
-    if ( link ) {
+    if (link) {
       const tgWebApp = window.Telegram?.WebApp;
       if (tgWebApp && isTelegramWebApp) {
         tgWebApp.openLink(link);
@@ -298,6 +336,7 @@ function ServiceDetail({ service, onDelete, onChangeTariff }: ServiceDetailProps
   };
 
   const category = normalizeCategory(service.service.category);
+  const StatusIcon = statusIcons[service.status] || IconClock;
 
   useEffect(() => {
     const fetchData = async () => {
@@ -312,7 +351,7 @@ function ServiceDetail({ service, onDelete, onChangeTariff }: ServiceDetailProps
           setActiveTab('config');
         } catch {
         }
-        if (!subscriptionUrl ) {
+        if (!subscriptionUrl) {
           try {
             const remnaResponse = await api.get(`/storage/manage/vpn_remna_${service.user_service_id}?format=json`);
             const url = remnaResponse.data.subscription_url || remnaResponse.data.response?.subscriptionUrl;
@@ -379,186 +418,178 @@ function ServiceDetail({ service, onDelete, onChangeTariff }: ServiceDetailProps
   ].some(Boolean);
 
   return (
-    <Stack gap="md">
-      <Group justify="space-between">
-        <div>
-          <Text fw={700} size="lg">#{service.user_service_id} - {service.service.name}</Text>
-          <Badge color={statusColor} variant="light">
-            {statusLabel}
-          </Badge>
-        </div>
-      </Group>
+    <Stack gap="lg">
+      <Card withBorder radius="xl" p="lg">
+        <Group justify="space-between" align="flex-start">
+          <div>
+            <Group gap="xs" mb="xs">
+              <ThemeIcon size={32} radius="xl" color={statusColor} variant="light">
+                <StatusIcon size={18} />
+              </ThemeIcon>
+              <div>
+                <Text fw={700} size="xl">#{service.user_service_id}</Text>
+                <Text size="sm" c="dimmed">{service.service.name}</Text>
+              </div>
+            </Group>
+            <Badge color={statusColor} variant="light" size="lg" radius="xl">
+              {statusLabel}
+            </Badge>
+          </div>
+        </Group>
+      </Card>
 
-      <Tabs value={activeTab} onChange={setActiveTab}>
-        <Tabs.List>
-          <Tabs.Tab value="info">{t('services.info')}</Tabs.Tab>
-          {isVpnOrProxy && service.status === 'ACTIVE' && <Tabs.Tab value="config">{t('services.connection')}</Tabs.Tab>}
+      <Tabs value={activeTab} onChange={setActiveTab} variant="pills" radius="xl">
+        <Tabs.List grow>
+          <Tabs.Tab value="info" leftSection={<IconServer size={16} />}>{t('services.info')}</Tabs.Tab>
+          {isVpnOrProxy && service.status === 'ACTIVE' && (
+            <Tabs.Tab value="config" leftSection={<IconDeviceMobileCog size={16} />}>{t('services.connection')}</Tabs.Tab>
+          )}
         </Tabs.List>
 
         <Tabs.Panel value="info" pt="md">
-          <Stack gap="xs">
-            <Group justify="space-between">
-              <Text size="sm" c="dimmed">{t('services.status')}:</Text>
-              <Badge color={statusColor} variant="light">{statusLabel}</Badge>
-            </Group>
-            <Group justify="space-between">
-              <Text size="sm" c="dimmed">{t('services.cost')}:</Text>
-              <Text size="sm">{service.service.cost} {t('common.currency')}</Text>
-            </Group>
-            {service.expire && (
+          <Card withBorder radius="xl" p="lg">
+            <Stack gap="md">
               <Group justify="space-between">
-                <Text size="sm" c="dimmed">{t('services.validUntil')}:</Text>
-                <Text size="sm">{new Date(service.expire as string).toLocaleDateString(i18n.language === 'ru' ? 'ru-RU' : 'en-US')}</Text>
+                <Text size="sm" fw={500} c="dimmed">{t('services.status')}:</Text>
+                <Badge color={statusColor} variant="light" radius="xl">{statusLabel}</Badge>
               </Group>
-            )}
-            {service.next && (
               <Group justify="space-between">
-                <Text size="sm" c="dimmed">{t('services.validUntilNext')}:</Text>
-                {nextServiceLoading ? (
-                  <Text size="sm">{t('common.loading')}</Text>
-                ) : nextServiceInfo ? (
-                  <Text size="sm">{nextServiceInfo.name} - {nextServiceInfo.cost} {t('common.currency')}</Text>
-                ) : (
-                  <Text size="sm">{service.next}</Text>
-                )}
+                <Text size="sm" fw={500} c="dimmed">{t('services.cost')}:</Text>
+                <Group gap={4}>
+                  <IconDiamond size={16} color="#22c55e" />
+                  <Text size="sm" fw={600}>{service.service.cost} {t('common.currency')}</Text>
+                </Group>
               </Group>
-            )}
-            {service.children && service.children.length > 0 && (
-              <>
-                <Text size="sm" c="dimmed" mt="md">{t('services.includedServices')}:</Text>
-                {service.children.map((child) => {
-                  const childStatusColor = statusColors[child.status] || 'gray';
-                  const childStatusLabel = t(`status.${child.status}`, child.status);
-                  return (
-                    <Group key={child.user_service_id} justify="space-between" ml="md">
-                      <Text size="sm">{child.service.name}</Text>
-                      <Badge size="sm" color={childStatusColor} variant="light">{childStatusLabel}</Badge>
-                    </Group>
-                  );
-                })}
-              </>
-            )}
-          </Stack>
+              {service.expire && (
+                <Group justify="space-between">
+                  <Text size="sm" fw={500} c="dimmed">{t('services.validUntil')}:</Text>
+                  <Group gap={4}>
+                    <IconCalendar size={14} />
+                    <Text size="sm">{new Date(service.expire as string).toLocaleDateString(i18n.language === 'ru' ? 'ru-RU' : 'en-US')}</Text>
+                  </Group>
+                </Group>
+              )}
+              {service.next && (
+                <Group justify="space-between">
+                  <Text size="sm" fw={500} c="dimmed">{t('services.validUntilNext')}:</Text>
+                  {nextServiceLoading ? (
+                    <Loader size="xs" />
+                  ) : nextServiceInfo ? (
+                    <Text size="sm" fw={600}>{nextServiceInfo.name} - {nextServiceInfo.cost} {t('common.currency')}</Text>
+                  ) : (
+                    <Text size="sm">{service.next}</Text>
+                  )}
+                </Group>
+              )}
+              {service.children && service.children.length > 0 && (
+                <>
+                  <Divider />
+                  <Text size="sm" fw={500} c="dimmed">{t('services.includedServices')}:</Text>
+                  <Stack gap="xs">
+                    {service.children.map((child) => {
+                      const childStatusColor = statusColors[child.status] || 'gray';
+                      const childStatusLabel = t(`status.${child.status}`, child.status);
+                      return (
+                        <Paper key={child.user_service_id} withBorder p="xs" radius="lg">
+                          <Group justify="space-between">
+                            <Text size="sm">{child.service.name}</Text>
+                            <Badge size="sm" color={childStatusColor} variant="light" radius="xl">{childStatusLabel}</Badge>
+                          </Group>
+                        </Paper>
+                      );
+                    })}
+                  </Stack>
+                </>
+              )}
+            </Stack>
+          </Card>
         </Tabs.Panel>
 
-        { service.status === 'ACTIVE' && (
+        {service.status === 'ACTIVE' && (
           <Tabs.Panel value="config" pt="md">
             <Stack gap="md">
               {isProxy && subscriptionUrl && (
-                <Paper withBorder p="md" radius="md">
-                  { config.SHOW_PROXY_SUB_LINK && ( <Text size="sm" fw={500} mb="xs">{t('services.subscriptionLink')}</Text> ) }
-                  <Group gap="xs">
-                    <Code style={{ flex: 1, wordBreak: 'break-all' }}>{subscriptionUrl}</Code>
-                    <Tooltip label={clipboard.copied ? t('common.copied') : t('common.copy')}>
-                      <ActionIcon color={clipboard.copied ? 'teal' : 'gray'} variant="subtle" onClick={() => clipboard.copy(subscriptionUrl)}>
-                        {clipboard.copied ? <IconCheck size={16} /> : <IconCopy size={16} />}
-                      </ActionIcon>
-                    </Tooltip>
-                  </Group>
-
-                  <Divider my="xs" />
-
-                  <Group gap="xs">
-                    {hasProxyAppUrls ? (
-                      <Timeline active={1} bulletSize={24} lineWidth={2}>
-                        <Timeline.Item bullet={<IconDownload size={12} />} title={t('services.stepDownloadApp')}>
-                          <AppDownloadBlock type="proxy" />
-                        </Timeline.Item>
-                        <Timeline.Item bullet={<IconDeviceMobileCog size={12} />} title={t('services.stepConfigureApp') + ' ' + (urlSchema ? t('services.deviceConfig') : t('services.openSubLink'))}>
-                          <Group gap="xs" mt="xs">
-                            { config.SHOW_PROXY_QR && (
-                              <Button
-                                leftSection={<IconQrcode size={16} />}
-                                variant="light"
-                                onClick={() => setQrModalOpen(true)}
-                              >
-                                {t('services.qrCode')}
-                            </Button>
-                            )}
-                            <Button
-                              component="a"
-                              color="green"
-                              onClick={() => urlSchema ? handleOpenUrlSchema() : handleConfigure()}
-                              leftSection={<IconDeviceMobileCog size={16} />}
-                              variant="light"
-                            >
-                              {urlSchema ? t('services.deviceConfig') : t('services.openSubLink')}
-                            </Button>
-                          </Group>
-                        </Timeline.Item>
-                      </Timeline>
-                    ) : (
-                    <Group gap="xs" mt="xs">
-                      {config.SHOW_PROXY_QR && (
-                        <Button
-                          leftSection={<IconQrcode size={16} />}
-                          variant="light"
-                          onClick={() => setQrModalOpen(true)}
-                        >
-                          {t('services.qrCode')}
-                        </Button>
-                      )}
-                      <Button
-                        component="a"
-                        color="green"
-                        onClick={() => handleConfigure()}
-                        leftSection={<IconDeviceMobileCog size={16} />}
-                        variant="light"
-                      >
-                        {t('services.openSubLink')}
-                      </Button>
+                <Card withBorder radius="xl" p="lg">
+                  <Text size="sm" fw={600} mb="xs">{t('services.subscriptionLink')}</Text>
+                  <Paper withBorder p="sm" radius="lg" bg={isDark ? 'dark.6' : 'gray.0'}>
+                    <Group gap="xs" wrap="nowrap">
+                      <Code style={{ flex: 1, wordBreak: 'break-all', background: 'transparent' }}>{subscriptionUrl}</Code>
+                      <Tooltip label={clipboard.copied ? t('common.copied') : t('common.copy')}>
+                        <ActionIcon color={clipboard.copied ? 'teal' : 'gray'} variant="subtle" onClick={() => clipboard.copy(subscriptionUrl)}>
+                          {clipboard.copied ? <IconCheck size={16} /> : <IconCopy size={16} />}
+                        </ActionIcon>
+                      </Tooltip>
                     </Group>
-                    )}
-                  </Group>
-                </Paper>
-              )}
-              { isVpn && storageData && (
-                <Paper withBorder p="md" radius="md">
-                  {hasVpnAppUrls ? (
-                    <Timeline active={1} bulletSize={24} lineWidth={2}>
-                      <Timeline.Item bullet={<IconDownload size={12} />} title={t('services.stepDownloadApp')}>
-                        <AppDownloadBlock type="vpn" />
-                      </Timeline.Item>
-                      <Timeline.Item bullet={<IconDeviceMobileCog size={12} />} title={t('services.stepConfigureApp') + ' ' +  (t('services.downloadConfig'))}>
-                        <Group gap="xs" mt="xs">
-                          <Button
-                            leftSection={<IconQrcode size={16} />}
-                            variant="light"
-                            onClick={() => setQrModalOpen(true)}
-                            >
-                              {t('services.qrCode')}
-                            </Button>
-                          <Button
-                            leftSection={<IconDownload size={16} />}
-                            variant="light"
-                            onClick={downloadConfig}
-                            loading={downloading}
-                          >
-                            {t('services.downloadConfig')}
-                          </Button>
-                        </Group>
-                      </Timeline.Item>
-                    </Timeline>
-                    ) : (
-                    <Group gap="xs" mt="xs">
+                  </Paper>
+
+                  <Divider my="md" />
+
+                  <Stack gap="sm">
+                    <Text fw={500} size="sm">Настройка подключения</Text>
+                    <SimpleGrid cols={{ base: 1, sm: 2 }} spacing="md">
                       <Button
-                        leftSection={<IconQrcode size={16} />}
+                        leftSection={<IconQrcode size={18} />}
                         variant="light"
+                        radius="xl"
                         onClick={() => setQrModalOpen(true)}
                       >
                         {t('services.qrCode')}
                       </Button>
                       <Button
-                        leftSection={<IconDownload size={16} />}
+                        color="green"
+                        onClick={() => urlSchema ? handleOpenUrlSchema() : handleConfigure()}
+                        leftSection={<IconExternalLink size={18} />}
+                        radius="xl"
+                      >
+                        {urlSchema ? t('services.deviceConfig') : t('services.openSubLink')}
+                      </Button>
+                    </SimpleGrid>
+
+                    {hasProxyAppUrls && (
+                      <>
+                        <Divider />
+                        <Text fw={500} size="sm">Установка приложения</Text>
+                        <AppDownloadBlock type="proxy" />
+                      </>
+                    )}
+                  </Stack>
+                </Card>
+              )}
+
+              {isVpn && storageData && (
+                <Card withBorder radius="xl" p="lg">
+                  <Stack gap="md">
+                    <Text fw={600} size="sm">Конфигурация VPN</Text>
+                    
+                    <SimpleGrid cols={{ base: 1, sm: 2 }} spacing="md">
+                      <Button
+                        leftSection={<IconQrcode size={18} />}
+                        variant="light"
+                        radius="xl"
+                        onClick={() => setQrModalOpen(true)}
+                      >
+                        {t('services.qrCode')}
+                      </Button>
+                      <Button
+                        leftSection={<IconDownload size={18} />}
                         variant="light"
                         onClick={downloadConfig}
                         loading={downloading}
+                        radius="xl"
                       >
                         {t('services.downloadConfig')}
                       </Button>
-                    </Group>
-                  )}
-                </Paper>
+                    </SimpleGrid>
+
+                    {hasVpnAppUrls && (
+                      <>
+                        <Divider />
+                        <Text fw={500} size="sm">Установка приложения</Text>
+                        <AppDownloadBlock type="vpn" />
+                      </>
+                    )}
+                  </Stack>
+                </Card>
               )}
 
               <QrModal
@@ -574,8 +605,13 @@ function ServiceDetail({ service, onDelete, onChangeTariff }: ServiceDetailProps
       </Tabs>
 
       {isNotPaid && (
-        <Paper withBorder p="md" radius="md" mt="md">
-          <Stack gap="sm">
+        <Card withBorder radius="xl" p="lg">
+          <Stack gap="md">
+            <Group gap="xs">
+              <IconWallet size={20} />
+              <Text fw={600}>Оплата услуги</Text>
+            </Group>
+
             {forecastLoading ? (
               <Group justify="center" py="xs">
                 <Loader size="sm" />
@@ -583,13 +619,16 @@ function ServiceDetail({ service, onDelete, onChangeTariff }: ServiceDetailProps
               </Group>
             ) : forecastTotal !== null && forecastTotal > 0 ? (
               <>
-                <Group justify="space-between">
-                  <Group gap="xs">
-                    <IconWallet size={18} />
-                    <Text fw={500}>{t('services.amountToPay')}</Text>
+                <Paper withBorder p="md" radius="lg" bg={isDark ? 'dark.6' : 'gray.0'}>
+                  <Group justify="space-between">
+                    <Text size="sm" c="dimmed">Сумма к оплате:</Text>
+                    <Group gap={4}>
+                      <IconDiamond size={20} color="#f59e0b" />
+                      <Text fw={800} size="xl" c="orange">{forecastTotal.toFixed(2)} {t('common.currency')}</Text>
+                    </Group>
                   </Group>
-                  <Text fw={700} size="lg" c="red">{forecastTotal.toFixed(2)} {t('common.currency')}</Text>
-                </Group>
+                </Paper>
+
                 {paySystemsLoading ? (
                   <Group justify="center" py="xs">
                     <Loader size="sm" />
@@ -597,21 +636,23 @@ function ServiceDetail({ service, onDelete, onChangeTariff }: ServiceDetailProps
                 ) : paySystems.length > 0 ? (
                   <>
                     <Select
-                      label={t('payments.paymentSystem')}
+                      label="Платёжная система"
                       data={paySystems.map(ps => ({ value: ps.shm_url, label: ps.name }))}
                       value={selectedPaySystem}
                       onChange={setSelectedPaySystem}
-                      size="sm"
+                      size="md"
+                      radius="xl"
                     />
                     <NumberInput
-                      label={t('payments.amount')}
+                      label="Сумма"
                       value={payAmount}
                       onChange={setPayAmount}
                       min={1}
                       step={10}
                       decimalScale={2}
                       suffix=" ₽"
-                      size="sm"
+                      size="md"
+                      radius="xl"
                     />
                     <Button
                       fullWidth
@@ -619,55 +660,59 @@ function ServiceDetail({ service, onDelete, onChangeTariff }: ServiceDetailProps
                       onClick={handlePay}
                       loading={paying}
                       disabled={!selectedPaySystem}
+                      radius="xl"
+                      size="lg"
                     >
-                      {t('services.payService', { amount: payAmount })}
+                      Оплатить {payAmount} ₽
                     </Button>
                   </>
                 ) : null}
               </>
             ) : null}
           </Stack>
-        </Paper>
+        </Card>
       )}
 
-      {canChange && (
-        <Button
-          color="blue"
-          variant="light"
-          leftSection={<IconExchange size={16} />}
-          onClick={() => onChangeTariff?.(service)}
-          mt="md"
-          fullWidth
-        >
-          {t('services.changeService')}
-        </Button>
-      )}
+      <Group grow>
+        {canChange && (
+          <Button
+            color="blue"
+            variant="light"
+            leftSection={<IconExchange size={18} />}
+            onClick={() => onChangeTariff?.(service)}
+            radius="xl"
+            size="md"
+          >
+            {t('services.changeService')}
+          </Button>
+        )}
 
-      {canStop && (
-        <Button
-          color="orange"
-          variant="light"
-          leftSection={<IconPlayerStop size={16} />}
-          onClick={() => setConfirmStop(true)}
-          mt="md"
-          fullWidth
-        >
-          {t('services.stopService')}
-        </Button>
-      )}
+        {canStop && (
+          <Button
+            color="orange"
+            variant="light"
+            leftSection={<IconPlayerStop size={18} />}
+            onClick={() => setConfirmStop(true)}
+            radius="xl"
+            size="md"
+          >
+            {t('services.stopService')}
+          </Button>
+        )}
 
-      {canDelete && (
-        <Button
-          color="red"
-          variant="light"
-          leftSection={<IconTrash size={16} />}
-          onClick={() => setConfirmDelete(true)}
-          mt="md"
-          fullWidth
-        >
-          {t('services.deleteService')}
-        </Button>
-      )}
+        {canDelete && (
+          <Button
+            color="red"
+            variant="light"
+            leftSection={<IconTrash size={18} />}
+            onClick={() => setConfirmDelete(true)}
+            radius="xl"
+            size="md"
+          >
+            {t('services.deleteService')}
+          </Button>
+        )}
+      </Group>
 
       <ConfirmModal
         opened={confirmStop}
@@ -698,6 +743,7 @@ function ServiceCard({ service, onClick, isChild = false, isLastChild = false }:
   const { t, i18n } = useTranslation();
   const statusColor = statusColors[service.status] || 'gray';
   const statusLabel = t(`status.${service.status}`, service.status);
+  const StatusIcon = statusIcons[service.status] || IconClock;
 
   if (isChild) {
     return (
@@ -732,25 +778,32 @@ function ServiceCard({ service, onClick, isChild = false, isLastChild = false }:
         </Box>
         <Card
           withBorder
-          radius="md"
+          radius="xl"
           p="sm"
           style={{ cursor: 'pointer', flex: 1 }}
           onClick={onClick}
         >
           <Group justify="space-between">
             <div>
-              <Text fw={500} size="sm">#{service.user_service_id} - {service.service.name}</Text>
-              {service.expire && (
-                <Text size="xs" c="dimmed">
-                  {new Date(service.expire as string).toLocaleDateString(i18n.language === 'ru' ? 'ru-RU' : 'en-US')}
-                </Text>
-              )}
+              <Group gap="xs">
+                <ThemeIcon size={24} radius="xl" color={statusColor} variant="light">
+                  <StatusIcon size={12} />
+                </ThemeIcon>
+                <div>
+                  <Text fw={500} size="sm">#{service.user_service_id} - {service.service.name}</Text>
+                  {service.expire && (
+                    <Text size="xs" c="dimmed">
+                      {new Date(service.expire as string).toLocaleDateString(i18n.language === 'ru' ? 'ru-RU' : 'en-US')}
+                    </Text>
+                  )}
+                </div>
+              </Group>
             </div>
             <Group gap="sm">
               {service.service.cost > 0 && (
-                <Text size="sm" c="dimmed">{service.service.cost} {t('common.currency')}</Text>
+                <Text size="sm" fw={500} c="dimmed">{service.service.cost} {t('common.currency')}</Text>
               )}
-              <Badge color={statusColor} variant="light" size="sm">
+              <Badge color={statusColor} variant="light" size="sm" radius="xl">
                 {statusLabel}
               </Badge>
             </Group>
@@ -763,25 +816,45 @@ function ServiceCard({ service, onClick, isChild = false, isLastChild = false }:
   return (
     <Card
       withBorder
-      radius="md"
+      radius="xl"
       p="md"
-      style={{ cursor: 'pointer' }}
+      style={{ cursor: 'pointer', transition: 'transform 0.2s, box-shadow 0.2s' }}
       onClick={onClick}
+      onMouseEnter={(e) => {
+        e.currentTarget.style.transform = 'translateY(-2px)';
+        e.currentTarget.style.boxShadow = '0 4px 20px rgba(0,0,0,0.1)';
+      }}
+      onMouseLeave={(e) => {
+        e.currentTarget.style.transform = 'translateY(0)';
+        e.currentTarget.style.boxShadow = '';
+      }}
     >
       <Group justify="space-between">
-        <div>
-          <Text fw={500}>#{service.user_service_id} - {service.service.name}</Text>
-          {service.expire && (
-            <Text size="xs" c="dimmed">
-              {new Date(service.expire as string).toLocaleDateString(i18n.language === 'ru' ? 'ru-RU' : 'en-US')}
-            </Text>
-          )}
-        </div>
-        <Group gap="sm">
+        <Group gap="md">
+          <ThemeIcon size={44} radius="xl" color={statusColor} variant="light">
+            <StatusIcon size={24} />
+          </ThemeIcon>
+          <div>
+            <Text fw={600} size="lg">#{service.user_service_id}</Text>
+            <Text size="sm" c="dimmed">{service.service.name}</Text>
+            {service.expire && (
+              <Group gap={4} mt={4}>
+                <IconCalendar size={12} />
+                <Text size="xs" c="dimmed">
+                  {new Date(service.expire as string).toLocaleDateString(i18n.language === 'ru' ? 'ru-RU' : 'en-US')}
+                </Text>
+              </Group>
+            )}
+          </div>
+        </Group>
+        <Group gap="lg">
           {service.service.cost > 0 && (
-            <Text size="sm" c="dimmed">{service.service.cost} {t('common.currency')}</Text>
+            <Group gap={4}>
+              <IconDiamond size={16} color="#22c55e" />
+              <Text fw={600} size="lg">{service.service.cost} {t('common.currency')}</Text>
+            </Group>
           )}
-          <Badge color={statusColor} variant="light">
+          <Badge color={statusColor} variant="light" size="lg" radius="xl">
             {statusLabel}
           </Badge>
         </Group>
@@ -805,6 +878,8 @@ export default function Services() {
   const { userEmailVerified, setOpenVerifyModal } = useStore();
   const [confirmEmailNotVerified, setConfirmEmailNotVerified] = useState(false);
   const navigate = useNavigate();
+  const { colorScheme } = useMantineColorScheme();
+  const isDark = colorScheme === 'dark';
 
   const handleEmailNotVerified = async () => {
     setOpenVerifyModal(true);
@@ -914,103 +989,214 @@ export default function Services() {
     return acc;
   }, {} as Record<string, UserService[]>);
 
+  // Statistics
+  const totalServices = services.length;
+  const activeServices = services.filter(s => s.status === 'ACTIVE').length;
+  const notPaidServices = services.filter(s => s.status === 'NOT PAID').length;
+  const totalCost = services.reduce((sum, s) => sum + (s.service.cost || 0), 0);
+
   if (loading) {
     return (
-      <Center h={300}>
-        <Loader size="lg" />
+      <Center h="70vh">
+        <Stack align="center" gap="md">
+          <Loader size="xl" variant="dots" />
+          <Text c="dimmed">{t('common.loading')}</Text>
+        </Stack>
       </Center>
     );
   }
 
   return (
-    <Stack gap="lg">
-      <Group justify="space-between">
-        <Title order={2}>{t('services.title')}</Title>
-        <Group>
-          <Button leftSection={<IconPlus size={16} />} onClick={ config.EMAIL_VERIFY_REQUIRED === "true" && !userEmailVerified ? () => setConfirmEmailNotVerified(true) : openOrderModal}>
-            {t('services.orderService')}
-          </Button>
-          <Button leftSection={<IconRefresh size={16} />} variant="light" color="cyan" onClick={() => fetchServices()}>
-            {t('common.refresh')}
-          </Button>
-        </Group>
-      </Group>
+    <Box pb={40}>
+      <Container size="xl">
+        <Stack gap="xl">
+          {/* Header with gradient */}
+          <Paper
+            p="xl"
+            radius="xl"
+            bg={isDark ? 'dark.6' : 'gradient(135deg, #667eea 0%, #764ba2 100%)'}
+            style={{
+              background: isDark ? undefined : 'linear-gradient(135deg, #667eea 0%, #764ba2 100%)',
+              position: 'relative',
+              overflow: 'hidden'
+            }}
+          >
+            <div style={{ position: 'relative', zIndex: 2 }}>
+              <Group justify="space-between" align="center">
+                <div>
+                  <Group gap="md">
+                    <ThemeIcon size={80} radius="xl" color="blue" variant="white" style={{ border: '4px solid rgba(255,255,255,0.2)' }}>
+                      <IconServer size={40} />
+                    </ThemeIcon>
+                    <div>
+                      <Text size="xl" fw={700} c={isDark ? undefined : 'white'}>
+                        {t('services.title')}
+                      </Text>
+                      <Group gap="xs" mt={4}>
+                        <Badge size="lg" variant={isDark ? 'light' : 'white'} radius="xl">
+                          Всего: {totalServices}
+                        </Badge>
+                        <Badge size="lg" color="green" variant={isDark ? 'light' : 'white'} radius="xl">
+                          Активных: {activeServices}
+                        </Badge>
+                        {notPaidServices > 0 && (
+                          <Badge size="lg" color="orange" variant={isDark ? 'light' : 'white'} radius="xl">
+                            Не оплачено: {notPaidServices}
+                          </Badge>
+                        )}
+                      </Group>
+                    </div>
+                  </Group>
+                </div>
+                <Button
+                  variant={isDark ? 'light' : 'white'}
+                  radius="xl"
+                  leftSection={<IconPlus size={18} />}
+                  onClick={config.EMAIL_VERIFY_REQUIRED === "true" && !userEmailVerified ? () => setConfirmEmailNotVerified(true) : openOrderModal}
+                >
+                  {t('services.orderService')}
+                </Button>
+              </Group>
+            </div>
+          </Paper>
 
-      {Object.keys(groupedServices).length === 0 ? (
-        <Paper withBorder p="xl" radius="md">
-          <Center>
-            <Stack align="center" gap="md">
-              <Text c="dimmed">{t('services.noServices')}</Text>
-              <Button leftSection={<IconPlus size={16} />} onClick={ config.EMAIL_VERIFY_REQUIRED === "true"  && !userEmailVerified ? () => setConfirmEmailNotVerified(true) : openOrderModal}>
-                {t('services.orderService')}
-              </Button>
-            </Stack>
-          </Center>
-        </Paper>
-      ) : (
-        <Accordion variant="separated" radius="md" multiple defaultValue={Object.keys(groupedServices)}>
-          {Object.entries(groupedServices).map(([category, categoryServices]) => {
-            const page = categoryPages[category] || 1;
-            const totalPages = Math.ceil(categoryServices.length / perPage);
-            const paginatedServices = categoryServices.slice((page - 1) * perPage, page * perPage);
-            let categoryTitle;
-            if ( category === 'vpn' && config.VPN_CATEGORY_TITLE ) {
-              categoryTitle = config.VPN_CATEGORY_TITLE
-            } else if ( category === 'proxy' && config.PROXY_CATEGORY_TITLE ) {
-              categoryTitle = config.PROXY_CATEGORY_TITLE
-            } else {
-              categoryTitle = t(`categories.${category}`, category);
-            }
-            return (
-            <Accordion.Item key={category} value={category}>
-              <Accordion.Control>
-                <Group>
-                  <Text fw={500}>{ categoryTitle }</Text>
-                  <Badge variant="light" size="sm">{categoryServices.length}</Badge>
-                </Group>
-              </Accordion.Control>
-              <Accordion.Panel>
-                <Stack gap="sm">
-                  {paginatedServices.map((service) => (
-                    <Box key={service.user_service_id}>
-                      <ServiceCard
-                        service={service}
-                        onClick={() => handleServiceClick(service)}
-                      />
-                      {service.children && service.children.length > 0 && (
-                        <Stack gap="xs" mt="xs" ml="md">
-                          {service.children.map((child, index) => (
-                            <ServiceCard
-                              key={child.user_service_id}
-                              service={child}
-                              onClick={() => handleServiceClick(child)}
-                              isChild
-                              isLastChild={index === service.children!.length - 1}
-                            />
+          {/* Statistics Cards */}
+          <SimpleGrid cols={{ base: 1, sm: 2, md: 4 }} spacing="md">
+            <Paper withBorder p="md" radius="xl">
+              <Group align="flex-start">
+                <ThemeIcon size={44} radius="xl" color="blue" variant="light">
+                  <IconServer size={24} />
+                </ThemeIcon>
+                <div>
+                  <Text size="xs" c="dimmed" tt="uppercase" fw={600}>Всего услуг</Text>
+                  <Text fw={800} style={{ fontSize: 28 }}>{totalServices}</Text>
+                </div>
+              </Group>
+            </Paper>
+            <Paper withBorder p="md" radius="xl">
+              <Group align="flex-start">
+                <ThemeIcon size={44} radius="xl" color="green" variant="light">
+                  <IconCircleCheck size={24} />
+                </ThemeIcon>
+                <div>
+                  <Text size="xs" c="dimmed" tt="uppercase" fw={600}>Активные</Text>
+                  <Text fw={800} style={{ fontSize: 28 }}>{activeServices}</Text>
+                </div>
+              </Group>
+            </Paper>
+            <Paper withBorder p="md" radius="xl">
+              <Group align="flex-start">
+                <ThemeIcon size={44} radius="xl" color="orange" variant="light">
+                  <IconClock size={24} />
+                </ThemeIcon>
+                <div>
+                  <Text size="xs" c="dimmed" tt="uppercase" fw={600}>Не оплачено</Text>
+                  <Text fw={800} style={{ fontSize: 28 }}>{notPaidServices}</Text>
+                </div>
+              </Group>
+            </Paper>
+            <Paper withBorder p="md" radius="xl">
+              <Group align="flex-start">
+                <ThemeIcon size={44} radius="xl" color="cyan" variant="light">
+                  <IconDiamond size={24} />
+                </ThemeIcon>
+                <div>
+                  <Text size="xs" c="dimmed" tt="uppercase" fw={600}>Общая стоимость</Text>
+                  <Text fw={800} style={{ fontSize: 28 }}>{totalCost.toFixed(2)} ₽</Text>
+                </div>
+              </Group>
+            </Paper>
+          </SimpleGrid>
+
+          {/* Services List */}
+          <Card withBorder radius="xl" p={0} style={{ overflow: 'hidden' }}>
+            {Object.keys(groupedServices).length === 0 ? (
+              <Card withBorder radius="xl" p="xl" ta="center">
+                <ThemeIcon size={80} radius="xl" color="gray" variant="light" mx="auto" mb="md">
+                  <IconServer size={40} />
+                </ThemeIcon>
+                <Text size="lg" fw={600} mb="sm">{t('services.noServices')}</Text>
+                <Text size="sm" c="dimmed" mb="md">У вас пока нет активных услуг</Text>
+                <Button
+                  color="cyan"
+                  radius="xl"
+                  leftSection={<IconPlus size={16} />}
+                  onClick={config.EMAIL_VERIFY_REQUIRED === "true" && !userEmailVerified ? () => setConfirmEmailNotVerified(true) : openOrderModal}
+                >
+                  {t('services.orderService')}
+                </Button>
+              </Card>
+            ) : (
+              <Accordion variant="separated" radius="xl" multiple defaultValue={Object.keys(groupedServices)}>
+                {Object.entries(groupedServices).map(([category, categoryServices]) => {
+                  const page = categoryPages[category] || 1;
+                  const totalPages = Math.ceil(categoryServices.length / perPage);
+                  const paginatedServices = categoryServices.slice((page - 1) * perPage, page * perPage);
+                  let categoryTitle;
+                  if (category === 'vpn' && config.VPN_CATEGORY_TITLE) {
+                    categoryTitle = config.VPN_CATEGORY_TITLE;
+                  } else if (category === 'proxy' && config.PROXY_CATEGORY_TITLE) {
+                    categoryTitle = config.PROXY_CATEGORY_TITLE;
+                  } else {
+                    categoryTitle = t(`categories.${category}`, category);
+                  }
+                  return (
+                    <Accordion.Item key={category} value={category}>
+                      <Accordion.Control>
+                        <Group>
+                          <ThemeIcon size={32} radius="xl" color="blue" variant="light">
+                            {category === 'vpn' ? <IconServer size={16} /> : <IconDeviceMobileCog size={16} />}
+                          </ThemeIcon>
+                          <Text fw={600}>{categoryTitle}</Text>
+                          <Badge variant="light" size="sm" radius="xl">{categoryServices.length}</Badge>
+                        </Group>
+                      </Accordion.Control>
+                      <Accordion.Panel>
+                        <Stack gap="sm">
+                          {paginatedServices.map((service) => (
+                            <Box key={service.user_service_id}>
+                              <ServiceCard
+                                service={service}
+                                onClick={() => handleServiceClick(service)}
+                              />
+                              {service.children && service.children.length > 0 && (
+                                <Stack gap="xs" mt="xs" ml="md">
+                                  {service.children.map((child, index) => (
+                                    <ServiceCard
+                                      key={child.user_service_id}
+                                      service={child}
+                                      onClick={() => handleServiceClick(child)}
+                                      isChild
+                                      isLastChild={index === service.children!.length - 1}
+                                    />
+                                  ))}
+                                </Stack>
+                              )}
+                            </Box>
                           ))}
+                          {totalPages > 1 && (
+                            <Center mt="xs">
+                              <Pagination
+                                total={totalPages}
+                                value={page}
+                                onChange={(p) => setCategoryPages(prev => ({ ...prev, [category]: p }))}
+                                size="sm"
+                                radius="xl"
+                              />
+                            </Center>
+                          )}
                         </Stack>
-                      )}
-                    </Box>
-                  ))}
-                  {totalPages > 1 && (
-                    <Center mt="xs">
-                      <Pagination
-                        total={totalPages}
-                        value={page}
-                        onChange={(p) => setCategoryPages(prev => ({ ...prev, [category]: p }))}
-                        size="sm"
-                      />
-                    </Center>
-                  )}
-                </Stack>
-              </Accordion.Panel>
-            </Accordion.Item>
-            );
-          })}
-        </Accordion>
-      )}
+                      </Accordion.Panel>
+                    </Accordion.Item>
+                  );
+                })}
+              </Accordion>
+            )}
+          </Card>
+        </Stack>
+      </Container>
 
-      <Modal opened={opened} onClose={close} title={t('services.serviceDetails')} size="lg">
+      <Modal opened={opened} onClose={close} title={t('services.serviceDetails')} size="xl" radius="xl">
         {selectedService && (
           <ServiceDetail
             service={selectedService}
@@ -1066,7 +1252,6 @@ export default function Services() {
         confirmLabel={t('services.emailNotVerifiedAction')}
         confirmColor="orange"
       />
-
-    </Stack>
+    </Box>
   );
 }
