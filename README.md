@@ -1,6 +1,6 @@
-# SHM Client
+# vBios Client
 
-Клиентский личный кабинет для SHM (Service Hosting Manager).
+Клиентский личный кабинет для vBios (vBios Service).
 
 - 🔐 Аутентификация Логин/Пароль, Логин/Пароль + 2FA, Passkey, Telegram widget, Telegram MiniApp
 - 📦 Покупка услуг, возможность остановить и удалить услугу
@@ -18,7 +18,7 @@
 ```yaml
 services:
   client:
-    image: danuk/shm-client-2:latest
+    image: idsmef/vbios-client-2:latest
     ports:
       - "3001:80"
     environment:
@@ -32,7 +32,7 @@ services:
 
 | Переменная | Описание | По умолчанию |
 |------------|----------|--------------|
-| `SHM_URL` | URL API сервера SHM | - |
+| `SHM_URL` | URL API сервера vBios | - |
 | `SHM_HOST` | Альтернатива SHM_URL | - |
 | `SHM_BASE_PATH` | Базовый путь (например `/cabinet`) | `/` |
 | `APP_NAME` | Название приложения | `SHM Client` |
