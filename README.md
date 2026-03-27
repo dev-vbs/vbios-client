@@ -95,6 +95,12 @@ services:
 | `IOS_PROXY_URL_SCHEMA` | URL-схема для открытия подписки на iOS (`happ://add/`) | `` |
 | `ANDROID_PROXY_URL_SCHEMA` | URL-схема для открытия подписки на Android (`happ://add/`) | `` |
 | `CAPTCHA_ENABLED` | Включить или выключить запрос Капчи при регистрации | `false` |
+| `MT_PROXY_ENABLED` | Включить отображение MTProxy в интерфейсе | `false` |
+| `MT_PROXY_IP` | IP-адрес или домен MTProxy сервера | - |
+| `MT_PROXY_PORT` | Порт MTProxy сервера | - |
+| `MT_PROXY_SECRET` | Секретный ключ MTProxy | - |
+| `MT_PROXY_LINK` | Готовая ссылка для подключения к MTProxy (формат tg://proxy?server=&port=&secret=) | - |
+
 | `ORDER_SORTING` | Сортировка услуг при покупке (cost_asc, cost_desc, name_asc, name_desc)| cost_asc |
 
 
