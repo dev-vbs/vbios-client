@@ -1,7 +1,17 @@
 import { useEffect, useRef, useState } from 'react';
-import { Card, Text, Stack, Button, ActionIcon, TextInput, PasswordInput, Divider, Title, Center, Modal, Group, Loader, useMantineColorScheme, useComputedColorScheme } from '@mantine/core';
+import { 
+  Card, Text, Stack, Button, ActionIcon, TextInput, PasswordInput, 
+  Divider, Title, Center, Modal, Group, Loader, useMantineColorScheme, 
+  useComputedColorScheme, Grid, Paper, Tooltip, Box
+} from '@mantine/core';
 import { useForm, isEmail, hasLength } from '@mantine/form';
-import { IconLogin, IconUserPlus, IconHeadset, IconFingerprint, IconShieldLock, IconBrandTelegram, IconMailForward, IconLock, IconMoon, IconSun} from '@tabler/icons-react';
+import { 
+  IconLogin, IconUserPlus, IconHeadset, IconFingerprint, 
+  IconShieldLock, IconBrandTelegram, IconMailForward, IconLock, 
+  IconMoon, IconSun, IconServer, IconExternalLink, IconCopy, 
+  IconEye, IconEyeOff, IconRefresh, IconQrcode, IconCircleCheck, 
+  IconX, IconClock, IconAlertCircle, IconRocket
+} from '@tabler/icons-react';
 import { notifications } from '@mantine/notifications';
 import { useTranslation } from 'react-i18next';
 import { auth, passkeyApi, userApi } from '../api/client';
@@ -12,6 +22,8 @@ import { config } from '../config';
 import { useTelegramWebApp } from '../hooks/useTelegramWebApp';
 import LanguageSwitcher from '../components/LanguageSwitcher';
 import { hasTelegramWebAppAutoAuth, hasTelegramWidget, hasTelegramWebAppAuth } from '../constants/webapp';
+import { QRCodeSVG } from 'qrcode.react';
+import { useClipboard } from '@mantine/hooks';
 
 function base64UrlToArrayBuffer(base64url: string): ArrayBuffer {
   const base64 = base64url.replace(/-/g, '+').replace(/_/g, '/');
@@ -49,6 +61,33 @@ function ThemeToggle() {
   );
 }
 
+// Ping Icon Component
+const PingIcon = ({ size = 18, color = 'currentColor' }: { size?: number; color?: string }) => (
+  <svg
+    width={size}
+    height={size}
+    viewBox="0 0 24 24"
+    fill="none"
+    stroke={color}
+    strokeWidth="2"
+    strokeLinecap="round"
+    strokeLinejoin="round"
+  >
+    <path d="M3 12h3l3-9 3 18 3-9h3" />
+    <path d="M21 12h-2" />
+    <path d="M15 6h2" />
+    <path d="M19 18h2" />
+  </svg>
+);
+
+interface MTProxyConfig {
+  enabled: boolean;
+  ip: string;
+  port: string;
+  secret: string;
+  link: string;
+}
+
 export default function Login() {
   const [mode, setMode] = useState<'login' | 'register'>('login');
   useEffect(() => {
@@ -76,6 +115,124 @@ export default function Login() {
   const { t } = useTranslation();
   const modeRef = useRef(mode);
   modeRef.current = mode;
+  const clipboard = useClipboard({ timeout: 1000 });
+  
+  // MTProxy state
+  const [mtProxy, setMtProxy] = useState<MTProxyConfig>({
+    enabled: false,
+    ip: '',
+    port: '',
+    secret: '',
+    link: ''
+  });
+  const [secretVisible, setSecretVisible] = useState(false);
+  const [qrModalOpen, setQrModalOpen] = useState(false);
+  const [pingLoading, setPingLoading] = useState(false);
+  const [pingValue, setPingValue] = useState<string>('-- ms');
+  const { colorScheme } = useMantineColorScheme();
+  const isDark = colorScheme === 'dark';
+
+  // Load MTProxy config from window or config
+  useEffect(() => {
+    try {
+      // Try to get from window config first (if available)
+      const windowConfig = (window as any).__APP_CONFIG__;
+      if (windowConfig) {
+        setMtProxy({
+          enabled: windowConfig.MT_PROXY_ENABLED === 'true',
+          ip: windowConfig.MT_PROXY_IP || '',
+          port: windowConfig.MT_PROXY_PORT || '',
+          secret: windowConfig.MT_PROXY_SECRET || '',
+          link: windowConfig.MT_PROXY_LINK || ''
+        });
+      } else {
+        // Fallback to config
+        setMtProxy({
+          enabled: config.MT_PROXY_ENABLED === 'true',
+          ip: config.MT_PROXY_IP || '',
+          port: config.MT_PROXY_PORT || '',
+          secret: config.MT_PROXY_SECRET || '',
+          link: config.MT_PROXY_LINK || ''
+        });
+      }
+    } catch (error) {
+      console.error('Failed to load MTProxy config:', error);
+    }
+  }, []);
+
+  // Check proxy ping
+  const checkProxyPing = async () => {
+    if (!mtProxy.enabled || !mtProxy.ip || !mtProxy.port) return;
+    
+    setPingLoading(true);
+    setPingValue('...');
+    
+    const startTime = Date.now();
+    
+    try {
+      const controller = new AbortController();
+      const timeoutId = setTimeout(() => controller.abort(), 5000);
+      
+      const url = `https://${mtProxy.ip}:${mtProxy.port}`;
+      await fetch(url, {
+        method: 'HEAD',
+        mode: 'no-cors',
+        signal: controller.signal
+      }).catch(() => {});
+      
+      clearTimeout(timeoutId);
+      const pingTime = Date.now() - startTime;
+      
+      if (pingTime < 5000) {
+        if (pingTime < 100) {
+          setPingValue(`${pingTime} ms`);
+        } else if (pingTime < 300) {
+          setPingValue(`${pingTime} ms`);
+        } else if (pingTime < 800) {
+          setPingValue(`${pingTime} ms`);
+        } else {
+          setPingValue(`${pingTime} ms`);
+        }
+      } else {
+        setPingValue('таймаут');
+      }
+    } catch (error) {
+      setPingValue('ошибка');
+    } finally {
+      setPingLoading(false);
+    }
+  };
+
+  // Get ping status
+  const getPingStatus = () => {
+    if (pingValue === '-- ms' || pingValue === '...') {
+      return { color: 'gray', text: 'Не проверено', icon: IconClock };
+    }
+    if (pingValue === 'таймаут') {
+      return { color: 'red', text: 'Таймаут', icon: IconX };
+    }
+    if (pingValue === 'ошибка') {
+      return { color: 'red', text: 'Ошибка', icon: IconAlertCircle };
+    }
+    
+    const ms = parseInt(pingValue);
+    if (ms < 100) return { color: 'green', text: 'Отлично', icon: IconCircleCheck };
+    if (ms < 300) return { color: 'teal', text: 'Хорошо', icon: IconRocket };
+    if (ms < 800) return { color: 'orange', text: 'Средне', icon: IconClock };
+    return { color: 'red', text: 'Медленно', icon: IconAlertCircle };
+  };
+
+  // Check proxy ping on component mount if MTProxy is enabled
+  useEffect(() => {
+    if (mtProxy.enabled && mtProxy.ip && mtProxy.port) {
+      checkProxyPing();
+    }
+  }, [mtProxy.enabled, mtProxy.ip, mtProxy.port]);
+
+  const connectionString = mtProxy.link || `tg://proxy?server=${mtProxy.ip}&port=${mtProxy.port}&secret=${mtProxy.secret}`;
+  const pingStatus = getPingStatus();
+  const PingStatusIcon = pingStatus.icon;
+
   const form = useForm({
     mode: 'controlled',
     validateInputOnBlur: true,
@@ -97,6 +254,7 @@ export default function Login() {
       },
     },
   });
+  
   const isWebAuthnSupported = !!window.PublicKeyCredential;
   const { telegramWebApp } = useTelegramWebApp();
   const autoAuthTriggeredRef = useRef(false);
@@ -119,7 +277,7 @@ export default function Login() {
       setCaptcha(null);
       setCaptchaAnswer('');
     }
-  }, [mode]); // eslint-disable-line react-hooks/exhaustive-deps
+  }, [mode]);
 
   useEffect(() => {
     if (!hasTelegramWebAppAutoAuth || autoAuthTriggeredRef.current || !telegramWebApp?.initData) {
@@ -450,193 +608,335 @@ export default function Login() {
   };
 
   return (
-    <Center h="80vh" style={{ position: 'relative' }}>
-      <Card withBorder radius="md" p="xl" w={400}>
-        <Stack gap="lg">
-          <Group justify="space-between" align="center">
-            <div style={{ flex: 1, display: 'flex', justifyContent: 'flex-start' }}>
-              <ThemeToggle />
-            </div>
-            <Group gap="xs" align="center" style={{ flex: 'auto', justifyContent: 'center' }}>
-              {config.LOGO_URL && (
-                <img
-                  src={config.LOGO_URL}
-                  alt=""
-                  style={{ height: 28, width: 28, objectFit: 'contain', flexShrink: 0 }}
-                />
-              )}
-              <Title order={2} ta="center">{config.APP_NAME}</Title>
-            </Group>
-            <div style={{ flex: 1, display: 'flex', justifyContent: 'flex-end' }}>
-              <LanguageSwitcher />
-            </div>
-
-          </Group>
-          {config.APP_DESCRIPTION && (
-            <Text size="sm" c="dimmed" ta="center" style={{ flex: 'auto' }}>{config.APP_DESCRIPTION}</Text>
-          )}
-          <Text size="sm" c="dimmed" ta="center">
-              {mode === 'login' ? t('auth.loginTitle') : t('auth.registerTitle')}
-          </Text>
-
-          {hasTelegramWebAppAuth && !showLoginForm && (
-            <>
-              <Button
-                color="blue"
-                leftSection={<IconBrandTelegram size={18} />}
-                onClick={handleTelegramWebAppAuth}
-                fullWidth
-                loading={loading}
-              >
-                {t('auth.loginWithTelegram')}
-              </Button>
-
-              <Divider label={t('common.or')} labelPosition="center" />
-
-              <Button
-                variant="light"
-                onClick={() => setShowLoginForm(true)}
-                fullWidth
-              >
-                {t('auth.useLoginPassword')}
-              </Button>
-            </>
-          )}
-
-          {hasTelegramWidget && (
-            <>
-              <Center>
-                <TelegramLoginButton
-                  botName={config.TELEGRAM_BOT_NAME}
-                  onAuth={handleTelegramWidgetAuth}
-                  buttonSize="large"
-                  requestAccess="write"
-                />
-              </Center>
-
-              <Divider label={t('common.or')} labelPosition="center" />
-            </>
-          )}
-
-          {(!hasTelegramWebAppAuth || showLoginForm) && (
-            <>
-              <form onSubmit={handleSubmit}>
-                <Stack gap="sm">
-                  {mode === 'register' && requireEmailRegister ? (
-                    <TextInput
-                      label={t('auth.emailLabel')}
-                      placeholder={t('auth.emailPlaceholder')}
-                      autoComplete="email"
-                      name="email"
-                      type="email"
-                      {...form.getInputProps('login')}
-                    />
-                  ) : (
-                    <TextInput
-                      label={t('auth.loginLabel')}
-                      placeholder={t('auth.loginPlaceholder')}
-                      autoComplete="username"
-                      name="username"
-                      {...form.getInputProps('login')}
-                    />
-                  )}
-                  <PasswordInput
-                    label={t('auth.passwordLabel')}
-                    placeholder={t('auth.passwordPlaceholder')}
-                    autoComplete={mode === 'login' ? 'current-password' : 'new-password'}
-                    name="password"
-                    {...form.getInputProps('password')}
+    <Box pos="relative" mih="100vh" style={{ display: 'flex', alignItems: 'center', justifyContent: 'center' }}>
+      <Center style={{ minHeight: '80vh', padding: '20px' }}>
+        <Card withBorder radius="md" p="xl" w={400}>
+          <Stack gap="lg">
+            <Group justify="space-between" align="center">
+              <div style={{ flex: 1, display: 'flex', justifyContent: 'flex-start' }}>
+                <ThemeToggle />
+              </div>
+              <Group gap="xs" align="center" style={{ flex: 'auto', justifyContent: 'center' }}>
+                {config.LOGO_URL && (
+                  <img
+                    src={config.LOGO_URL}
+                    alt=""
+                    style={{ height: 28, width: 28, objectFit: 'contain', flexShrink: 0 }}
                   />
-                  {mode === 'register' && (
-                    <PasswordInput
-                      label={t('auth.confirmPasswordLabel')}
-                      placeholder={t('auth.confirmPasswordPlaceholder')}
-                      autoComplete="new-password"
-                      name="confirm-password"
-                      {...form.getInputProps('confirmPassword')}
-                    />
-                  )}
-                  {mode === 'register' && config.CAPTCHA_ENABLED === 'true' && (
-                    <Group gap="xs" align="flex-end">
-                      <TextInput
-                        style={{ flex: 1 }}
-                        label={t('auth.captchaLabel')}
-                        description={captcha ? `${captcha.question} = ?` : '…'}
-                        placeholder={t('auth.captchaPlaceholder')}
-                        value={captchaAnswer}
-                        onChange={(e) => setCaptchaAnswer(e.target.value.replace(/\D/g, ''))}
-                        disabled={!captcha}
-                      />
-                      <Button variant="subtle" size="compact-sm" px={8} onClick={fetchCaptcha} title={t('auth.captchaRefresh')}>
-                        ↻
-                      </Button>
-                    </Group>
-                  )}
-                  <Button
-                    type="submit"
-                    leftSection={mode === 'login' ? <IconLogin size={18} /> : <IconUserPlus size={18} />}
-                    loading={loading}
-                  >
-                    {mode === 'login' ? t('auth.login') : t('auth.register')}
-                  </Button>
-                  {mode === 'login' && isWebAuthnSupported && hasTelegramWidget && config.PASSKEY_AUTH_DISABLED === 'false' && (
-                    <Button
-                      variant="light"
-                      leftSection={<IconFingerprint size={18} />}
-                      loading={passkeyLoading}
-                      onClick={handlePasskeyAuth}
-                    >
-                      {t('passkey.loginWithPasskey')}
-                    </Button>
-                  )}
-                </Stack>
-              </form>
+                )}
+                <Title order={2} ta="center">{config.APP_NAME}</Title>
+              </Group>
+              <div style={{ flex: 1, display: 'flex', justifyContent: 'flex-end' }}>
+                <LanguageSwitcher />
+              </div>
+            </Group>
+            {config.APP_DESCRIPTION && (
+              <Text size="sm" c="dimmed" ta="center" style={{ flex: 'auto' }}>{config.APP_DESCRIPTION}</Text>
+            )}
+            <Text size="sm" c="dimmed" ta="center">
+              {mode === 'login' ? t('auth.loginTitle') : t('auth.registerTitle')}
+            </Text>
 
-              <Text size="sm" ta="center">
-                {mode === 'login' ? (
-                  <>
-                    {t('auth.noAccount')}{' '}
-                    <Text component="span" c="blue" style={{ cursor: 'pointer' }} onClick={() => { setMode('register'); form.clearErrors(); }}>
-                      {t('auth.register')}
+            {hasTelegramWebAppAuth && !showLoginForm && (
+              <>
+                <Button
+                  color="blue"
+                  leftSection={<IconBrandTelegram size={18} />}
+                  onClick={handleTelegramWebAppAuth}
+                  fullWidth
+                  loading={loading}
+                >
+                  {t('auth.loginWithTelegram')}
+                </Button>
+
+                <Divider label={t('common.or')} labelPosition="center" />
+
+                <Button
+                  variant="light"
+                  onClick={() => setShowLoginForm(true)}
+                  fullWidth
+                >
+                  {t('auth.useLoginPassword')}
+                </Button>
+              </>
+            )}
+
+            {hasTelegramWidget && (
+              <>
+                <Center>
+                  <TelegramLoginButton
+                    botName={config.TELEGRAM_BOT_NAME}
+                    onAuth={handleTelegramWidgetAuth}
+                    buttonSize="large"
+                    requestAccess="write"
+                  />
+                </Center>
+
+                <Divider label={t('common.or')} labelPosition="center" />
+              </>
+            )}
+
+            {(!hasTelegramWebAppAuth || showLoginForm) && (
+              <>
+                <form onSubmit={handleSubmit}>
+                  <Stack gap="sm">
+                    {mode === 'register' && requireEmailRegister ? (
+                      <TextInput
+                        label={t('auth.emailLabel')}
+                        placeholder={t('auth.emailPlaceholder')}
+                        autoComplete="email"
+                        name="email"
+                        type="email"
+                        {...form.getInputProps('login')}
+                      />
+                    ) : (
+                      <TextInput
+                        label={t('auth.loginLabel')}
+                        placeholder={t('auth.loginPlaceholder')}
+                        autoComplete="username"
+                        name="username"
+                        {...form.getInputProps('login')}
+                      />
+                    )}
+                    <PasswordInput
+                      label={t('auth.passwordLabel')}
+                      placeholder={t('auth.passwordPlaceholder')}
+                      autoComplete={mode === 'login' ? 'current-password' : 'new-password'}
+                      name="password"
+                      {...form.getInputProps('password')}
+                    />
+                    {mode === 'register' && (
+                      <PasswordInput
+                        label={t('auth.confirmPasswordLabel')}
+                        placeholder={t('auth.confirmPasswordPlaceholder')}
+                        autoComplete="new-password"
+                        name="confirm-password"
+                        {...form.getInputProps('confirmPassword')}
+                      />
+                    )}
+                    {mode === 'register' && config.CAPTCHA_ENABLED === 'true' && (
+                      <Group gap="xs" align="flex-end">
+                        <TextInput
+                          style={{ flex: 1 }}
+                          label={t('auth.captchaLabel')}
+                          description={captcha ? `${captcha.question} = ?` : '…'}
+                          placeholder={t('auth.captchaPlaceholder')}
+                          value={captchaAnswer}
+                          onChange={(e) => setCaptchaAnswer(e.target.value.replace(/\D/g, ''))}
+                          disabled={!captcha}
+                        />
+                        <Button variant="subtle" size="compact-sm" px={8} onClick={fetchCaptcha} title={t('auth.captchaRefresh')}>
+                          ↻
+                        </Button>
+                      </Group>
+                    )}
+                    <Button
+                      type="submit"
+                      leftSection={mode === 'login' ? <IconLogin size={18} /> : <IconUserPlus size={18} />}
+                      loading={loading}
+                    >
+                      {mode === 'login' ? t('auth.login') : t('auth.register')}
+                    </Button>
+                    {mode === 'login' && isWebAuthnSupported && hasTelegramWidget && config.PASSKEY_AUTH_DISABLED === 'false' && (
+                      <Button
+                        variant="light"
+                        leftSection={<IconFingerprint size={18} />}
+                        loading={passkeyLoading}
+                        onClick={handlePasskeyAuth}
+                      >
+                        {t('passkey.loginWithPasskey')}
+                      </Button>
+                    )}
+                  </Stack>
+                </form>
+
+                <Text size="sm" ta="center">
+                  {mode === 'login' ? (
+                    <>
+                      {t('auth.noAccount')}{' '}
+                      <Text component="span" c="blue" style={{ cursor: 'pointer' }} onClick={() => { setMode('register'); form.clearErrors(); }}>
+                        {t('auth.register')}
+                      </Text>
+                    </>
+                  ) : (
+                    <>
+                      {t('auth.hasAccount')}{' '}
+                      <Text component="span" c="blue" style={{ cursor: 'pointer' }} onClick={() => { setMode('login'); form.clearErrors(); }}>
+                        {t('auth.login')}
+                      </Text>
+                    </>
+                  )}
+                </Text>
+
+                {mode === 'login' && (
+                  <Text size="sm" ta="center">
+                    <Text component="span" c="blue" style={{ cursor: 'pointer' }} onClick={() => setShowResetPassword(true)}>
+                      {t('auth.forgotPassword')}
                     </Text>
-                  </>
-                ) : (
+                  </Text>
+                )}
+
+                {hasTelegramWebAppAuth && showLoginForm && (
                   <>
-                    {t('auth.hasAccount')}{' '}
-                    <Text component="span" c="blue" style={{ cursor: 'pointer' }} onClick={() => { setMode('login'); form.clearErrors(); }}>
-                      {t('auth.login')}
-                    </Text>
+                    <Divider label={t('common.or')} labelPosition="center" />
+                    <Button
+                      variant="outline"
+                      color="blue"
+                      leftSection={<IconBrandTelegram size={18} />}
+                      onClick={handleTelegramWebAppAuth}
+                      fullWidth
+                      loading={loading}
+                    >
+                      {t('auth.loginWithTelegram')}
+                    </Button>
                   </>
                 )}
-              </Text>
+              </>
+            )}
+          </Stack>
+        </Card>
 
-              {mode === 'login' && (
-                <Text size="sm" ta="center">
-                  <Text component="span" c="blue" style={{ cursor: 'pointer' }} onClick={() => setShowResetPassword(true)}>
-                    {t('auth.forgotPassword')}
+        {/* MTProxy Block */}
+        {mtProxy.enabled && mtProxy.ip && mtProxy.port && mtProxy.secret && (
+          <Card 
+            withBorder 
+            radius="xl" 
+            p="lg" 
+            style={{ 
+              position: 'fixed',
+              bottom: 24,
+              left: 24,
+              width: 400,
+              zIndex: 100,
+              backgroundColor: 'var(--mantine-color-body)',
+              boxShadow: 'var(--mantine-shadow-md)'
+            }}
+          >
+            <Group justify="space-between" mb="md">
+              <Group gap="xs">
+                <IconServer size={24} color="#0088cc" />
+                <Text fw={600} size="lg">MTProxy подключение</Text>
+              </Group>
+              {mtProxy.link && (
+                <Button
+                  component="a"
+                  href={mtProxy.link}
+                  target="_blank"
+                  variant="light"
+                  size="xs"
+                  radius="xl"
+                  leftSection={<IconExternalLink size={14} />}
+                >
+                  Открыть в Telegram
+                </Button>
+              )}
+            </Group>
+            
+            <Grid>
+              <Grid.Col span={{ base: 12, md: 6 }}>
+                <Stack gap="sm">
+                  <Paper withBorder p="sm" radius="lg">
+                    <Group justify="space-between">
+                      <Text size="sm" fw={500}>Сервер:</Text>
+                      <Group gap="xs">
+                        <Text size="sm" c="dimmed" style={{ fontFamily: 'monospace' }}>{mtProxy.ip}:{mtProxy.port}</Text>
+                        <ActionIcon 
+                          size="sm" 
+                          variant="subtle" 
+                          onClick={() => {
+                            clipboard.copy(`${mtProxy.ip}:${mtProxy.port}`);
+                            notifications.show({
+                              title: t('common.success'),
+                              message: 'Сервер скопирован',
+                              color: 'green',
+                            });
+                          }}
+                        >
+                          <IconCopy size={14} />
+                        </ActionIcon>
+                      </Group>
+                    </Group>
+                  </Paper>
+                  <Paper withBorder p="sm" radius="lg">
+                    <Group justify="space-between">
+                      <Text size="sm" fw={500}>Секрет:</Text>
+                      <Group gap="xs">
+                        <Text size="sm" c="dimmed" style={{ fontFamily: 'monospace' }}>
+                          {secretVisible ? mtProxy.secret : '••••••••••••••••••••••••••••••••'}
+                        </Text>
+                        <ActionIcon size="sm" variant="subtle" onClick={() => setSecretVisible(!secretVisible)}>
+                          {secretVisible ? <IconEyeOff size={14} /> : <IconEye size={14} />}
+                        </ActionIcon>
+                        <ActionIcon 
+                          size="sm" 
+                          variant="subtle" 
+                          onClick={() => {
+                            clipboard.copy(mtProxy.secret);
+                            notifications.show({
+                              title: t('common.success'),
+                              message: 'Секрет скопирован',
+                              color: 'green',
+                            });
+                          }}
+                        >
+                          <IconCopy size={14} />
+                        </ActionIcon>
+                      </Group>
+                    </Group>
+                  </Paper>
+                </Stack>
+              </Grid.Col>
+              <Grid.Col span={{ base: 12, md: 6 }}>
+                <Paper withBorder p="sm" radius="lg">
+                  <Group justify="space-between" align="center">
+                    <Group gap="xs">
+                      <PingIcon size={18} color={`var(--mantine-color-${pingStatus.color}-6)`} />
+                      <Text size="sm" fw={500}>Пинг:</Text>
+                      <Text size="sm" c={pingStatus.color} fw={600}>{pingValue}</Text>
+                    </Group>
+                    <Tooltip label="Проверить задержку">
+                      <ActionIcon 
+                        variant="light" 
+                        onClick={checkProxyPing}
+                        loading={pingLoading}
+                      >
+                        <IconRefresh size={16} />
+                      </ActionIcon>
+                    </Tooltip>
+                  </Group>
+                  <Text size="xs" c="dimmed" mt={8}>
+                    Статус: {pingStatus.text}
                   </Text>
-                </Text>
-              )}
-
-              {hasTelegramWebAppAuth && showLoginForm && (
-                <>
-                  <Divider label={t('common.or')} labelPosition="center" />
-                  <Button
-                    variant="outline"
-                    color="blue"
-                    leftSection={<IconBrandTelegram size={18} />}
-                    onClick={handleTelegramWebAppAuth}
-                    fullWidth
-                    loading={loading}
-                  >
-                    {t('auth.loginWithTelegram')}
-                  </Button>
-                </>
-              )}
-            </>
-          )}
-        </Stack>
-      </Card>
+                </Paper>
+              </Grid.Col>
+            </Grid>
+            
+            <Divider my="md" />
+            
+            <Group grow>
+              <Button
+                component="a"
+                href={mtProxy.link}
+                target="_blank"
+                leftSection={<IconBrandTelegram size={18} />}
+                variant="filled"
+                color="blue"
+                radius="xl"
+              >
+                Подключиться через Telegram
+              </Button>
+              <Button
+                variant="light"
+                onClick={() => setQrModalOpen(true)}
+                leftSection={<IconQrcode size={18} />}
+                radius="xl"
+              >
+                Показать QR код
+              </Button>
+            </Group>
+          </Card>
+        )}
+      </Center>
 
       <Modal
         opened={showOtp}
@@ -769,6 +1069,41 @@ export default function Login() {
         </Stack>
       </Modal>
 
+      {/* QR Modal */}
+      <Modal 
+        opened={qrModalOpen} 
+        onClose={() => setQrModalOpen(false)} 
+        title="QR код для подключения" 
+        size="md" 
+        centered 
+        radius="xl"
+      >
+        <Stack align="center" gap="md">
+          <Card withBorder p="md" style={{ background: 'white' }} radius="xl">
+            <QRCodeSVG value={connectionString} size={250} level="H" includeMargin />
+          </Card>
+          <Text size="sm" ta="center">
+            Отсканируйте QR код в Telegram для быстрого подключения
+          </Text>
+          <Button 
+            variant="light" 
+            leftSection={<IconCopy size={16} />} 
+            onClick={() => {
+              clipboard.copy(connectionString);
+              notifications.show({ 
+                title: t('common.success'), 
+                message: 'Строка подключения скопирована', 
+                color: 'green' 
+              });
+            }} 
+            fullWidth 
+            radius="xl"
+          >
+            Скопировать строку подключения
+          </Button>
+        </Stack>
+      </Modal>
+
       {verifyingToken && (
         <Modal opened={true} onClose={() => {}} withCloseButton={false} centered>
           <Stack align="center" gap="md">
@@ -794,6 +1129,6 @@ export default function Login() {
           {t('common.support')}
         </Button>
       )}
-    </Center>
+    </Box>
   );
 }
