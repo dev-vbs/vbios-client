@@ -2,9 +2,9 @@ import { useEffect, useRef, useState } from 'react';
 import { 
   Card, Text, Stack, Button, ActionIcon, TextInput, PasswordInput, 
   Divider, Title, Center, Modal, Group, Loader, useMantineColorScheme, 
-  useComputedColorScheme, Grid, Paper, Tooltip, Box, Badge, 
+  useComputedColorScheme, Paper, Tooltip, Box, Badge, 
   ThemeIcon, Transition, ScrollArea, Container, Flex, 
-  Skeleton, RingProgress, SimpleGrid, CloseButton
+  RingProgress, SimpleGrid
 } from '@mantine/core';
 import { useForm, isEmail, hasLength } from '@mantine/form';
 import { 
@@ -13,7 +13,7 @@ import {
   IconMoon, IconSun, IconServer, IconCopy, IconCheck,
   IconEye, IconEyeOff, IconRefresh, IconQrcode, IconCircleCheck, 
   IconX, IconClock, IconAlertCircle, IconRocket, IconWifi, 
-  IconNetwork, IconPlugConnected, IconArrowRight, IconExternalLink
+  IconNetwork, IconPlugConnected
 } from '@tabler/icons-react';
 import { notifications } from '@mantine/notifications';
 import { useTranslation } from 'react-i18next';
@@ -169,20 +169,20 @@ export default function Login() {
   // Get ping status with quality indicator
   const getPingStatus = () => {
     if (pingValue === '-- ms' || pingValue === '...') {
-      return { color: 'gray', text: 'Не проверено', icon: IconClock, quality: 0, gradient: 'gray' };
+      return { color: 'gray', text: 'Не проверено', icon: IconClock, quality: 0 };
     }
     if (pingValue === 'таймаут') {
-      return { color: 'red', text: 'Таймаут', icon: IconX, quality: 0, gradient: 'red' };
+      return { color: 'red', text: 'Таймаут', icon: IconX, quality: 0 };
     }
     if (pingValue === 'ошибка') {
-      return { color: 'red', text: 'Ошибка', icon: IconAlertCircle, quality: 0, gradient: 'red' };
+      return { color: 'red', text: 'Ошибка', icon: IconAlertCircle, quality: 0 };
     }
     
     const ms = parseInt(pingValue);
-    if (ms < 100) return { color: 'green', text: 'Отлично', icon: IconCircleCheck, quality: 100, gradient: 'teal' };
-    if (ms < 300) return { color: 'teal', text: 'Хорошо', icon: IconRocket, quality: 75, gradient: 'cyan' };
-    if (ms < 800) return { color: 'orange', text: 'Средне', icon: IconClock, quality: 50, gradient: 'orange' };
-    return { color: 'red', text: 'Медленно', icon: IconAlertCircle, quality: 25, gradient: 'red' };
+    if (ms < 100) return { color: 'green', text: 'Отлично', icon: IconCircleCheck, quality: 100 };
+    if (ms < 300) return { color: 'teal', text: 'Хорошо', icon: IconRocket, quality: 75 };
+    if (ms < 800) return { color: 'orange', text: 'Средне', icon: IconClock, quality: 50 };
+    return { color: 'red', text: 'Медленно', icon: IconAlertCircle, quality: 25 };
   };
 
   useEffect(() => {
@@ -604,7 +604,7 @@ export default function Login() {
                     <IconNetwork size={22} />
                   </ThemeIcon>
                 )}
-                <Title order={1} size="h2" variant="gradient" gradient={{ from: 'blue', to: 'violet' }}>
+                <Title order={1} size="h2" c="blue.6">
                   {config.APP_NAME}
                 </Title>
               </Group>
@@ -618,7 +618,7 @@ export default function Login() {
             <Divider />
             
             <Text fw={600} ta="center" size="lg">
-              {mode === 'login' ? t('auth.welcomeBack') || 'Добро пожаловать!' : t('auth.createAccount') || 'Создать аккаунт'}
+              {mode === 'login' ? 'Добро пожаловать!' : 'Создать аккаунт'}
             </Text>
 
             {/* Telegram Auth Options */}
@@ -755,8 +755,7 @@ export default function Login() {
                       <Text size="sm" c="dimmed">{t('auth.noAccount')}</Text>
                       <Text 
                         component="span" 
-                        variant="gradient" 
-                        gradient={{ from: 'blue', to: 'violet' }}
+                        c="blue"
                         style={{ cursor: 'pointer', fontWeight: 600 }}
                         onClick={() => { setMode('register'); form.clearErrors(); }}
                       >
@@ -768,8 +767,7 @@ export default function Login() {
                       <Text size="sm" c="dimmed">{t('auth.hasAccount')}</Text>
                       <Text 
                         component="span" 
-                        variant="gradient" 
-                        gradient={{ from: 'blue', to: 'violet' }}
+                        c="blue"
                         style={{ cursor: 'pointer', fontWeight: 600 }}
                         onClick={() => { setMode('login'); form.clearErrors(); }}
                       >
@@ -819,11 +817,7 @@ export default function Login() {
             {(styles) => (
               <Button
                 onClick={() => setMtProxyModalOpen(true)}
-                style={styles}
-                pos="fixed"
-                bottom={24}
-                left={24}
-                zIndex={100}
+                style={{ ...styles, position: 'fixed', bottom: 24, left: 24 }}
                 leftSection={<IconPlugConnected size={18} />}
                 radius="xl"
                 size="md"
@@ -848,7 +842,7 @@ export default function Login() {
             <ThemeIcon size={32} radius="xl" variant="gradient" gradient={{ from: 'blue', to: 'violet' }}>
               <IconServer size={18} />
             </ThemeIcon>
-            <Text fw={700} size="xl" variant="gradient" gradient={{ from: 'blue', to: 'violet' }}>
+            <Text fw={700} size="xl" c="blue.6">
               Телеграм прокси Подключение
             </Text>
           </Group>
@@ -885,7 +879,7 @@ export default function Login() {
                   />
                   <div>
                     <Text size="xs" c="dimmed" tt="uppercase" fw={600}>Статус соединения</Text>
-                    <Text fw={800} size="xxl" c={pingStatus.color} style={{ fontSize: 28 }}>
+                    <Text fw={800} size="28px" c={pingStatus.color}>
                       {pingStatus.text}
                     </Text>
                     <Group gap="xs" mt={4}>
@@ -1003,7 +997,7 @@ export default function Login() {
                 <Badge color="teal" variant="filled" radius="xl">Рекомендуется</Badge>
               </Group>
               
-              <SimpleGrid cols={{ base: 1, sm: 2 }} spacing="xl" align="center">
+              <SimpleGrid cols={{ base: 1, sm: 2 }} spacing="xl">
                 <Center>
                   <Card withBorder p="md" style={{ background: 'white' }} radius="lg">
                     <QRCodeSVG value={connectionString} size={180} level="H" includeMargin />
@@ -1266,10 +1260,7 @@ export default function Login() {
       {config.SUPPORT_LINK && (
         <Button
           onClick={handleSupportLink}
-          pos="fixed"
-          bottom={24}
-          right={24}
-          zIndex={200}
+          style={{ position: 'fixed', bottom: 24, right: 24 }}
           leftSection={<IconHeadset size={20} />}
           radius="xl"
           size="md"
