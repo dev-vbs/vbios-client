@@ -984,47 +984,6 @@ export default function Login() {
               </Paper>
             </SimpleGrid>
 
-            {/* QR Code Section */}
-            <Paper withBorder p="xl" radius="xl" bg={isDark ? 'var(--mantine-color-dark-7)' : 'var(--mantine-color-gray-0)'}>
-              <Group justify="space-between" align="center" mb="lg">
-                <Group gap="xs">
-                  <ThemeIcon size={32} radius="xl" color="teal" variant="light">
-                    <IconQrcode size={18} />
-                  </ThemeIcon>
-                  <Text fw={700} size="lg">Быстрое подключение</Text>
-                </Group>
-                <Badge color="teal" variant="filled" radius="xl">Рекомендуется</Badge>
-              </Group>
-              
-              <SimpleGrid cols={{ base: 1, sm: 2 }} spacing="xl">
-                <Center>
-                  <Card withBorder p="md" style={{ background: 'white' }} radius="lg">
-                    <QRCodeSVG value={connectionString} size={180} level="H" includeMargin />
-                  </Card>
-                </Center>
-                <Stack gap="sm">
-                  <Text fw={600}>Сканируйте QR код:</Text>
-                  <Text size="sm" c="dimmed">
-                    • Откройте Telegram на телефоне<br />
-                    • Нажмите на иконку QR-кода в поиске<br />
-                    • Наведите камеру на этот код
-                  </Text>
-                  <Button 
-                    variant="light" 
-                    leftSection={<IconCopy size={16} />} 
-                    onClick={() => {
-                      clipboard.copy(connectionString);
-                      notifications.show({ title: 'Готово', message: 'Строка подключения скопирована', color: 'green', icon: <IconCheck size={16} /> });
-                    }} 
-                    size="sm"
-                    radius="xl"
-                    fullWidth
-                  >
-                    Скопировать ссылку
-                  </Button>
-                </Stack>
-              </SimpleGrid>
-            </Paper>
 
             <Divider />
 
