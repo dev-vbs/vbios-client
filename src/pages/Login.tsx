@@ -63,26 +63,6 @@ function ThemeToggle() {
   );
 }
 
-// Animated Ping Icon
-const AnimatedPingIcon = ({ size = 18, color = 'currentColor', animated = false }: { size?: number; color?: string; animated?: boolean }) => (
-  <svg
-    width={size}
-    height={size}
-    viewBox="0 0 24 24"
-    fill="none"
-    stroke={color}
-    strokeWidth="2"
-    strokeLinecap="round"
-    strokeLinejoin="round"
-    className={animated ? 'animate-pulse' : ''}
-  >
-    <path d="M3 12h3l3-9 3 18 3-9h3" />
-    <path d="M21 12h-2" />
-    <path d="M15 6h2" />
-    <path d="M19 18h2" />
-  </svg>
-);
-
 interface MTProxyConfig {
   enabled: boolean;
   ip: string;
