@@ -287,7 +287,7 @@ function ServiceDetail({ service, onDelete, onChangeTariff }: ServiceDetailProps
   const handleOpenUrlSchema = async () => {
     const urlSchema = config[`${detectPlatform()}_PROXY_URL_SCHEMA` as keyof typeof config];
     let link = `${urlSchema}${subscriptionUrl}`;
-    if ( config.SHOW_PROXY_HAPP_CRYPTOLINK === 'true' ) {
+    if ( config.SHOW_HAPP_CRYPTOLINK === 'true' ) {
       try {
         const response = await fetch(`https://crypto.happ.su/api-v2.php`, {
           method: 'POST',
@@ -476,7 +476,6 @@ function ServiceDetail({ service, onDelete, onChangeTariff }: ServiceDetailProps
                     <Divider my="xs" />
                     </>
                   )}
-
 
                   <Group gap="xs">
                     {hasProxyAppUrls ? (

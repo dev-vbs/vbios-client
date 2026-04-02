@@ -11,7 +11,7 @@
 - 👤 Редактирование профиля
 - 🌐 Мультиязычность (Русский / English)
 
-### Docker Compose
+## Docker Compose
 
 - Вместе с контейнерами SHM
 
@@ -31,14 +31,14 @@ services:
 ### Переменные окружения
 
 | Переменная | Описание | По умолчанию |
-|------------|----------|--------------|
+| ------------ | ---------- | -------------- |
 | `SHM_URL` | URL API сервера SHM | - |
 | `SHM_HOST` | Альтернатива SHM_URL | - |
 | `SHM_BASE_PATH` | Базовый путь (например `/cabinet`) | `/` |
 | `APP_NAME` | Название приложения | `SHM Client` |
 | `APP_DESCRIPTION` | Описание приложения | Powerful and flexible client for SHM |
 | `LOGO_URL` | Ссылка на логитип приложения | локальный favicon.jpg |
-| `TELEGRAM_BOT_NAME` | Username Telegram бота (без @) s| - |
+| `TELEGRAM_BOT_NAME` | Username Telegram бота (без @) s | - |
 | `TELEGRAM_BOT_AUTH_ENABLE` | Включить авторизацию через Telegram виджет | `false` |
 | `TELEGRAM_BOT_AUTH_PROFILE` | Название бота (профиля) в SHM | `telegram_bot` |
 | `TELEGRAM_WEBAPP_AUTH_ENABLE` | Авторизация через телеграмм вебапп | `false` |
@@ -49,24 +49,24 @@ services:
 | `OTP_ENABLE` | Показать настройки OTP | `true` |
 | `PASSKEY_ENABLE` | Показать настройки Passkey | `true` |
 | `PASSKEY_AUTH_DISABLED` | Скрыть кнопку авторизации через Passkey | `false` |
-| `BITRIX_WIDGET_SCRIPT_URL` | URL виждета Битрих-24 (https://cdn-ru.bitrix24.ru/b********/crm/site_button/loader_****.js)| - |
+| `BITRIX_WIDGET_SCRIPT_URL` | URL виждета Битрих-24 `https://cdn-ru.bitrix24.ru/b********/crm/site_button/loader_****.js` | - |
 | `PROXY_CATEGORY` | Категория прокси чтобы показать ссылку на подписку (vpn-remna,vpn-trial) | - |
 | `PROXY_CATEGORY_TITLE` | Название категории | VPN Подписка |
 | `PROXY_STORAGE_PREFIX` | префикс для категории proxy в хранилище, например 'vpm_remna_' | 'vpm_mrzb_' |
-| `SHOW_PROXY_SUB_LINK` | Показывать ссылку на подписку для категории proxy | `true`|
-| `SHOW_PROXY_HAPP_CRYPTOLINK` | Показать крипто ссылку на подписку для категории proxy | `false` |
-| `SHOW_PROXY_QR` | Показывать кнопку `QR` на ссылку подписки для категории proxy | `true`|
+| `SHOW_PROXY_SUB_LINK` | Показывать ссылку на подписку для категории proxy | `true` |
+| `SHOW_HAPP_CRYPTOLINK` | Показать крипто ссылку на подписку для категории proxy | `false` |
+| `SHOW_PROXY_QR` | Показывать кнопку `QR` на ссылку подписки для категории proxy | `true` |
 | `VPN_CATEGORY` | Категория VPN чтобы показать QR или возможность скачать файл конфигурации (vpn-wg,vpn-awg) | - |
 | `VPN_CATEGORY_TITLE` | Название категории | VPN |
 | `VPN_STORAGE_PREFIX` | Префикс для категории vpn в хранилище например 'wg_key_' | 'vpn' |
-| `VISIBLE_CATEGORIES` | Категории для отображения при покупке и уже купленных услуг (vpn-mz,vpm-mz-trial)| - |
+| `VISIBLE_CATEGORIES` | Категории для отображения при покупке и уже купленных услуг (vpn-mz,vpm-mz-trial) | - |
 | `EMAIL_REQUIRED` | Hе дает пользоваться ЛК пока клиент не введет email | false |
 | `EMAIL_VERIFY_REQUIRED` | Hе дает заказать услугу пока email не будет подтвержден | false |
 | `ALLOW_SERVICE_BLOCKED` | Разрешить пользователю блокировать услугу | true |
 | `ALLOW_SERVICE_DELETE` | Разрешить пользователю удалять услугу | true |
 | `ALLOW_SERVICE_CHANGE` | Разрешить пользователю сменить услугу | true |
 | `ALLOW_SERVICE_CHANGE_FORCE` | Разрешить сменить услугу сразу (не спрашивая пользователя) | false |
-| `SERVICE_CHANGE_ALL_CATEGORY` | Разрешить сменить услугу на все доступные категории ( если false то можно сменить только на такую же категорию как и в текущей услуге)| true |
+| `SERVICE_CHANGE_ALL_CATEGORY` | Разрешить сменить услугу на все доступные категории ( если false то можно сменить только на такую же категорию как и в текущей услуге) | true |
 | `ALLOW_TELEGRAM_PIN` | Разрешить привязку аккаунта Telegram | true |
 | `VPN_APP_WINDOWS_URL` | Ссылка на скачивание приложения для категории VPN для Windows | - |
 | `VPN_APP_LINUX_URL` | Ссылка на скачивание приложения для категории VPN для Linux | - |
@@ -95,11 +95,11 @@ services:
 | `MAC_PROXY_URL_SCHEMA` | URL-схема для открытия подписки на macOS (`happ://add/`) | `` |
 | `IOS_PROXY_URL_SCHEMA` | URL-схема для открытия подписки на iOS (`happ://add/`) | `` |
 | `ANDROID_PROXY_URL_SCHEMA` | URL-схема для открытия подписки на Android (`happ://add/`) | `` |
-| `CAPTCHA_ENABLED` | Включение/выключение капчи (надо включить в кабинете администратора)| `false` |
-| `ORDER_SORTING` | Сортировка услуг при покупке (cost_asc, cost_desc, name_asc, name_desc)| `cost_asc` |
-
+| `CAPTCHA_ENABLED` | Включение/выключение капчи (надо включить в кабинете администратора) | `false` |
+| `ORDER_SORTING` | Сортировка услуг при покупке (cost_asc, cost_desc, name_asc, name_desc) | `cost_asc` |
 
 ### Telegram Widget
+
 Для работы с авторизацией через Telegram Widget нужно в астройках бота  который указан в `TELGRAM_BOT_NAME` указать домен на котором расположена ваше приложение `shm-client`
 
 ## Категории услуг для VPN/Proxy
@@ -109,6 +109,7 @@ services:
 ### VPN (WireGuard конфигурация)
 
 Категория должна **начинаться** с одного из значений:
+
 - `vpn`
 - `wg`
 - `awg`
@@ -120,6 +121,7 @@ services:
 ### Proxy (Marzban/Remnawave подписка)
 
 Категория должна содержать одно из слов:
+
 - `remna`
 - `remnawave`
 - `marzban`
@@ -129,12 +131,14 @@ services:
 Примеры валидных категорий: `marzban`, `remnawave`, `mz-premium`, `proxy-marz`
 
 **Storage ключи:**
+
 - `vpn_mrzb_{user_service_id}` (например: `vpn_mrzb_123`)
 - `vpn_remna_{user_service_id}` (например: `vpn_remna_123`)
 
 ### Прочие категории
 
 Следующие категории отображаются как есть (без QR/ссылки):
+
 - `web_tariff` — Тарифы хостинга
 - `web` — Web хостинг
 - `mysql` — Базы данных

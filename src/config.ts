@@ -19,7 +19,7 @@ interface AppConfig {
   PROXY_CATEGORY_TITLE: string;
   PROXY_STORAGE_PREFIX?: string;
   SHOW_PROXY_SUB_LINK: string;
-  SHOW_PROXY_HAPP_CRYPTOLINK: string;
+  SHOW_HAPP_CRYPTOLINK: string;
   SHOW_PROXY_QR: string;
   VPN_CATEGORY: string;
   VPN_CATEGORY_TITLE: string;
@@ -94,7 +94,7 @@ function getConfig(): AppConfig {
     PROXY_CATEGORY_TITLE: runtimeConfig?.PROXY_CATEGORY_TITLE || import.meta.env.VITE_PROXY_CATEGORY_TITLE || '',
     PROXY_STORAGE_PREFIX: runtimeConfig?.PROXY_STORAGE_PREFIX || import.meta.env.VITE_PROXY_STORAGE_PREFIX || '',
     SHOW_PROXY_SUB_LINK: runtimeConfig?.SHOW_PROXY_SUB_LINK || import.meta.env.VITE_SHOW_PROXY_SUB_LINK || 'true',
-    SHOW_PROXY_HAPP_CRYPTOLINK: runtimeConfig?.SHOW_PROXY_HAPP_CRYPTOLINK || import.meta.env.VITE_SHOW_PROXY_HAPP_CRYPTOLINK || 'true',
+    SHOW_HAPP_CRYPTOLINK: runtimeConfig?.SHOW_HAPP_CRYPTOLINK || import.meta.env.VITE_SHOW_HAPP_CRYPTOLINK || 'false',
     SHOW_PROXY_QR: runtimeConfig?.SHOW_PROXY_QR || import.meta.env.VITE_SHOW_PROXY_QR || 'true',
     VPN_CATEGORY: runtimeConfig?.VPN_CATEGORY || import.meta.env.VITE_VPN_CATEGORY || '',
     VPN_CATEGORY_TITLE: runtimeConfig?.VPN_CATEGORY_TITLE || import.meta.env.VITE_VPN_CATEGORY_TITLE|| '',
