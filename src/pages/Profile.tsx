@@ -515,7 +515,7 @@ export default function Profile() {
             <Group justify="space-between" mb="md">
               <Text fw={500}>Email</Text>
                 <Group gap="xs">
-                  {profileEmail && !emailVerified && (
+                  {config.ALLOW_EMAIL_VERIFY === 'true' && profileEmail && !emailVerified && (
                     <Button
                       variant="light"
                       size="xs"

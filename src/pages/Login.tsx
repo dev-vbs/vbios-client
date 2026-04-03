@@ -61,7 +61,7 @@ export default function Login() {
   const [passkeyLoading, setPasskeyLoading] = useState(false);
   const [loginOrEmail, setLoginOrEmail] = useState('');
   const requireEmailRegister = config.EMAIL_REQUIRED === 'true';
-  const [captcha, setCaptcha] = useState<{ question: string; token: string } | null>(null);
+  const [captcha, setCaptcha] = useState<{ image?: string; question?: string; token: string } | null>(null);
   const [captchaAnswer, setCaptchaAnswer] = useState('');
   const [showOtp, setShowOtp] = useState(false);
   const [otpToken, setOtpToken] = useState('');
@@ -557,19 +557,28 @@ export default function Login() {
                     />
                   )}
                   {mode === 'register' && config.CAPTCHA_ENABLED === 'true' && (
-                    <Group gap="xs" align="flex-end">
-                      <TextInput
-                        style={{ flex: 1 }}
-                        label={t('auth.captchaLabel')}
-                        description={captcha ? `${captcha.question} = ?` : '…'}
-                        placeholder={t('auth.captchaPlaceholder')}
-                        value={captchaAnswer}
-                        onChange={(e) => setCaptchaAnswer(e.target.value.replace(/\D/g, ''))}
-                        disabled={!captcha}
-                      />
+                    <Group gap="xs" align="center">
+                      {captcha?.image ? (
+                        <img
+                          src={`data:image/svg+xml;base64,${captcha.image}`}
+                          alt="captcha"
+                          width={150}
+                          style={{ borderRadius: 4, border: '1px solid #ddd' }}
+                        />
+                      ) : captcha?.question ? (
+                        <Text size="lg" fw={500}>{captcha.question} =</Text>
+                      ) : null}
                       <Button variant="subtle" size="compact-sm" px={8} onClick={fetchCaptcha} title={t('auth.captchaRefresh')}>
                         ↻
                       </Button>
+                      <TextInput
+                        style={{ width: 130 }}
+                        placeholder={t('auth.captchaPlaceholder')}
+                        value={captchaAnswer}
+                        onChange={(e) => setCaptchaAnswer(e.target.value.replace(/\D/g, '').slice(0, 2))}
+                        maxLength={2}
+                        disabled={!captcha}
+                      />
                     </Group>
                   )}
                   <Button

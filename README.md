@@ -60,14 +60,15 @@ services:
 | `VPN_CATEGORY_TITLE` | Название категории | VPN |
 | `VPN_STORAGE_PREFIX` | Префикс для категории vpn в хранилище например 'wg_key_' | 'vpn' |
 | `VISIBLE_CATEGORIES` | Категории для отображения при покупке и уже купленных услуг (vpn-mz,vpm-mz-trial) | - |
-| `EMAIL_REQUIRED` | Hе дает пользоваться ЛК пока клиент не введет email | false |
-| `EMAIL_VERIFY_REQUIRED` | Hе дает заказать услугу пока email не будет подтвержден | false |
-| `ALLOW_SERVICE_BLOCKED` | Разрешить пользователю блокировать услугу | true |
-| `ALLOW_SERVICE_DELETE` | Разрешить пользователю удалять услугу | true |
-| `ALLOW_SERVICE_CHANGE` | Разрешить пользователю сменить услугу | true |
-| `ALLOW_SERVICE_CHANGE_FORCE` | Разрешить сменить услугу сразу (не спрашивая пользователя) | false |
-| `SERVICE_CHANGE_ALL_CATEGORY` | Разрешить сменить услугу на все доступные категории ( если false то можно сменить только на такую же категорию как и в текущей услуге) | true |
-| `ALLOW_TELEGRAM_PIN` | Разрешить привязку аккаунта Telegram | true |
+| `EMAIL_REQUIRED` | Hе дает пользоваться ЛК пока клиент не введет email | `false` |
+| `EMAIL_VERIFY_REQUIRED` | Hе дает заказать услугу пока email не будет подтвержден | `false` |
+| `ALLOW_EMAIL_VERIFY` | Разрешить верифицировать email | `true` |
+| `ALLOW_SERVICE_BLOCKED` | Разрешить пользователю блокировать услугу | `true` |
+| `ALLOW_SERVICE_DELETE` | Разрешить пользователю удалять услугу | `true` |
+| `ALLOW_SERVICE_CHANGE` | Разрешить пользователю сменить услугу | `true` |
+| `ALLOW_SERVICE_CHANGE_FORCE` | Разрешить сменить услугу сразу (не спрашивая пользователя) | `false` |
+| `SERVICE_CHANGE_ALL_CATEGORY` | Разрешить сменить услугу на все доступные категории ( если `false` то можно сменить только на такую же категорию как и в текущей услуге) | `true` |
+| `ALLOW_TELEGRAM_PIN` | Разрешить привязку аккаунта Telegram | `true` |
 | `VPN_APP_WINDOWS_URL` | Ссылка на скачивание приложения для категории VPN для Windows | - |
 | `VPN_APP_LINUX_URL` | Ссылка на скачивание приложения для категории VPN для Linux | - |
 | `VPN_APP_MAC_URL` | Ссылка на скачивание приложения для категории VPN для macOS | - |

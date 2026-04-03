@@ -27,6 +27,7 @@ interface AppConfig {
   VISIBLE_CATEGORIES: string;
   EMAIL_REQUIRED: string;
   EMAIL_VERIFY_REQUIRED: string;
+  ALLOW_EMAIL_VERIFY: string;
   ALLOW_SERVICE_BLOCKED: string;
   ALLOW_SERVICE_DELETE: string;
   ALLOW_SERVICE_CHANGE: string;
@@ -103,6 +104,7 @@ function getConfig(): AppConfig {
     ORDER_SORTING: runtimeConfig?.ORDER_SORTING || import.meta.env.VITE_ORDER_SORTING || 'cost_asc',
     EMAIL_REQUIRED: runtimeConfig?.EMAIL_REQUIRED || import.meta.env.VITE_EMAIL_REQUIRED || 'true',
     EMAIL_VERIFY_REQUIRED: runtimeConfig?.EMAIL_VERIFY_REQUIRED || import.meta.env.VITE_EMAIL_VERIFY_REQUIRED || 'false',
+    ALLOW_EMAIL_VERIFY: runtimeConfig?.ALLOW_EMAIL_VERIFY || import.meta.env.VITE_ALLOW_EMAIL_VERIFY || 'true',
     ALLOW_SERVICE_BLOCKED: runtimeConfig?.ALLOW_SERVICE_BLOCKED || import.meta.env.VITE_ALLOW_SERVICE_BLOCKED || 'true',
     ALLOW_SERVICE_DELETE: runtimeConfig?.ALLOW_SERVICE_DELETE || import.meta.env.VITE_ALLOW_SERVICE_DELETE || 'true',
     ALLOW_SERVICE_CHANGE: runtimeConfig?.ALLOW_SERVICE_CHANGE || import.meta.env.VITE_ALLOW_SERVICE_CHANGE || 'true',

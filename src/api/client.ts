@@ -104,7 +104,7 @@ export const auth = {
     }
     return response;
   },
-  getCaptcha: () => api.get<{ data: { question: string; token: string } }>('/user/captcha'),
+  getCaptcha: () => api.get<{ data: { image?: string; question?: string; token: string } }>('/user/captcha'),
 
   telegramWebAppAuth: async (initData: string, profile: string) => {
     const partnerId = getPartnerCookie();
