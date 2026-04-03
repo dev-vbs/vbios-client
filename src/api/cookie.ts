@@ -34,6 +34,24 @@ export function extendCookie(): void {
 const PARTNER_COOKIE_NAME = 'partner_id';
 const PARTNER_COOKIE_DAYS = 30;
 
+export function encodePartnerIdBase64url(id: number): string {
+  return btoa(String(id)).replace(/\+/g, '-').replace(/\//g, '_').replace(/=+$/, '');
+}
+
+function decodePartnerIdBase64url(value: string): string {
+  // Обратная совместимость: если уже пришло просто число — используем как есть
+  if (/^\d+$/.test(value)) {
+    return value;
+  }
+  try {
+    const padded = value.replace(/-/g, '+').replace(/_/g, '/');
+    const padding = (4 - (padded.length % 4)) % 4;
+    return atob(padded + '='.repeat(padding));
+  } catch {
+    return value;
+  }
+}
+
 export function setPartnerCookie(value: string): void {
   const expires = new Date();
   expires.setTime(expires.getTime() + PARTNER_COOKIE_DAYS * 24 * 60 * 60 * 1000);
@@ -61,7 +79,8 @@ export function parseAndSavePartnerId(): void {
   const urlParams = new URLSearchParams(window.location.search);
   const partnerId = urlParams.get('partner_id');
   if (partnerId) {
-    setPartnerCookie(partnerId);
+    const decoded = decodePartnerIdBase64url(partnerId);
+    setPartnerCookie(decoded);
     urlParams.delete('partner_id');
     const newSearch = urlParams.toString();
     const newUrl = window.location.pathname + (newSearch ? '?' + newSearch : '') + window.location.hash;
