@@ -56,6 +56,7 @@ jobs:
           PRERELEASE="${{ steps.release_info.outputs.prerelease }}"
           BODY="${{ steps.release_info.outputs.body }}"
           REPO_NAME="${{ github.repository }}"
+          REPO_URL="https://github.com/${{ github.repository }}"
 
           # Определение типа релиза и эмодзи
           if [ "$PRERELEASE" = "true" ]; then
@@ -91,7 +92,7 @@ jobs:
           fi
 
           # Форматирование сообщения (используем plain text без Markdown)
-          MESSAGE="${EMOJI} ${RELEASE_TYPE} ${TAG_NAME}\n\n📦 Репозиторий: ${REPO_NAME}\n\n📋 Changelog:\n${COMMITS_SECTION}"
+          MESSAGE="${EMOJI} ${RELEASE_TYPE} ${TAG_NAME}\n\n📦 Репозиторий: ${REPO_NAME}\n\n📋 Changelog:\n${COMMITS_SECTION}\n\n🔗 Посмотреть релиз: ${REPO_URL}/releases/tag/${TAG_NAME}"
 
           # Escape the message for JSON
           MESSAGE=$(echo "$MESSAGE" | sed ':a;N;$!ba;s/\n/\\n/g' | sed 's/"/\\"/g')
