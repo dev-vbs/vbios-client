@@ -82,8 +82,11 @@ export default function Login() {
     initialValues: { login: '', password: '', confirmPassword: '' },
     validate: {
       login: (value) => {
-        if (requireEmailRegister && modeRef.current === 'register') {
-          return isEmail(t('auth.invalidEmail'))(value);
+        if (modeRef.current === 'register') {
+          if (requireEmailRegister) {
+            return isEmail(t('auth.invalidEmail'))(value);
+          }
+          return hasLength({ min: 6 }, t('auth.loginTooShort'))(value);
         }
         return null;
       },
@@ -232,7 +235,9 @@ export default function Login() {
       notifications.show({ title: t('common.success'), message: t('auth.loginSuccess'), color: 'green' });
     } catch (error: unknown) {
       const axiosError = error as { response?: { status?: number; data?: { error?: string } } };
-      if (axiosError.response?.status === 403 && axiosError.response?.data?.error?.includes('Password authentication is disabled')) {
+      if (axiosError.response?.status === 429) {
+        notifications.show({ title: t('common.error'), message: t('auth.tooManyRequests'), color: 'red' });
+      } else if (axiosError.response?.status === 403 && axiosError.response?.data?.error?.includes('Password authentication is disabled')) {
         notifications.show({ title: t('common.error'), message: t('auth.passwordAuthDisabled'), color: 'red' });
       } else {
         notifications.show({ title: t('common.error'), message: t('auth.loginError'), color: 'red' });
@@ -276,10 +281,15 @@ export default function Login() {
     } catch (error: unknown) {
       const axiosError = error as { response?: { data?: { error?: string } } };
       const errMsg = axiosError.response?.data?.error || '';
-      if (errMsg === 'Invalid captcha') {
+      const axiosStatus = (error as { response?: { status?: number } }).response?.status;
+      if (axiosStatus === 429) {
+        notifications.show({ title: t('common.error'), message: t('auth.tooManyRequests'), color: 'red' });
+      } else if (errMsg === 'Invalid captcha') {
         notifications.show({ title: t('common.error'), message: t('auth.captchaInvalid'), color: 'red' });
       } else if (errMsg === 'Captcha required') {
         notifications.show({ title: t('common.error'), message: t('auth.captchaRequired'), color: 'red' });
+      } else if (errMsg === 'Login already in use' || errMsg === 'Email already in use') {
+        notifications.show({ title: t('common.error'), message: t('auth.loginAlreadyInUse'), color: 'red' });
       } else {
         notifications.show({ title: t('common.error'), message: t('auth.registerError'), color: 'red' });
       }
