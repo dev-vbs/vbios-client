@@ -1,6 +1,6 @@
 import { useState, useEffect, useCallback } from 'react';
 import { Card, Text, Stack, Group, Divider, Grid, Button, TextInput, Tooltip, ActionIcon, Avatar, Title, Modal, Loader, Center, Collapse, Alert, Skeleton, useMantineColorScheme } from '@mantine/core';
-import { IconUser, IconPhone, IconCopy, IconCheck, IconBrandTelegram, IconCreditCard, IconChevronDown, IconChevronUp, IconMail, IconAlertCircle } from '@tabler/icons-react';
+import { IconUser, IconPhone, IconCopy, IconCheck, IconBrandTelegram, IconCreditCard, IconReceipt, IconChevronDown, IconChevronUp, IconMail, IconAlertCircle } from '@tabler/icons-react';
 import { notifications } from '@mantine/notifications';
 import { useClipboard } from '@mantine/hooks';
 import { useTranslation } from 'react-i18next';
@@ -63,6 +63,8 @@ interface ForecastData {
 
 export default function Profile() {
   const { telegramPhoto, userEmail: storeEmail, userEmailVerified: storeEmailVerified, setUserEmail, setUserEmailVerified } = useStore();
+  const setPayHistoryOpen = useStore((s) => s.setPayHistoryOpen);
+  const setWithdrawHistoryOpen = useStore((s) => s.setWithdrawHistoryOpen);
   const [profile, setProfile] = useState<UserProfile | null>(null);
   const [loading, setLoading] = useState(true);
   const [editing, setEditing] = useState(false);
@@ -401,6 +403,24 @@ export default function Profile() {
     <Stack gap="lg">
       <Title order={2}>{t('profile.title')}</Title>
 
+      {config.NAV_PAYMENTS_IN_PROFILE === 'true' && (
+        <Group gap="sm">
+          <Button
+            leftSection={<IconCreditCard size={16} />}
+            variant="light"
+            onClick={() => setPayHistoryOpen(true)}
+          >
+            {t('nav.payments')}
+          </Button>
+          <Button
+            leftSection={<IconReceipt size={16} />}
+            variant="light"
+            onClick={() => setWithdrawHistoryOpen(true)}
+          >
+            {t('nav.withdrawals')}
+          </Button>
+        </Group>
+      )}
 
       <Grid>
         <Grid.Col span={{ base: 12, md: 6 }} style={{ display: 'flex' }}>

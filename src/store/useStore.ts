@@ -33,6 +33,10 @@ interface AppState {
   setTelegramPhoto: (photo: string | null) => void;
   setHasNewTicketMessages: (hasNew: boolean) => void;
   setLastTicketCheck: (timestamp: number) => void;
+  payHistoryOpen: boolean;
+  setPayHistoryOpen: (v: boolean) => void;
+  withdrawHistoryOpen: boolean;
+  setWithdrawHistoryOpen: (v: boolean) => void;
   openVerifyModal: boolean;
   setOpenVerifyModal: (open: boolean) => void;
   logout: () => void;
@@ -48,6 +52,8 @@ export const useStore = create<AppState>((set) => ({
   telegramPhoto: localStorage.getItem('shm_telegram_photo'),
   hasNewTicketMessages: false,
   lastTicketCheck: parseInt(localStorage.getItem('shm_last_ticket_check') || '0'),
+  payHistoryOpen: false,
+  withdrawHistoryOpen: false,
   openVerifyModal: false,
 
   setUser: (user) => set({
@@ -71,6 +77,8 @@ export const useStore = create<AppState>((set) => ({
     localStorage.setItem('shm_last_ticket_check', String(timestamp));
     set({ lastTicketCheck: timestamp });
   },
+  setPayHistoryOpen: (open) => set({ payHistoryOpen: open }),
+  setWithdrawHistoryOpen: (open) => set({ withdrawHistoryOpen: open }),
   setOpenVerifyModal: (open) => set({ openVerifyModal: open }),
   logout: () => {
     removeCookie();

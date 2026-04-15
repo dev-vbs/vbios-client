@@ -171,7 +171,13 @@ function BottomNavigation({ onPayments, onWithdrawals }: { onPayments: () => voi
         }}
       >
         <Group justify="space-around" gap={4}>
-          {NAV_ITEMS.map((item) => {
+          {NAV_ITEMS
+            .filter((item) =>
+              config.NAV_PAYMENTS_IN_PROFILE === 'true'
+                ? item.path !== '/payments' && item.path !== '/withdrawals'
+                : true
+            )
+            .map((item) => {
             const isActive = location.pathname === item.path;
             const Icon = item.icon;
             return (
@@ -230,8 +236,10 @@ function AppContent() {
     handleResendCode: handleGlobalResendCode,
   } = useEmailRequired();
 
-  const [payHistoryOpen, setPayHistoryOpen] = useState(false);
-  const [withdrawHistoryOpen, setWithdrawHistoryOpen] = useState(false);
+  const payHistoryOpen = useStore((s) => s.payHistoryOpen);
+  const setPayHistoryOpen = useStore((s) => s.setPayHistoryOpen);
+  const withdrawHistoryOpen = useStore((s) => s.withdrawHistoryOpen);
+  const setWithdrawHistoryOpen = useStore((s) => s.setWithdrawHistoryOpen);
   const [versionOpen, setVersionOpen] = useState(false);
   const showVersion = () => setVersionOpen(true);
   const longPressProps = useLongPress(showVersion);
@@ -481,7 +489,13 @@ function AppContent() {
               </Text>
             </Group>
             <Group gap="xs" visibleFrom="sm" wrap="nowrap">
-              {NAV_ITEMS.map((item) => {
+              {NAV_ITEMS
+                .filter((item) =>
+                  config.NAV_PAYMENTS_IN_PROFILE === 'true'
+                    ? item.path !== '/payments' && item.path !== '/withdrawals'
+                    : true
+                )
+                .map((item) => {
                 const Icon = item.icon;
                 const isActive = location.pathname === item.path;
                 if (item.path === '/payments') {
