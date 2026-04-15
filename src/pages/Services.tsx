@@ -1159,7 +1159,16 @@ export default function Services() {
           inline
         />
       ) : (
-        <Accordion variant="separated" radius="md" multiple defaultValue={Object.keys(groupedServices)}>
+        <Accordion
+          variant="separated"
+          radius="md"
+          multiple
+          defaultValue={Object.keys(groupedServices)}
+          transitionDuration={260}
+          styles={{
+            chevron: { transition: 'transform 220ms cubic-bezier(0.4, 0, 0.2, 1)' },
+          }}
+        >
           {Object.entries(groupedServices).map(([category, categoryServices]) => {
             const page = categoryPages[category] || 1;
             const totalPages = Math.ceil(categoryServices.length / perPage);

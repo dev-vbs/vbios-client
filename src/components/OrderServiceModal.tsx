@@ -663,8 +663,10 @@ export default function OrderServiceModal({
               );
             };
 
-            // Inline rendering when there is a single period or a single service — no accordion needed.
-            const inlineRender = periodKeys.length <= 1 || group.services.length === 1;
+            // Operator can disable grouping entirely via ORDER_GROUP_BY_PERIOD=false.
+            // Otherwise fall back to flat rendering when there is a single period or a single service.
+            const groupingEnabled = config.ORDER_GROUP_BY_PERIOD === 'true';
+            const inlineRender = !groupingEnabled || periodKeys.length <= 1 || group.services.length === 1;
 
             return (
               <div key={category}>
@@ -676,7 +678,18 @@ export default function OrderServiceModal({
                     {group.services.map(renderServiceCard)}
                   </Stack>
                 ) : (
-                  <Accordion variant="separated" radius="md" multiple>
+                  <Accordion
+                    variant="separated"
+                    radius="md"
+                    multiple
+                    transitionDuration={260}
+                    chevronPosition="right"
+                    styles={{
+                      control: { transition: 'background-color 180ms ease' },
+                      chevron: { transition: 'transform 220ms cubic-bezier(0.4, 0, 0.2, 1)' },
+                      panel: { overflow: 'hidden' },
+                    }}
+                  >
                     {periodKeys.map((pk) => {
                       const period = Number(pk);
                       const list = byPeriod[pk];

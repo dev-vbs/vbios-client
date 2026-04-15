@@ -43,6 +43,7 @@ services:
 | `NAV_PAYMENTS_IN_PROFILE` | Убрать «Платежи»/«Списания» из меню, показать в Профиле | `false` |
 | `THEME_GLASSMORPHISM_ENABLE` | Тёмная glassmorphism-тема (пурпурно-синие градиенты, прозрачные панели) | `false` |
 | `DASHBOARD_PAGE_ENABLE` | Dashboard-страница как лендинг (`/`), список услуг переезжает на `/services` | `false` |
+| `ORDER_GROUP_BY_PERIOD` | Группировать услуги в каталоге заказа по периоду (Accordion). При `false` — плоский список | `true` |
 
 ### Переменные окружения
 

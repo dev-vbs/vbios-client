@@ -70,6 +70,7 @@ interface AppConfig {
   NAV_PAYMENTS_IN_PROFILE: string;
   THEME_GLASSMORPHISM_ENABLE: string;
   DASHBOARD_PAGE_ENABLE: string;
+  ORDER_GROUP_BY_PERIOD: string;
 }
 
 declare global {
@@ -153,6 +154,7 @@ function getConfig(): AppConfig {
     NAV_PAYMENTS_IN_PROFILE: runtimeConfig?.NAV_PAYMENTS_IN_PROFILE || import.meta.env.VITE_NAV_PAYMENTS_IN_PROFILE || 'false',
     THEME_GLASSMORPHISM_ENABLE: runtimeConfig?.THEME_GLASSMORPHISM_ENABLE || import.meta.env.VITE_THEME_GLASSMORPHISM_ENABLE || 'false',
     DASHBOARD_PAGE_ENABLE: runtimeConfig?.DASHBOARD_PAGE_ENABLE || import.meta.env.VITE_DASHBOARD_PAGE_ENABLE || 'false',
+    ORDER_GROUP_BY_PERIOD: runtimeConfig?.ORDER_GROUP_BY_PERIOD || import.meta.env.VITE_ORDER_GROUP_BY_PERIOD || 'true',
 
   };
 }

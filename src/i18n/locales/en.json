@@ -291,7 +291,8 @@
     "bonusCoversNow": "Now −{{amount}} ₽ from bonus",
     "discountBadge": "−{{amount}} ₽",
     "discountLabel": "Discount",
-    "startingFrom": "from"
+    "startingFrom": "from",
+    "variantsCount": "{{count}} variants"
   },
   "confirm": {
     "title": "Confirmation"

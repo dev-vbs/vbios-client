@@ -291,7 +291,8 @@
     "bonusCoversNow": "Сейчас −{{amount}} ₽ с бонусов",
     "discountBadge": "−{{amount}} ₽",
     "discountLabel": "Скидка",
-    "startingFrom": "от"
+    "startingFrom": "от",
+    "variantsCount": "{{count}} вариантов"
   },
   "confirm": {
     "title": "Подтверждение"
