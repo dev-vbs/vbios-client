@@ -1,7 +1,7 @@
 import { useState, useEffect, useRef } from 'react';
 import { useNavigate } from 'react-router-dom';
-import { Card, Timeline, Text, Stack, Group, Badge, Button, Divider, Modal, ActionIcon, Loader, Center, Paper, Title, Tabs, Code, Tooltip, Accordion, Box, Select, NumberInput, Pagination } from '@mantine/core';
-import { IconQrcode, IconCopy, IconCheck, IconDownload, IconRefresh, IconTrash, IconPlus, IconPlayerStop, IconExchange, IconCreditCard, IconWallet, IconDeviceMobileCog } from '@tabler/icons-react';
+import { Alert, Card, Timeline, Text, Stack, Group, Badge, Button, Divider, Modal, ActionIcon, Loader, Center, Paper, Title, Tabs, Code, Tooltip, Accordion, Box, Select, NumberInput, Pagination } from '@mantine/core';
+import { IconQrcode, IconCopy, IconCheck, IconDownload, IconRefresh, IconTrash, IconPlus, IconPlayerStop, IconExchange, IconCreditCard, IconWallet, IconDeviceMobileCog, IconInfoCircle } from '@tabler/icons-react';
 import { useDisclosure, useClipboard } from '@mantine/hooks';
 import { useTranslation } from 'react-i18next';
 import { api, servicesApi, userApi } from '../api/client';
@@ -13,6 +13,12 @@ import AppDownloadBlock from '../components/AppDownloadBlock';
 import { config } from '../config';
 import { useStore } from '../store/useStore';
 import { isTelegramWebApp } from '../constants/webapp';
+import {
+  normalizeCategory,
+  getOccupiedCategories,
+  isMonoApplicable,
+  hasMonoBlockingService,
+} from '../utils/services';
 
 interface ForecastItem {
   name: string;
@@ -60,28 +66,6 @@ const statusColors: Record<string, string> = {
   'INIT': 'gray',
 };
 
-function normalizeCategory(category: string): string {
-  const proxyCategories = new Set(config.PROXY_CATEGORY.split(','));
-  const vpnCategories = new Set(config.VPN_CATEGORY.split(','));
-
-  if (proxyCategories.has(category)) {
-    return 'proxy';
-  }
-  if (vpnCategories.has(category)) {
-    return 'vpn';
-  }
-
-  if (category.match(/remna|remnawave|marzban|marz|mz/i)) {
-    return 'proxy';
-  }
-  if (category.match(/^(vpn|wg|awg)/i)) {
-    return 'vpn';
-  }
-  if (['web_tariff', 'web', 'mysql', 'mail', 'hosting'].includes(category)) {
-    return category;
-  }
-  return 'other';
-}
 
 interface ServiceDetailProps {
   service: UserService;
@@ -941,6 +925,28 @@ export default function Services() {
     return acc;
   }, {} as Record<string, UserService[]>);
 
+  const monoBlocks = hasMonoBlockingService(services);
+
+  const handlePrimaryCta = () => {
+    if (config.EMAIL_VERIFY_REQUIRED === 'true' && !userEmailVerified) {
+      setConfirmEmailNotVerified(true);
+      return;
+    }
+    if (monoBlocks) {
+      const occupied = getOccupiedCategories(services);
+      const target = services.find((s) => {
+        const cat = normalizeCategory(s.service.category);
+        return occupied.has(cat) && isMonoApplicable(cat);
+      });
+      if (target) {
+        setChangeService(target);
+        openChangeModal();
+        return;
+      }
+    }
+    openOrderModal();
+  };
+
   if (loading) {
     return (
       <Center h={300}>
@@ -954,8 +960,11 @@ export default function Services() {
       <Group justify="space-between">
         <Title order={2}>{t('services.title')}</Title>
         <Group>
-          <Button leftSection={<IconPlus size={16} />} onClick={ config.EMAIL_VERIFY_REQUIRED === "true" && !userEmailVerified ? () => setConfirmEmailNotVerified(true) : openOrderModal}>
-            {t('services.orderService')}
+          <Button
+            leftSection={<IconPlus size={16} />}
+            onClick={handlePrimaryCta}
+          >
+            {monoBlocks ? t('services.changeService') : t('services.orderService')}
           </Button>
           <Button leftSection={<IconRefresh size={16} />} variant="light" color="cyan" onClick={() => fetchServices()}>
             {t('common.refresh')}
@@ -963,13 +972,27 @@ export default function Services() {
         </Group>
       </Group>
 
+      {monoBlocks && (
+        <Alert
+          icon={<IconInfoCircle size={16} />}
+          color="blue"
+          variant="light"
+          radius="md"
+        >
+          {t('services.monoServiceNotice')}
+        </Alert>
+      )}
+
       {Object.keys(groupedServices).length === 0 ? (
         <Paper withBorder p="xl" radius="md">
           <Center>
             <Stack align="center" gap="md">
               <Text c="dimmed">{t('services.noServices')}</Text>
-              <Button leftSection={<IconPlus size={16} />} onClick={ config.EMAIL_VERIFY_REQUIRED === "true"  && !userEmailVerified ? () => setConfirmEmailNotVerified(true) : openOrderModal}>
-                {t('services.orderService')}
+              <Button
+                leftSection={<IconPlus size={16} />}
+                onClick={handlePrimaryCta}
+              >
+                {monoBlocks ? t('services.changeService') : t('services.orderService')}
               </Button>
             </Stack>
           </Center>
