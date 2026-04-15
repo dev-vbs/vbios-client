@@ -74,7 +74,7 @@ export default function Dashboard() {
   }, []);
 
   const activeService = services
-    .filter((s) => s.status === 'ACTIVE' || s.status === 'NOT PAID' || s.status === 'PROGRESS')
+    .filter((s) => ['ACTIVE', 'NOT PAID', 'PROGRESS', 'BLOCK'].includes(s.status))
     .sort((a, b) => {
       const ea = a.expire ? new Date(a.expire).getTime() : Infinity;
       const eb = b.expire ? new Date(b.expire).getTime() : Infinity;
