@@ -83,6 +83,6 @@ export const useStore = create<AppState>((set) => ({
   logout: () => {
     removeCookie();
     localStorage.removeItem('shm_telegram_photo');
-    set({ user: null, isAuthenticated: false, telegramPhoto: null, hasNewTicketMessages: false, userEmail: null, userEmailVerified: null, isEmailLoaded: false });
+    set({ user: null, isAuthenticated: false, telegramPhoto: null, hasNewTicketMessages: false, userEmail: null, userEmailVerified: null, isEmailLoaded: false, payHistoryOpen: false, withdrawHistoryOpen: false, openVerifyModal: false });
   },
 }));

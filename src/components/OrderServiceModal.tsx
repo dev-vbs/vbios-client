@@ -95,7 +95,7 @@ export default function OrderServiceModal({
     if (isChangeMode) return false;
     const cat = normalizeCategory(rawCategory);
     if (!isMonoApplicable(cat)) return false;
-    return occupiedCategories.size > 0;
+    return occupiedCategories.has(cat);
   };
 
   const getAppliedBonus = (service: OrderService): number => {

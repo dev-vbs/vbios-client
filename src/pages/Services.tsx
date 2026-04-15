@@ -1002,6 +1002,12 @@ export default function Services() {
     if (data) {
       setQuickQrData(data);
       setQuickQrService(service);
+    } else {
+      notifications.show({
+        title: t('common.error'),
+        message: t('services.qrTooLongDesc'),
+        color: 'orange',
+      });
     }
   };
 
@@ -1066,7 +1072,15 @@ export default function Services() {
     }
     if (monoBlocks) {
       const occupied = getOccupiedCategories(services);
-      const target = services.find((s) => {
+      const flat: UserService[] = [];
+      const walk = (items: UserService[]) => {
+        for (const s of items) {
+          flat.push(s);
+          if (s.children) walk(s.children);
+        }
+      };
+      walk(services);
+      const target = flat.find((s) => {
         const cat = normalizeCategory(s.service.category);
         return occupied.has(cat) && isMonoApplicable(cat);
       });

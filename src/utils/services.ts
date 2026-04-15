@@ -51,9 +51,11 @@ export function flattenServices<T extends UserServiceLike>(list: T[]): T[] {
  */
 export function getMonoServiceSettings() {
   const enabled = config.MONO_SERVICE_ENABLE === 'true';
+  // Normalize each token so operators can list either raw categories (e.g. "wg1")
+  // or canonical ones (e.g. "vpn") — both are accepted.
   const categories = config.MONO_SERVICE_CATEGORIES
     .split(',')
-    .map((c) => c.trim().toLowerCase())
+    .map((c) => normalizeCategory(c.trim()).toLowerCase())
     .filter(Boolean);
   const statuses = new Set(
     config.MONO_SERVICE_STATUSES

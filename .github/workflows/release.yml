@@ -126,5 +126,6 @@ jobs:
 
   notify:
     needs: build
+    if: ${{ vars.ENABLE_TELEGRAM_NOTIFY == 'true' }}
     uses: ./.github/workflows/telegram-release-notify.yml
     secrets: inherit
