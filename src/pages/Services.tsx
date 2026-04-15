@@ -697,10 +697,34 @@ function ServiceDetail({ service, onDelete, onChangeTariff }: ServiceDetailProps
   );
 }
 
-function ServiceCard({ service, onClick, isChild = false, isLastChild = false }: { service: UserService; onClick: () => void; isChild?: boolean; isLastChild?: boolean }) {
+function ServiceCard({
+  service,
+  onClick,
+  onQr,
+  onChange,
+  onStop,
+  onDelete,
+  isChild = false,
+  isLastChild = false,
+}: {
+  service: UserService;
+  onClick: () => void;
+  onQr?: (service: UserService) => void;
+  onChange?: (service: UserService) => void;
+  onStop?: (service: UserService) => void;
+  onDelete?: (service: UserService) => void;
+  isChild?: boolean;
+  isLastChild?: boolean;
+}) {
   const { t, i18n } = useTranslation();
   const statusColor = statusColors[service.status] || 'gray';
   const statusLabel = t(`status.${service.status}`, service.status);
+  const showQuick = config.SHOW_CARD_QUICK_ACTIONS === 'true' && !isChild;
+  const canQr = service.status === 'ACTIVE';
+  const canChange = config.ALLOW_SERVICE_CHANGE === 'true' && ['ACTIVE', 'BLOCK'].includes(service.status);
+  const canStop = config.ALLOW_SERVICE_BLOCKED === 'true' && service.status === 'ACTIVE';
+  const canDelete = config.ALLOW_SERVICE_DELETE === 'true' && ['BLOCK', 'NOT PAID', 'ERROR'].includes(service.status);
+  const stop = (e: React.MouseEvent) => e.stopPropagation();
 
   if (isChild) {
     return (
@@ -781,6 +805,38 @@ function ServiceCard({ service, onClick, isChild = false, isLastChild = false }:
           )}
         </div>
         <Group gap="sm">
+          {showQuick && (
+            <Group gap={4} onClick={stop} wrap="nowrap">
+              {canQr && (
+                <Tooltip label={t('services.qrCode')} withArrow>
+                  <ActionIcon variant="subtle" color="blue" onClick={() => onQr?.(service)} aria-label="QR">
+                    <IconQrcode size={18} />
+                  </ActionIcon>
+                </Tooltip>
+              )}
+              {canChange && (
+                <Tooltip label={t('services.changeService')} withArrow>
+                  <ActionIcon variant="subtle" color="cyan" onClick={() => onChange?.(service)} aria-label="Change">
+                    <IconExchange size={18} />
+                  </ActionIcon>
+                </Tooltip>
+              )}
+              {canStop && (
+                <Tooltip label={t('services.stopService')} withArrow>
+                  <ActionIcon variant="subtle" color="orange" onClick={() => onStop?.(service)} aria-label="Stop">
+                    <IconPlayerStop size={18} />
+                  </ActionIcon>
+                </Tooltip>
+              )}
+              {canDelete && (
+                <Tooltip label={t('services.deleteService')} withArrow>
+                  <ActionIcon variant="subtle" color="red" onClick={() => onDelete?.(service)} aria-label="Delete">
+                    <IconTrash size={18} />
+                  </ActionIcon>
+                </Tooltip>
+              )}
+            </Group>
+          )}
           {service.service.cost > 0 && (
             <Text size="sm" c="dimmed">{service.service.cost} {t('common.currency')}</Text>
           )}
@@ -807,6 +863,10 @@ export default function Services() {
   const { t } = useTranslation();
   const { userEmailVerified, setOpenVerifyModal } = useStore();
   const [confirmEmailNotVerified, setConfirmEmailNotVerified] = useState(false);
+  const [quickQrService, setQuickQrService] = useState<UserService | null>(null);
+  const [quickQrData, setQuickQrData] = useState<string | null>(null);
+  const [stopTarget, setStopTarget] = useState<UserService | null>(null);
+  const [deleteTarget, setDeleteTarget] = useState<UserService | null>(null);
   const navigate = useNavigate();
 
   const handleEmailNotVerified = async () => {
@@ -913,6 +973,78 @@ export default function Services() {
     setChangeService(service);
     close();
     openChangeModal();
+  };
+
+  const handleQuickQr = async (service: UserService) => {
+    const category = normalizeCategory(service.service.category);
+    let data = '';
+    if (category === 'proxy') {
+      const prefix = config.PROXY_STORAGE_PREFIX ? config.PROXY_STORAGE_PREFIX : 'vpn_mrzb_';
+      try {
+        const mzResponse = await api.get(`/storage/manage/${prefix}${service.user_service_id}?format=json`);
+        const url = mzResponse.data.subscription_url || mzResponse.data.response?.subscriptionUrl;
+        if (url) data = url;
+      } catch { /* ignore */ }
+      if (!data) {
+        try {
+          const remnaResponse = await api.get(`/storage/manage/vpn_remna_${service.user_service_id}?format=json`);
+          const url = remnaResponse.data.subscription_url || remnaResponse.data.response?.subscriptionUrl;
+          if (url) data = url;
+        } catch { /* ignore */ }
+      }
+    } else if (category === 'vpn') {
+      const prefix = config.VPN_STORAGE_PREFIX ? config.VPN_STORAGE_PREFIX : 'vpn';
+      try {
+        const vpnResponse = await api.get(`/storage/manage/${prefix}${service.user_service_id}`);
+        if (vpnResponse.data) data = vpnResponse.data;
+      } catch { /* ignore */ }
+    }
+    if (data) {
+      setQuickQrData(data);
+      setQuickQrService(service);
+    }
+  };
+
+  const handleQuickStop = async () => {
+    if (!stopTarget) return;
+    try {
+      await userApi.stopService(stopTarget.user_service_id);
+      notifications.show({
+        title: t('common.success'),
+        message: t('services.serviceStopped'),
+        color: 'green',
+      });
+      setStopTarget(null);
+      refreshAttemptsRef.current = 0;
+      fetchServices();
+    } catch {
+      notifications.show({
+        title: t('common.error'),
+        message: t('services.serviceStopError'),
+        color: 'red',
+      });
+    }
+  };
+
+  const handleQuickDelete = async () => {
+    if (!deleteTarget) return;
+    try {
+      await api.delete(`/user/service?user_service_id=${deleteTarget.user_service_id}`);
+      notifications.show({
+        title: t('common.success'),
+        message: t('services.serviceDeleted'),
+        color: 'green',
+      });
+      setDeleteTarget(null);
+      refreshAttemptsRef.current = 0;
+      fetchServices();
+    } catch {
+      notifications.show({
+        title: t('common.error'),
+        message: t('services.serviceDeleteError'),
+        color: 'red',
+      });
+    }
   };
 
   const groupedServices = services.reduce((acc, service) => {
@@ -1026,6 +1158,10 @@ export default function Services() {
                       <ServiceCard
                         service={service}
                         onClick={() => handleServiceClick(service)}
+                        onQr={(s) => handleQuickQr(s)}
+                        onChange={(s) => handleChangeTariff(s)}
+                        onStop={(s) => setStopTarget(s)}
+                        onDelete={(s) => setDeleteTarget(s)}
                       />
                       {service.children && service.children.length > 0 && (
                         <Stack gap="xs" mt="xs" ml="md">
@@ -1117,6 +1253,35 @@ export default function Services() {
         message={t('services.emailNotVerifiedDesc')}
         confirmLabel={t('services.emailNotVerifiedAction')}
         confirmColor="orange"
+      />
+
+      {quickQrService && quickQrData && (
+        <QrModal
+          opened
+          onClose={() => { setQuickQrService(null); setQuickQrData(null); }}
+          data={quickQrData}
+          title={t('services.qrCode')}
+        />
+      )}
+
+      <ConfirmModal
+        opened={stopTarget !== null}
+        onClose={() => setStopTarget(null)}
+        onConfirm={handleQuickStop}
+        title={t('services.stopServiceTitle')}
+        message={t('services.stopServiceMessage')}
+        confirmLabel={t('services.stop')}
+        confirmColor="orange"
+      />
+
+      <ConfirmModal
+        opened={deleteTarget !== null}
+        onClose={() => setDeleteTarget(null)}
+        onConfirm={handleQuickDelete}
+        title={t('services.deleteServiceTitle')}
+        message={t('services.deleteServiceMessage')}
+        confirmLabel={t('common.delete')}
+        confirmColor="red"
       />
 
     </Stack>
