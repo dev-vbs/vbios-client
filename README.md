@@ -41,6 +41,8 @@ services:
 | `MONO_SERVICE_STATUSES` | Какие статусы считать «занятым слотом» | `ACTIVE,NOT PAID,PROGRESS` |
 | `SHOW_CARD_QUICK_ACTIONS` | Иконки быстрых действий (QR/смена/стоп/удаление) на карточках | `true` |
 | `NAV_PAYMENTS_IN_PROFILE` | Убрать «Платежи»/«Списания» из меню, показать в Профиле | `false` |
+| `THEME_GLASSMORPHISM_ENABLE` | Тёмная glassmorphism-тема (пурпурно-синие градиенты, прозрачные панели) | `false` |
+| `DASHBOARD_PAGE_ENABLE` | Dashboard-страница как лендинг (`/`), список услуг переезжает на `/services` | `false` |
 
 ### Переменные окружения
 
