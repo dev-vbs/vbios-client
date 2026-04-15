@@ -1081,6 +1081,7 @@ export default function Services() {
           refreshAttemptsRef.current = 0;
           fetchServices();
         }}
+        userServices={services}
       />
 
       <OrderServiceModal
@@ -1105,6 +1106,7 @@ export default function Services() {
           refreshAttemptsRef.current = 0;
           fetchServices();
         }}
+        userServices={services}
       />
 
       <ConfirmModal

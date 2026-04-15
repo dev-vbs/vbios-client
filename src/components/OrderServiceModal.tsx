@@ -1,10 +1,11 @@
 import { useState, useEffect } from 'react';
 import { useTranslation } from 'react-i18next';
-import { Modal, Stack, Text, Card, Group, Badge, Loader, Center, Button, Paper, Divider, Select, NumberInput, Alert, Checkbox, ScrollArea } from '@mantine/core';
-import { IconArrowLeft, IconCreditCard, IconCheck, IconWallet } from '@tabler/icons-react';
+import { Modal, Stack, Text, Card, Group, Badge, Loader, Center, Button, Paper, Divider, Select, NumberInput, Alert, Checkbox, ScrollArea, Tooltip } from '@mantine/core';
+import { IconArrowLeft, IconCreditCard, IconCheck, IconWallet, IconInfoCircle } from '@tabler/icons-react';
 import { servicesApi, userApi } from '../api/client';
 import { notifications } from '@mantine/notifications';
 import { config } from '../config';
+import { normalizeCategory, getOccupiedCategories, isMonoApplicable } from '../utils/services';
 
 interface OrderService {
   service_id: number;
@@ -38,19 +39,11 @@ interface OrderServiceModalProps {
     name?: string;
   };
   onChangeSuccess?: () => void;
-}
-
-function normalizeCategory(category: string): string {
-  if (category.match(/remna|remnawave|marzban|marz|mz/i)) {
-    return 'proxy';
-  }
-  if (category.match(/^(vpn|wg|awg)/i)) {
-    return 'vpn';
-  }
-  if (['web_tariff', 'web', 'mysql', 'mail', 'hosting'].includes(category)) {
-    return category;
-  }
-  return 'other';
+  userServices?: Array<{
+    status: string;
+    service: { category: string };
+    children?: Array<{ status: string; service: { category: string } }>;
+  }>;
 }
 
 function formatPeriod(value: number, t: any) {
@@ -78,6 +71,7 @@ export default function OrderServiceModal({
   mode = 'order',
   currentService,
   onChangeSuccess,
+  userServices = [],
 }: OrderServiceModalProps) {
   const { t } = useTranslation();
   const [services, setServices] = useState<OrderService[]>([]);
@@ -95,6 +89,14 @@ export default function OrderServiceModal({
 
   const isChangeMode = mode === 'change';
   const canDeferChange = isChangeMode && currentService?.status === 'ACTIVE';
+
+  const occupiedCategories = getOccupiedCategories(userServices);
+  const isServiceBlockedByMono = (rawCategory: string): boolean => {
+    if (isChangeMode) return false;
+    const cat = normalizeCategory(rawCategory);
+    if (!isMonoApplicable(cat)) return false;
+    return occupiedCategories.size > 0;
+  };
 
   const getAppliedBonus = (service: OrderService): number => {
     const plannedBonus = Number(service.cost_bonus || 0);
@@ -368,6 +370,17 @@ export default function OrderServiceModal({
       size="lg"
       scrollAreaComponent={ScrollArea.Autosize}
     >
+      {!isChangeMode && occupiedCategories.size > 0 && [...occupiedCategories].some(isMonoApplicable) && (
+        <Alert
+          icon={<IconInfoCircle size={16} />}
+          color="blue"
+          variant="light"
+          radius="md"
+          mb="md"
+        >
+          {t('order.monoServiceBanner')}
+        </Alert>
+      )}
       {loading ? (
         <Center h={200}>
           <Loader size="lg" />
@@ -559,47 +572,59 @@ export default function OrderServiceModal({
                 { group.title }
               </Text>
               <Stack gap="xs">
-                {group.services.map((service) => (
-                  <Card
-                    key={service.service_id}
-                    withBorder
-                    radius="md"
-                    p="sm"
-                    style={{ cursor: 'pointer' }}
-                    onClick={() => setSelectedService(service)}
-                  >
-                    <Group justify="space-between">
-                      <div>
-                        <Text fw={500}>{service.name}</Text>
-                        {service.descr && (
-                          <Text size="xs" c="dimmed" lineClamp={1}>
-                            {service.descr}
-                          </Text>
-                        )}
-                      </div>
-                      <Group gap="sm" align="baseline">
-                        {service.discount && service.discount > 0 || getAppliedBonus(service) > 0 ? (
-                          <>
-                            <Text size="sm" c="dimmed" style={{ textDecoration: 'line-through' }}>
-                              {service.cost} ₽
+                {group.services.map((service) => {
+                  const blocked = isServiceBlockedByMono(service.category);
+                  return (
+                    <Tooltip
+                      key={service.service_id}
+                      label={t('order.blockedByMono')}
+                      disabled={!blocked}
+                      withArrow
+                    >
+                      <Card
+                        withBorder
+                        radius="md"
+                        p="sm"
+                        onClick={blocked ? undefined : () => setSelectedService(service)}
+                        style={{
+                          cursor: blocked ? 'not-allowed' : 'pointer',
+                          opacity: blocked ? 0.5 : 1,
+                        }}
+                      >
+                        <Group justify="space-between">
+                          <div>
+                            <Text fw={500}>{service.name}</Text>
+                            {service.descr && (
+                              <Text size="xs" c="dimmed" lineClamp={1}>
+                                {service.descr}
+                              </Text>
+                            )}
+                          </div>
+                          <Group gap="sm" align="baseline">
+                            {service.discount && service.discount > 0 || getAppliedBonus(service) > 0 ? (
+                              <>
+                                <Text size="sm" c="dimmed" style={{ textDecoration: 'line-through' }}>
+                                  {service.cost} ₽
+                                </Text>
+                              </>
+                            ) : null}
+                            <Text fw={600} color={service.discount && service.discount > 0 || getAppliedBonus(service) > 0 ? 'green' : undefined}>
+                              {getEffectiveCost(service)} ₽
                             </Text>
-                          </>
-                        ) : null}
-                        <Text fw={600} color={service.discount && service.discount > 0 || getAppliedBonus(service) > 0 ? 'green' : undefined}>
-                          {getEffectiveCost(service)} ₽
-                        </Text>
-                        <Text size="xs" c="dimmed">
-                          / {service.period === 1 ? t('common.month') :
-                             service.period === 3 ? t('common.months3') :
-                             service.period === 6 ? t('common.months6') :
-                             service.period === 12 ? t('common.year') :
-                             formatPeriod(service.period, t)
-                            }
-                        </Text>
-                      </Group>
-                    </Group>
-                  </Card>
-                ))}
+                            <Text size="xs" c="dimmed">
+                              / {service.period === 1 ? t('common.month') :
+                                 service.period === 3 ? t('common.months3') :
+                                 service.period === 6 ? t('common.months6') :
+                                 service.period === 12 ? t('common.year') :
+                                 formatPeriod(service.period, t)
+                                }
+                            </Text>
+                          </Group>
+                        </Group>
+                      </Card>
+                    </Tooltip>
+                  );
+                })}
               </Stack>
             </div>
           ))}
