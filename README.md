@@ -13,12 +13,16 @@
 
 ## Docker Compose
 
-- Вместе с контейнерами SHM
+Образы собираются через GitHub Actions и публикуются в **GHCR** текущего репозитория:
+`ghcr.io/<owner>/<repo>-client-2:<tag>`. Для форка никаких дополнительных секретов
+не требуется — workflow использует `GITHUB_TOKEN` автоматически. Убедитесь, что
+в `Settings → Actions → General → Workflow permissions` включено
+«Read and write permissions».
 
 ```yaml
 services:
   client:
-    image: danuk/shm-client-2:latest
+    image: ghcr.io/dignezzz/shm-client-4-client-2:latest
     ports:
       - "3001:80"
     environment:
@@ -27,6 +31,16 @@ services:
       APP_DESCRIPTION: "My Company Description"
     restart: unless-stopped
 ```
+
+### Новые флаги UX (v2.6.0)
+
+| Переменная | Описание | По умолчанию |
+| ------------ | ---------- | -------------- |
+| `MONO_SERVICE_ENABLE` | Режим моно-услуги: запрет заказа дополнительных услуг при активной подписке | `false` |
+| `MONO_SERVICE_CATEGORIES` | CSV категорий под моно-правилом (пусто = все) | `` |
+| `MONO_SERVICE_STATUSES` | Какие статусы считать «занятым слотом» | `ACTIVE,NOT PAID,PROGRESS` |
+| `SHOW_CARD_QUICK_ACTIONS` | Иконки быстрых действий (QR/смена/стоп/удаление) на карточках | `true` |
+| `NAV_PAYMENTS_IN_PROFILE` | Убрать «Платежи»/«Списания» из меню, показать в Профиле | `false` |
 
 ### Переменные окружения
 
