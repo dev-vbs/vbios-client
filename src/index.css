@@ -66,3 +66,83 @@ button:focus-visible {
     background-color: #f9f9f9;
   }
 }
+
+/* ============================================================
+ * Glassmorphism theme tokens
+ * Activated when <html data-shm-glass="true"> is set by App bootstrap
+ * (see src/main.tsx). Variables stay inert otherwise.
+ * ============================================================ */
+:root[data-shm-glass="true"] {
+  --shm-bg-base: #0B0B14;
+  --shm-bg-surface: rgba(255, 255, 255, 0.04);
+  --shm-bg-raised: rgba(255, 255, 255, 0.07);
+  --shm-border-glass: rgba(255, 255, 255, 0.06);
+  --shm-border-strong: rgba(255, 255, 255, 0.12);
+  --shm-accent-300: #B9A3FF;
+  --shm-accent-400: #8A6BFF;
+  --shm-accent-500: #6A4BFF;
+  --shm-accent-600: #4F35D6;
+  --shm-success: #2ED687;
+  --shm-success-bg: rgba(46, 214, 135, 0.15);
+  --shm-warning: #FFB547;
+  --shm-danger: #FF5A6B;
+  --shm-text-primary: #FFFFFF;
+  --shm-text-secondary: rgba(255, 255, 255, 0.72);
+  --shm-text-muted: rgba(255, 255, 255, 0.48);
+  --shm-grad-balance: linear-gradient(135deg, #5B3DF5 0%, #8A6BFF 55%, #B9A3FF 100%);
+  --shm-grad-cta: linear-gradient(90deg, #6A4BFF 0%, #3E8BFF 100%);
+  --shm-blur: blur(20px) saturate(140%);
+  --shm-shadow-glass: 0 8px 32px rgba(0, 0, 0, 0.35), inset 0 1px 0 rgba(255, 255, 255, 0.04);
+
+  background-color: var(--shm-bg-base);
+  color: var(--shm-text-primary);
+}
+
+html[data-shm-glass="true"],
+html[data-shm-glass="true"] body {
+  background-color: var(--shm-bg-base);
+  color-scheme: dark;
+}
+
+/* Ambient purple/blue glow behind everything */
+html[data-shm-glass="true"] body::before {
+  content: "";
+  position: fixed;
+  inset: 0;
+  pointer-events: none;
+  z-index: 0;
+  background:
+    radial-gradient(60% 40% at 20% 10%, rgba(106, 75, 255, 0.35), transparent 70%),
+    radial-gradient(50% 35% at 85% 95%, rgba(62, 139, 255, 0.20), transparent 70%);
+}
+
+/* Glass utility class — apply to any panel-like surface */
+.shm-glass {
+  background: var(--shm-bg-surface);
+  border: 1px solid var(--shm-border-glass);
+  backdrop-filter: var(--shm-blur);
+  -webkit-backdrop-filter: var(--shm-blur);
+  box-shadow: var(--shm-shadow-glass);
+}
+
+/* Fallback for browsers without backdrop-filter — bump opacity to preserve legibility */
+@supports not ((backdrop-filter: blur(1px)) or (-webkit-backdrop-filter: blur(1px))) {
+  html[data-shm-glass="true"] .shm-glass {
+    background: rgba(22, 22, 32, 0.88);
+  }
+}
+
+/* Prefers-reduced-transparency users get opaque surfaces */
+@media (prefers-reduced-transparency: reduce) {
+  html[data-shm-glass="true"] .shm-glass {
+    background: rgba(22, 22, 32, 0.92);
+    backdrop-filter: none;
+    -webkit-backdrop-filter: none;
+  }
+}
+
+/* Status pill helpers for redesigned ServiceCard badges */
+html[data-shm-glass="true"] .shm-pill-success {
+  background: var(--shm-success-bg);
+  color: var(--shm-success);
+}

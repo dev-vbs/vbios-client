@@ -1,7 +1,8 @@
 import '@mantine/core/styles.css';
 import '@mantine/notifications/styles.css';
 import { useEffect, useState } from 'react';
-import { MantineProvider, createTheme, AppShell, Group, Text, ActionIcon, useMantineColorScheme, useComputedColorScheme, Center, Loader, Box, Button, Modal, TextInput, Stack } from '@mantine/core';
+import { MantineProvider, AppShell, Group, Text, ActionIcon, useMantineColorScheme, useComputedColorScheme, Center, Loader, Box, Button, Modal, TextInput, Stack } from '@mantine/core';
+import { legacyTheme, glassTheme } from './theme';
 import { Notifications } from '@mantine/notifications';
 import { useMediaQuery, useHotkeys, useLongPress } from '@mantine/hooks';
 import { BrowserRouter, Routes, Route, Link, useLocation, useNavigate } from 'react-router-dom';
@@ -26,32 +27,8 @@ import Profile from './pages/Profile';
 import Login from './pages/Login';
 import NotFound from './pages/NotFound';
 
-const theme = createTheme({
-  primaryColor: 'blue',
-  fontFamily: 'Inter, -apple-system, BlinkMacSystemFont, Segoe UI, Roboto, sans-serif',
-  defaultRadius: 'md',
-  colors: {
-    dark: [
-      '#C1C2C5',
-      '#A6A7AB',
-      '#909296',
-      '#5c5f66',
-      '#373A40',
-      '#2C2E33',
-      '#25262b',
-      '#1A1B1E',
-      '#141517',
-      '#101113',
-    ],
-  },
-  components: {
-    Modal: {
-      defaultProps: {
-        lockScroll: false,
-      },
-    },
-  },
-});
+const glassEnabled = config.THEME_GLASSMORPHISM_ENABLE === 'true';
+const theme = glassEnabled ? glassTheme : legacyTheme;
 
 function ThemeToggle() {
   const { setColorScheme } = useMantineColorScheme();
@@ -585,7 +562,7 @@ function App() {
   }, []);
 
   return (
-    <MantineProvider theme={theme} defaultColorScheme="auto">
+    <MantineProvider theme={theme} defaultColorScheme={glassEnabled ? 'dark' : 'auto'}>
       <Notifications position="top-right" />
       <BrowserRouter basename={basePath}>
         <AppContent />
