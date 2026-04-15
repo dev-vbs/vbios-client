@@ -82,9 +82,18 @@ export const glassTheme = createTheme({
     gradCTA: 'linear-gradient(90deg,#6A4BFF 0%,#3E8BFF 100%)',
   },
   components: {
-    Modal: { defaultProps: { lockScroll: false, radius: 'lg' } },
-    Card: { defaultProps: { radius: 'lg' } },
+    Modal: {
+      defaultProps: { lockScroll: false, radius: 'lg' },
+      classNames: { content: 'shm-glass', overlay: 'shm-modal-overlay' },
+    },
+    Card: {
+      defaultProps: { radius: 'lg' },
+      classNames: { root: 'shm-glass' },
+    },
+    Paper: {
+      defaultProps: { radius: 'lg' },
+      classNames: { root: 'shm-glass' },
+    },
     Button: { defaultProps: { radius: 'md' } },
-    Paper: { defaultProps: { radius: 'lg' } },
   },
 });

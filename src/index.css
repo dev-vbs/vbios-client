@@ -146,3 +146,10 @@ html[data-shm-glass="true"] .shm-pill-success {
   background: var(--shm-success-bg);
   color: var(--shm-success);
 }
+
+/* Modal overlay — glassy dim */
+html[data-shm-glass="true"] .shm-modal-overlay {
+  background: rgba(7, 7, 13, 0.72);
+  backdrop-filter: blur(4px);
+  -webkit-backdrop-filter: blur(4px);
+}

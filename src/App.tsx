@@ -132,7 +132,9 @@ function BottomNavigation({ onPayments, onWithdrawals }: { onPayments: () => voi
     >
       <Box
         style={{
-          background: computedColorScheme === 'dark'
+          background: config.THEME_GLASSMORPHISM_ENABLE === 'true' && computedColorScheme === 'dark'
+            ? 'rgba(11, 11, 20, 0.7)'
+            : computedColorScheme === 'dark'
             ? 'rgba(40, 40, 45, 0.85)'
             : 'rgba(255, 255, 255, 0.85)',
           backdropFilter: 'blur(20px)',
@@ -435,12 +437,22 @@ function AppContent() {
         header={{ height: 60 }}
         padding="md"
         styles={{
-          header: {
-            left: appShellOffset,
-            right: appShellOffset,
-            borderBottom: 0,
-            opacity: 100,
-          },
+          header: glassEnabled
+            ? {
+                left: appShellOffset,
+                right: appShellOffset,
+                border: 'none',
+                background: 'rgba(11, 11, 20, 0.6)',
+                backdropFilter: 'blur(16px) saturate(140%)',
+                WebkitBackdropFilter: 'blur(16px) saturate(140%)',
+                borderBottom: '1px solid rgba(255, 255, 255, 0.06)',
+              }
+            : {
+                left: appShellOffset,
+                right: appShellOffset,
+                borderBottom: 0,
+                opacity: 100,
+              },
           main: {
             paddingLeft: `calc(var(--app-shell-padding) + var(--app-shell-navbar-offset, 0px) + ${appShellOffset})`,
             paddingRight: `calc(var(--app-shell-padding) + ${appShellOffset})`,
