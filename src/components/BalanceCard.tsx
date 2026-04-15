@@ -1,9 +1,10 @@
 import { Box, Group, Text, Button } from '@mantine/core';
-import { IconWallet, IconCreditCard } from '@tabler/icons-react';
+import { IconWallet, IconCreditCard, IconGift } from '@tabler/icons-react';
 import { useTranslation } from 'react-i18next';
 
 interface BalanceCardProps {
   balance: number;
+  bonus?: number;
   currency?: string;
   onTopUp?: () => void;
 }
@@ -13,12 +14,15 @@ interface BalanceCardProps {
  * Visible only when the glass theme is active — when disabled, upstream
  * components should render the legacy balance UI.
  */
-export default function BalanceCard({ balance, currency = '₽', onTopUp }: BalanceCardProps) {
+export default function BalanceCard({ balance, bonus = 0, currency = '₽', onTopUp }: BalanceCardProps) {
   const { t } = useTranslation();
-  const formatted = new Intl.NumberFormat('ru-RU', {
-    minimumFractionDigits: 2,
-    maximumFractionDigits: 2,
-  }).format(balance);
+  const fmt = (n: number) =>
+    new Intl.NumberFormat('ru-RU', {
+      minimumFractionDigits: 2,
+      maximumFractionDigits: 2,
+    }).format(n);
+  const formatted = fmt(balance);
+  const hasBonus = bonus > 0;
 
   return (
     <Box
@@ -73,6 +77,14 @@ export default function BalanceCard({ balance, currency = '₽', onTopUp }: Bala
             >
               {formatted} {currency}
             </Text>
+            {hasBonus && (
+              <Group gap={6} mt={6} wrap="nowrap">
+                <IconGift size={14} color="rgba(255,255,255,0.88)" />
+                <Text size="xs" fw={600} c="rgba(255,255,255,0.88)">
+                  {t('profile.bonus', 'Бонусы')}: {fmt(bonus)} {currency}
+                </Text>
+              </Group>
+            )}
           </Box>
         </Group>
         {onTopUp && (

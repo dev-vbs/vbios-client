@@ -156,7 +156,11 @@ export default function Dashboard() {
       <Stack gap="lg">
         <Title order={2}>{t('nav.home', 'Главная')}</Title>
 
-        <BalanceCard balance={user?.balance ?? 0} onTopUp={() => setPayOpen(true)} />
+        <BalanceCard
+          balance={user?.balance ?? 0}
+          bonus={user?.bonus ?? 0}
+          onTopUp={() => setPayOpen(true)}
+        />
 
         {activeService ? (
           <Card p="md" radius="lg">
