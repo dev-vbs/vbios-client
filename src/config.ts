@@ -68,6 +68,8 @@ interface AppConfig {
   MONO_SERVICE_STATUSES: string;
   SHOW_CARD_QUICK_ACTIONS: string;
   NAV_PAYMENTS_IN_PROFILE: string;
+  THEME_GLASSMORPHISM_ENABLE: string;
+  DASHBOARD_PAGE_ENABLE: string;
 }
 
 declare global {
@@ -149,6 +151,8 @@ function getConfig(): AppConfig {
     MONO_SERVICE_STATUSES: runtimeConfig?.MONO_SERVICE_STATUSES || import.meta.env.VITE_MONO_SERVICE_STATUSES || 'ACTIVE,NOT PAID,PROGRESS',
     SHOW_CARD_QUICK_ACTIONS: runtimeConfig?.SHOW_CARD_QUICK_ACTIONS || import.meta.env.VITE_SHOW_CARD_QUICK_ACTIONS || 'true',
     NAV_PAYMENTS_IN_PROFILE: runtimeConfig?.NAV_PAYMENTS_IN_PROFILE || import.meta.env.VITE_NAV_PAYMENTS_IN_PROFILE || 'false',
+    THEME_GLASSMORPHISM_ENABLE: runtimeConfig?.THEME_GLASSMORPHISM_ENABLE || import.meta.env.VITE_THEME_GLASSMORPHISM_ENABLE || 'false',
+    DASHBOARD_PAGE_ENABLE: runtimeConfig?.DASHBOARD_PAGE_ENABLE || import.meta.env.VITE_DASHBOARD_PAGE_ENABLE || 'false',
 
   };
 }
