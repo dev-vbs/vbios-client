@@ -217,7 +217,8 @@
     "profit": "Your profit is {{amount}} ₽ considering discount and bonuses",
     "emailNotVerifiedtitle": "Email not verified",
     "emailNotVerifiedDesc": "To order services, you need to verify your email address. Please verify your email to continue.",
-    "emailNotVerifiedAction": "Confirm email"
+    "emailNotVerifiedAction": "Confirm email",
+    "monoServiceNotice": "You already have an active subscription. Only tariff change is available."
   },
   "categories": {
     "vpn": "VPN",
@@ -282,7 +283,9 @@
     "loadError": "Failed to load services list",
     "orderSuccess": "Service \"{{name}}\" ordered and paid from balance",
     "orderPaySuccess": "Service \"{{name}}\" ordered. Open payment window.",
-    "orderError": "Failed to order service"
+    "orderError": "Failed to order service",
+    "monoServiceBanner": "You already have an active subscription. Ordering additional services in this category is unavailable — use \"Change tariff\".",
+    "blockedByMono": "Unavailable while a subscription is active"
   },
   "confirm": {
     "title": "Confirmation"
