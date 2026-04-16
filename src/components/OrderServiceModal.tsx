@@ -1,6 +1,6 @@
 import { useState, useEffect } from 'react';
 import { useTranslation } from 'react-i18next';
-import { Modal, Stack, Text, Card, Group, Badge, Loader, Center, Button, Paper, Divider, Select, NumberInput, Alert, Checkbox, ScrollArea, Tooltip, Accordion } from '@mantine/core';
+import { Modal, Stack, Text, Card, Group, Badge, Loader, Center, Button, Paper, Divider, Select, NumberInput, Alert, Checkbox, ScrollArea, Tooltip, Accordion, Box } from '@mantine/core';
 import { IconArrowLeft, IconCreditCard, IconCheck, IconWallet, IconInfoCircle, IconGift } from '@tabler/icons-react';
 import { servicesApi, userApi } from '../api/client';
 import { notifications } from '@mantine/notifications';
