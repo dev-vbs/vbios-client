@@ -63,32 +63,13 @@ export default function Dashboard() {
     let alive = true;
     (async () => {
       try {
-        const response = await userApi.getServices();
-        if (!alive) return;
-        const raw = (response.data.data || []) as Array<UserService & { category?: string; cost?: string | number; name?: string }>;
-        const mapped: UserService[] = raw.map((item) => ({
-          ...item,
-          service: item.service ?? {
-            name: item.name ?? '',
-            category: item.category ?? '',
-          },
-        }));
-        setServices(mapped);
-      } catch {
-        /* empty state */
-      } finally {
-        if (alive) setLoading(false);
-      }
-    })();
-    (async () => {
-      try {
         const [svcRes, forecastRes] = await Promise.all([
           userApi.getServices(),
           userApi.getForecast(),
         ]);
         if (!alive) return;
 
-        const rawSvc = (svcRes.data.data || []) as Array<UserService & { category?: string; name?: string }>;
+        const rawSvc = (svcRes.data.data || []) as Array<UserService & { category?: string; cost?: string | number; name?: string }>;
         const mappedSvc: UserService[] = rawSvc.map((item) => ({
           ...item,
           service: item.service ?? { name: item.name ?? '', category: item.category ?? '' },
@@ -115,7 +96,11 @@ export default function Dashboard() {
             }
           }
         }
-      } catch { /* ignore */ }
+      } catch {
+        /* empty state */
+      } finally {
+        if (alive) setLoading(false);
+      }
     })();
 
     return () => { alive = false; };
