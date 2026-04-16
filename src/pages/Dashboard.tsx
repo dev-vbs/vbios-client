@@ -22,6 +22,7 @@ import {
   IconExchange,
   IconCopy,
   IconCheck,
+  IconCreditCard,
 } from '@tabler/icons-react';
 import { useTranslation } from 'react-i18next';
 import { useClipboard } from '@mantine/hooks';
@@ -53,7 +54,9 @@ export default function Dashboard() {
   const [loading, setLoading] = useState(true);
   const [connecting, setConnecting] = useState(false);
   const [payOpen, setPayOpen] = useState(false);
+  const [payAmount, setPayAmount] = useState<number | undefined>(undefined);
   const [promoOpen, setPromoOpen] = useState(false);
+  const [forecastAmount, setForecastAmount] = useState<number>(0);
   const clipboardLink = useClipboard({ timeout: 1500 });
 
   useEffect(() => {
@@ -77,6 +80,20 @@ export default function Dashboard() {
         if (alive) setLoading(false);
       }
     })();
+    (async () => {
+      try {
+        const response = await userApi.getForecast();
+        if (!alive) return;
+        const forecastData = response.data.data;
+        if (Array.isArray(forecastData) && forecastData.length > 0) {
+          const f = forecastData[0];
+          const balance = f.balance || 0;
+          const total = f.total || 0;
+          setForecastAmount(Math.max(0, Math.ceil((total - balance) * 100) / 100));
+        }
+      } catch { /* ignore */ }
+    })();
+
     return () => { alive = false; };
   }, []);
 
@@ -186,7 +203,7 @@ export default function Dashboard() {
                 </Group>
               </Box>
               <Badge
-                color="green"
+                color={activeService.status === 'ACTIVE' ? 'green' : activeService.status === 'NOT PAID' ? 'blue' : 'red'}
                 variant="light"
                 className={activeService.status === 'ACTIVE' ? 'shm-pill-success' : undefined}
                 size="lg"
@@ -195,22 +212,41 @@ export default function Dashboard() {
               </Badge>
             </Group>
 
-            <Button
-              fullWidth
-              size="md"
-              leftSection={<IconShieldLock size={18} />}
-              mt="md"
-              loading={connecting}
-              style={{
-                height: 52,
-                background: 'var(--shm-grad-cta, linear-gradient(90deg,#10B981 0%,#0891B2 100%))',
-                color: '#fff',
-                border: 'none',
-              }}
-              onClick={() => handleConnect(activeService)}
-            >
-              {t('services.connection')}
-            </Button>
+            {activeService.status === 'ACTIVE' ? (
+              <Button
+                fullWidth
+                size="md"
+                leftSection={<IconShieldLock size={18} />}
+                mt="md"
+                loading={connecting}
+                style={{
+                  height: 52,
+                  background: 'var(--shm-grad-cta, linear-gradient(90deg,#10B981 0%,#0891B2 100%))',
+                  color: '#fff',
+                  border: 'none',
+                }}
+                onClick={() => handleConnect(activeService)}
+              >
+                {t('services.connection')}
+              </Button>
+            ) : (
+              <Button
+                fullWidth
+                size="md"
+                leftSection={<IconCreditCard size={18} />}
+                mt="md"
+                color="blue"
+                style={{ height: 52 }}
+                onClick={() => {
+                  setPayAmount(forecastAmount > 0 ? forecastAmount : undefined);
+                  setPayOpen(true);
+                }}
+              >
+                {forecastAmount > 0
+                  ? t('services.payService', { amount: forecastAmount })
+                  : t('profile.topUp')}
+              </Button>
+            )}
 
             <Button
               variant="default"
@@ -299,7 +335,7 @@ export default function Dashboard() {
           </Group>
         </Card>
 
-        <PayModal opened={payOpen} onClose={() => setPayOpen(false)} />
+        <PayModal opened={payOpen} onClose={() => { setPayOpen(false); setPayAmount(undefined); }} initialAmount={payAmount} />
         <PromoModal opened={promoOpen} onClose={() => setPromoOpen(false)} />
       </Stack>
     </Container>
