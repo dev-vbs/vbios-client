@@ -82,14 +82,38 @@ export default function Dashboard() {
     })();
     (async () => {
       try {
-        const response = await userApi.getForecast();
+        const [svcRes, forecastRes] = await Promise.all([
+          userApi.getServices(),
+          userApi.getForecast(),
+        ]);
         if (!alive) return;
-        const forecastData = response.data.data;
+
+        const rawSvc = (svcRes.data.data || []) as Array<UserService & { category?: string; name?: string }>;
+        const mappedSvc: UserService[] = rawSvc.map((item) => ({
+          ...item,
+          service: item.service ?? { name: item.name ?? '', category: item.category ?? '' },
+        }));
+        setServices(mappedSvc);
+
+        const forecastData = forecastRes.data.data;
         if (Array.isArray(forecastData) && forecastData.length > 0) {
           const f = forecastData[0];
-          const balance = f.balance || 0;
-          const total = f.total || 0;
-          setForecastAmount(Math.max(0, Math.ceil((total - balance) * 100) / 100));
+          const balance = Number(f.balance || 0);
+
+          const needingPayment = mappedSvc.find((s) =>
+            ['BLOCK', 'NOT PAID'].includes(s.status)
+          );
+          if (needingPayment) {
+            const item = f.items?.find(
+              (it: { user_service_id: string | number; total: number }) =>
+                String(it.user_service_id) === String(needingPayment.user_service_id)
+            );
+            if (item) {
+              setForecastAmount(Math.max(0, Math.ceil((item.total - balance) * 100) / 100));
+            } else if (f.total > 0) {
+              setForecastAmount(Math.max(0, Math.ceil((f.total - balance) * 100) / 100));
+            }
+          }
         }
       } catch { /* ignore */ }
     })();
