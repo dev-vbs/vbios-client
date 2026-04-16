@@ -120,7 +120,6 @@ function ServiceDetail({ service, onDelete, onChangeTariff, inline = false }: Se
   const canDelete = config.ALLOW_SERVICE_DELETE === 'true' && ['BLOCK', 'NOT PAID', 'ERROR'].includes(service.status);
   const canStop = config.ALLOW_SERVICE_BLOCKED === 'true' && service.status === 'ACTIVE';
   const canChange = config.ALLOW_SERVICE_CHANGE === 'true' && ['BLOCK', 'ACTIVE'].includes(service.status);
-  const isNotPaid = service.status === 'NOT PAID';
   const needsPayment = service.status === 'NOT PAID' || service.status === 'BLOCK';
 
   useEffect(() => {
