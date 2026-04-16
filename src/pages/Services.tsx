@@ -88,6 +88,7 @@ function ServiceDetail({ service, onDelete, onChangeTariff, inline = false }: Se
   const [confirmStop, setConfirmStop] = useState(false);
   const [downloading, setDownloading] = useState(false);
   const { t, i18n } = useTranslation();
+  const { user } = useStore();
   const clipboard = useClipboard({ timeout: 1000 });
 
   const [forecastTotal, setForecastTotal] = useState<number | null>(null);
@@ -129,6 +130,7 @@ function ServiceDetail({ service, onDelete, onChangeTariff, inline = false }: Se
       try {
         const response = await userApi.getForecast();
         const forecastData = response.data.data;
+        let resolved = false;
         if (Array.isArray(forecastData) && forecastData.length > 0) {
           const forecast = forecastData[0];
           const balance = forecast.balance || 0;
@@ -139,12 +141,30 @@ function ServiceDetail({ service, onDelete, onChangeTariff, inline = false }: Se
             const needToPay = Math.max(0, Math.ceil((item.total - balance) * 100) / 100);
             setForecastTotal(needToPay);
             setPayAmount(needToPay);
+            resolved = true;
           } else if (forecast.total > 0) {
             setForecastTotal(forecast.total);
             setPayAmount(Math.max(0, Math.ceil(forecast.total * 100) / 100));
+            resolved = true;
           }
         }
+        if (!resolved && service.status === 'BLOCK') {
+          const cost = Number(service.service.cost || 0);
+          const userBalance = Number(user?.balance || 0);
+          const userBonus = Number(user?.bonus || 0);
+          const needToPay = Math.max(0, Math.ceil((cost - userBalance - userBonus) * 100) / 100);
+          setForecastTotal(needToPay);
+          setPayAmount(needToPay);
+        }
       } catch {
+        if (service.status === 'BLOCK') {
+          const cost = Number(service.service.cost || 0);
+          const userBalance = Number(user?.balance || 0);
+          const userBonus = Number(user?.bonus || 0);
+          const needToPay = Math.max(0, Math.ceil((cost - userBalance - userBonus) * 100) / 100);
+          setForecastTotal(needToPay);
+          setPayAmount(needToPay);
+        }
       } finally {
         setForecastLoading(false);
       }

@@ -41,7 +41,7 @@ import { IconLink } from '@tabler/icons-react';
 
 interface UserService {
   user_service_id: number;
-  service: { name: string; category: string };
+  service: { name: string; category: string; cost?: number };
   status: string;
   expire: string | null;
 }
@@ -72,29 +72,40 @@ export default function Dashboard() {
         const rawSvc = (svcRes.data.data || []) as Array<UserService & { category?: string; cost?: string | number; name?: string }>;
         const mappedSvc: UserService[] = rawSvc.map((item) => ({
           ...item,
-          service: item.service ?? { name: item.name ?? '', category: item.category ?? '' },
+          service: item.service ?? {
+            name: item.name ?? '',
+            category: item.category ?? '',
+            cost: typeof item.cost === 'string' ? parseFloat(item.cost) || 0 : (item.cost ?? 0),
+          },
         }));
         setServices(mappedSvc);
 
+        const needingPayment = mappedSvc.find((s) =>
+          ['BLOCK', 'NOT PAID'].includes(s.status)
+        );
+
+        let resolved = false;
         const forecastData = forecastRes.data.data;
-        if (Array.isArray(forecastData) && forecastData.length > 0) {
+        if (Array.isArray(forecastData) && forecastData.length > 0 && needingPayment) {
           const f = forecastData[0];
           const balance = Number(f.balance || 0);
-
-          const needingPayment = mappedSvc.find((s) =>
-            ['BLOCK', 'NOT PAID'].includes(s.status)
+          const item = f.items?.find(
+            (it: { user_service_id: string | number; total: number }) =>
+              String(it.user_service_id) === String(needingPayment.user_service_id)
           );
-          if (needingPayment) {
-            const item = f.items?.find(
-              (it: { user_service_id: string | number; total: number }) =>
-                String(it.user_service_id) === String(needingPayment.user_service_id)
-            );
-            if (item) {
-              setForecastAmount(Math.max(0, Math.ceil((item.total - balance) * 100) / 100));
-            } else if (f.total > 0) {
-              setForecastAmount(Math.max(0, Math.ceil((f.total - balance) * 100) / 100));
-            }
+          if (item) {
+            setForecastAmount(Math.max(0, Math.ceil((item.total - balance) * 100) / 100));
+            resolved = true;
+          } else if (f.total > 0) {
+            setForecastAmount(Math.max(0, Math.ceil((f.total - balance) * 100) / 100));
+            resolved = true;
           }
+        }
+        if (!resolved && needingPayment) {
+          const cost = Number(needingPayment.service.cost || 0);
+          const bal = Number(user?.balance || 0);
+          const bon = Number(user?.bonus || 0);
+          setForecastAmount(Math.max(0, Math.ceil((cost - bal - bon) * 100) / 100));
         }
       } catch {
         /* empty state */
