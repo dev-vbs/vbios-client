@@ -62,8 +62,15 @@ export default function Dashboard() {
       try {
         const response = await userApi.getServices();
         if (!alive) return;
-        const raw: UserService[] = response.data.data || [];
-        setServices(raw);
+        const raw = (response.data.data || []) as Array<UserService & { category?: string; cost?: string | number; name?: string }>;
+        const mapped: UserService[] = raw.map((item) => ({
+          ...item,
+          service: item.service ?? {
+            name: item.name ?? '',
+            category: item.category ?? '',
+          },
+        }));
+        setServices(mapped);
       } catch {
         /* empty state */
       } finally {
