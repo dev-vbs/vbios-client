@@ -590,6 +590,11 @@ export default function OrderServiceModal({
             const effectiveCostOf = (svc: OrderService): number =>
               Math.max(0, Number(svc.cost || 0) - Number(svc.cost_discount || 0));
 
+            const showDescr = config.SHOW_TARIFF_DESCRIPTION === 'true';
+
+            const parseDescrLines = (descr: string): string[] =>
+              descr.split(/\n|\\n|,\s*/).map((l) => l.trim()).filter(Boolean);
+
             const renderServiceCard = (service: OrderService) => {
               const blocked = isServiceBlockedByMono(service.category);
               const discount = Number(service.cost_discount || 0);
@@ -598,6 +603,7 @@ export default function OrderServiceModal({
               const hasBonus = bonusApplied > 0;
               const priceAfterDiscount = Math.max(0, Number(service.cost || 0) - discount);
               const periodLabel = formatPeriodLabel(service.period);
+              const descrLines = showDescr && service.descr ? parseDescrLines(service.descr) : [];
 
               return (
                 <Tooltip
@@ -628,28 +634,42 @@ export default function OrderServiceModal({
                       </Badge>
                     )}
                     <Group justify="space-between" wrap="nowrap" align="flex-start">
-                      <Stack gap={2} style={{ minWidth: 0, flex: 1 }}>
+                      <Stack gap={4} style={{ minWidth: 0, flex: 1 }}>
                         <Text fw={600}>{service.name}</Text>
-                        {service.descr && (
-                          <Text size="xs" c="dimmed" lineClamp={2} style={{ lineHeight: 1.3 }}>
-                            {service.descr}
-                          </Text>
+                        {descrLines.length > 0 && (
+                          <Stack gap={2}>
+                            {descrLines.map((line, i) => (
+                              <Group key={i} gap={6} wrap="nowrap" align="center">
+                                <Box
+                                  style={{
+                                    width: 4,
+                                    height: 4,
+                                    borderRadius: '50%',
+                                    background: 'var(--shm-accent-500, var(--mantine-color-teal-5))',
+                                    flexShrink: 0,
+                                    marginTop: 1,
+                                  }}
+                                />
+                                <Text size="xs" c="dimmed" style={{ lineHeight: 1.35 }}>{line}</Text>
+                              </Group>
+                            ))}
+                          </Stack>
                         )}
                       </Stack>
-                      <Stack gap={2} style={{ flexShrink: 0 }}>
+                      <Stack gap={2} style={{ flexShrink: 0, textAlign: 'right' }}>
                         <Group gap="sm" align="baseline" wrap="nowrap">
                           {hasDiscount && (
                             <Text size="sm" c="dimmed" style={{ textDecoration: 'line-through' }}>
                               {service.cost} ₽
                             </Text>
                           )}
-                          <Text fw={700} c={hasDiscount ? 'teal' : undefined}>
+                          <Text fw={700} fz="lg" c={hasDiscount ? 'teal' : undefined}>
                             {priceAfterDiscount} ₽
                           </Text>
-                          <Text size="xs" c="dimmed">/ {periodLabel}</Text>
                         </Group>
+                        <Text size="xs" c="dimmed">/ {periodLabel}</Text>
                         {hasBonus && (
-                          <Group gap={4} wrap="nowrap">
+                          <Group gap={4} wrap="nowrap" justify="flex-end">
                             <IconGift size={12} color="var(--mantine-color-teal-4)" />
                             <Text size="xs" c="teal.4" fw={500}>
                               {t('order.bonusCoversNow', 'Сейчас −{{amount}} ₽ с бонусов', { amount: bonusApplied })}
@@ -681,13 +701,26 @@ export default function OrderServiceModal({
                   <Accordion
                     variant="separated"
                     radius="md"
-                    multiple
-                    transitionDuration={260}
+                    defaultValue={periodKeys[0]}
+                    transitionDuration={300}
                     chevronPosition="right"
                     styles={{
-                      control: { transition: 'background-color 180ms ease' },
-                      chevron: { transition: 'transform 220ms cubic-bezier(0.4, 0, 0.2, 1)' },
-                      panel: { overflow: 'hidden' },
+                      control: {
+                        transition: 'background-color 200ms ease, box-shadow 200ms ease',
+                        borderRadius: 'var(--mantine-radius-md)',
+                      },
+                      chevron: {
+                        transition: 'transform 300ms cubic-bezier(0.34, 1.56, 0.64, 1)',
+                      },
+                      panel: {
+                        overflow: 'hidden',
+                      },
+                      item: {
+                        transition: 'box-shadow 200ms ease',
+                        '&[data-active]': {
+                          boxShadow: '0 0 0 1px var(--shm-accent-500, var(--mantine-color-teal-5))',
+                        },
+                      },
                     }}
                   >
                     {periodKeys.map((pk) => {

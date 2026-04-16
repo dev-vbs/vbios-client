@@ -73,6 +73,7 @@ interface AppConfig {
   ORDER_GROUP_BY_PERIOD: string;
   CONFIGURE_BUTTON_LABEL: string;
   CUSTOM_INSTRUCTION: string;
+  SHOW_TARIFF_DESCRIPTION: string;
 }
 
 declare global {
@@ -159,6 +160,7 @@ function getConfig(): AppConfig {
     ORDER_GROUP_BY_PERIOD: runtimeConfig?.ORDER_GROUP_BY_PERIOD || import.meta.env.VITE_ORDER_GROUP_BY_PERIOD || 'true',
     CONFIGURE_BUTTON_LABEL: runtimeConfig?.CONFIGURE_BUTTON_LABEL || import.meta.env.VITE_CONFIGURE_BUTTON_LABEL || '',
     CUSTOM_INSTRUCTION: runtimeConfig?.CUSTOM_INSTRUCTION || import.meta.env.VITE_CUSTOM_INSTRUCTION || '',
+    SHOW_TARIFF_DESCRIPTION: runtimeConfig?.SHOW_TARIFF_DESCRIPTION || import.meta.env.VITE_SHOW_TARIFF_DESCRIPTION || 'true',
 
   };
 }
