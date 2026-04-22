@@ -22,7 +22,7 @@
 ```yaml
 services:
   client:
-    image: ghcr.io/dignezzz/shm-client-4:latest
+    image: ghcr.io/dev-vbs/shm-client-4:latest
     ports:
       - "3001:80"
     environment:
