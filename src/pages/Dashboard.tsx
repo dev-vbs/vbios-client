@@ -198,7 +198,7 @@ export default function Dashboard() {
   return (
     <Container size="sm" px={0}>
       <Stack gap="lg">
-        <Title order={2}>{t('nav.home', 'Главная')}</Title>
+        <Title order={2} c="var(--shm-text-primary, #fff)">{t('nav.home', 'Главная')}</Title>
 
         <BalanceCard
           balance={user?.balance ?? 0}
@@ -214,8 +214,8 @@ export default function Dashboard() {
                   #{activeService.user_service_id} - {activeService.service.name}
                 </Text>
                 <Group gap={6} mt={4}>
-                  <IconClock size={14} color="rgba(255,255,255,0.48)" />
-                  <Text size="sm" c="var(--shm-text-muted, rgba(255,255,255,0.48))">
+                  <IconClock size={14} color="var(--shm-text-muted, rgba(0,0,0,0.48))" />
+                  <Text size="sm" c="var(--shm-text-muted, rgba(0,0,0,0.48))">
                     {daysLeft(activeService.expire) !== null
                       ? `${daysLeft(activeService.expire)} ${t('common.days')} • ${formatDate(activeService.expire)}`
                       : formatDate(activeService.expire)}
@@ -275,9 +275,9 @@ export default function Dashboard() {
               mt="sm"
               fullWidth
               style={{
-                background: 'rgba(255,255,255,0.06)',
-                border: '1px solid rgba(255,255,255,0.06)',
-                color: '#fff',
+                background: 'rgba(0,0,0,0.06)',
+                border: '1px solid var(--mantine-color-default-border)',
+                color: 'var(--mantine-color-text)',
               }}
             >
               {t('services.changeService')}
@@ -332,13 +332,13 @@ export default function Dashboard() {
               </Text>
               <Text
                 size="sm"
-                c="var(--shm-text-muted, rgba(255,255,255,0.48))"
+                c="var(--shm-text-muted, rgba(0,0,0,0.48))"
                 mt={4}
                 style={{ wordBreak: 'break-all', fontFamily: 'ui-monospace, monospace' }}
               >
                 {partnerLink}
               </Text>
-              <Text size="xs" c="var(--shm-text-muted, rgba(255,255,255,0.36))" mt="xs">
+              <Text size="xs" c="var(--shm-text-muted, rgba(0,0,0,0.36))" mt="xs">
                 {t('profile.partnerLinkDescription')}
               </Text>
             </Box>
