@@ -16,8 +16,8 @@ import { config } from './config';
 import LanguageSwitcher from './components/LanguageSwitcher';
 import { hasTelegramWebAppAutoAuth, isTelegramWebApp } from './constants/webapp';
 import { useEmailRequired } from './hooks/useEmailRequired';
-import PayHistoryModal from './components/PayHistoryModal';
-import WithdrawHistoryModal from './components/WithdrawHistoryModal';
+const PayHistoryModal = lazy(() => import('./components/PayHistoryModal'));
+const WithdrawHistoryModal = lazy(() => import('./components/WithdrawHistoryModal'));
 
 parseAndSaveSessionId();
 parseAndSavePartnerId();
@@ -463,8 +463,10 @@ function AppContent() {
           </Box>
           <BottomNavigation onPayments={() => setPayHistoryOpen(true)} onWithdrawals={() => setWithdrawHistoryOpen(true)} />
         </Box>
-        <PayHistoryModal opened={payHistoryOpen} onClose={() => setPayHistoryOpen(false)} />
-        <WithdrawHistoryModal opened={withdrawHistoryOpen} onClose={() => setWithdrawHistoryOpen(false)} />
+        <Suspense fallback={null}>
+          <PayHistoryModal opened={payHistoryOpen} onClose={() => setPayHistoryOpen(false)} />
+          <WithdrawHistoryModal opened={withdrawHistoryOpen} onClose={() => setWithdrawHistoryOpen(false)} />
+        </Suspense>
       </>
     );
   }
@@ -603,8 +605,10 @@ function AppContent() {
           </Suspense>
         </AppShell.Main>
       </AppShell>
-      <PayHistoryModal opened={payHistoryOpen} onClose={() => setPayHistoryOpen(false)} />
-      <WithdrawHistoryModal opened={withdrawHistoryOpen} onClose={() => setWithdrawHistoryOpen(false)} />
+      <Suspense fallback={null}>
+        <PayHistoryModal opened={payHistoryOpen} onClose={() => setPayHistoryOpen(false)} />
+        <WithdrawHistoryModal opened={withdrawHistoryOpen} onClose={() => setWithdrawHistoryOpen(false)} />
+      </Suspense>
     </>
   );
 }

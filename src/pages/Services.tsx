@@ -1,4 +1,4 @@
-import { useState, useEffect, useRef } from 'react';
+import { useState, useEffect, useRef, lazy, Suspense } from 'react';
 import { useNavigate } from 'react-router-dom';
 import { Alert, Card, Timeline, Text, Stack, Group, Badge, Button, Divider, Modal, ActionIcon, Loader, Center, Paper, Title, Tabs, Code, Tooltip, Accordion, Box, Select, NumberInput, Pagination } from '@mantine/core';
 import { IconQrcode, IconCopy, IconCheck, IconDownload, IconRefresh, IconTrash, IconPlus, IconPlayerStop, IconExchange, IconCreditCard, IconWallet, IconDeviceMobileCog, IconInfoCircle } from '@tabler/icons-react';
@@ -6,8 +6,6 @@ import { useDisclosure, useClipboard } from '@mantine/hooks';
 import { useTranslation } from 'react-i18next';
 import { api, servicesApi, userApi } from '../api/client';
 import { notifications } from '@mantine/notifications';
-import QrModal from '../components/QrModal';
-import OrderServiceModal from '../components/OrderServiceModal';
 import ConfirmModal from '../components/ConfirmModal';
 import AppDownloadBlock from '../components/AppDownloadBlock';
 import { config } from '../config';
@@ -19,6 +17,9 @@ import {
   isMonoApplicable,
   hasMonoBlockingService,
 } from '../utils/services';
+
+const QrModal = lazy(() => import('../components/QrModal'));
+const OrderServiceModal = lazy(() => import('../components/OrderServiceModal'));
 
 interface ForecastItem {
   name: string;
@@ -597,13 +598,15 @@ function ServiceDetail({ service, onDelete, onChangeTariff, inline = false }: Se
                 </Paper>
               )}
 
-              <QrModal
-                opened={qrModalOpen}
-                onClose={() => setQrModalOpen(false)}
-                data={isVpn ? (storageData || '') : (subscriptionUrl || '')}
-                title={isVpn ? t('services.vpnQrTitle') : t('services.subscriptionQrTitle')}
-                onDownload={isVpn ? downloadConfig : undefined}
-              />
+              <Suspense fallback={null}>
+                <QrModal
+                  opened={qrModalOpen}
+                  onClose={() => setQrModalOpen(false)}
+                  data={isVpn ? (storageData || '') : (subscriptionUrl || '')}
+                  title={isVpn ? t('services.vpnQrTitle') : t('services.subscriptionQrTitle')}
+                  onDownload={isVpn ? downloadConfig : undefined}
+                />
+              </Suspense>
             </Stack>
           </Box>
         )}
@@ -1275,40 +1278,42 @@ export default function Services() {
         )}
       </Modal>
 
-      <OrderServiceModal
-        opened={orderModalOpened}
-        onClose={closeOrderModal}
-        onOrderSuccess={() => {
-          refreshAttemptsRef.current = 0;
-          fetchServices();
-        }}
-        userServices={services}
-      />
+      <Suspense fallback={null}>
+        <OrderServiceModal
+          opened={orderModalOpened}
+          onClose={closeOrderModal}
+          onOrderSuccess={() => {
+            refreshAttemptsRef.current = 0;
+            fetchServices();
+          }}
+          userServices={services}
+        />
 
-      <OrderServiceModal
-        opened={changeModalOpened}
-        onClose={() => {
-          setChangeService(null);
-          closeChangeModal();
-        }}
-        mode="change"
-        currentService={
-          changeService
-            ? {
-                user_service_id: changeService.user_service_id,
-                service_id: changeService.service_id,
-                status: changeService.status,
-                category: changeService.service.category,
-                name: changeService.service.name,
-              }
-            : undefined
-        }
-        onChangeSuccess={() => {
-          refreshAttemptsRef.current = 0;
-          fetchServices();
-        }}
-        userServices={services}
-      />
+        <OrderServiceModal
+          opened={changeModalOpened}
+          onClose={() => {
+            setChangeService(null);
+            closeChangeModal();
+          }}
+          mode="change"
+          currentService={
+            changeService
+              ? {
+                  user_service_id: changeService.user_service_id,
+                  service_id: changeService.service_id,
+                  status: changeService.status,
+                  category: changeService.service.category,
+                  name: changeService.service.name,
+                }
+              : undefined
+          }
+          onChangeSuccess={() => {
+            refreshAttemptsRef.current = 0;
+            fetchServices();
+          }}
+          userServices={services}
+        />
+      </Suspense>
 
       <ConfirmModal
         opened={confirmEmailNotVerified}
@@ -1321,12 +1326,14 @@ export default function Services() {
       />
 
       {quickQrService && quickQrData && (
-        <QrModal
-          opened
-          onClose={() => { setQuickQrService(null); setQuickQrData(null); }}
-          data={quickQrData}
-          title={t('services.qrCode')}
-        />
+        <Suspense fallback={null}>
+          <QrModal
+            opened
+            onClose={() => { setQuickQrService(null); setQuickQrData(null); }}
+            data={quickQrData}
+            title={t('services.qrCode')}
+          />
+        </Suspense>
       )}
 
       <ConfirmModal
