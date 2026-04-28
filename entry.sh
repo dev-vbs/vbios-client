@@ -1,5 +1,40 @@
 #!/bin/sh
 
+# Если задан VITE_HOST - заменяем статическую обслужку на проксирование к Vite
+if [ ! -z "$VITE_HOST" ]; then
+    echo "Development mode: proxying to Vite server at $VITE_HOST:5173"
+
+    # Заменяем статическое обслуживание на проксирование к Vite
+    sed -i "s|        alias /app/;|        proxy_pass http://$VITE_HOST:5173/;|" /etc/nginx/conf.d/default.conf
+    sed -i "s|        try_files \$uri \$uri/ /index.html;|        proxy_http_version 1.1;\\
+        proxy_set_header Upgrade \$http_upgrade;\\
+        proxy_set_header Connection 'upgrade';\\
+        proxy_set_header Host \$host;\\
+        proxy_set_header X-Real-IP \$remote_addr;\\
+        proxy_set_header X-Forwarded-For \$proxy_add_x_forwarded_for;\\
+        proxy_set_header X-Forwarded-Proto \$scheme;\\
+        proxy_cache_bypass \$http_upgrade;|" /etc/nginx/conf.d/default.conf
+
+    # Добавляем специальные locations для Vite ресурсов ПЕРЕД основным location /
+    sed -i "/location \/ {/i\\
+    # Vite special resources\\
+    location ~ ^/@(vite|react-refresh) {\\
+        proxy_pass http://$VITE_HOST:5173;\\
+        proxy_http_version 1.1;\\
+        proxy_set_header Upgrade \$http_upgrade;\\
+        proxy_set_header Connection 'upgrade';\\
+        proxy_set_header Host \$host;\\
+        proxy_cache_bypass \$http_upgrade;\\
+    }\\
+\\
+    location ~ ^/src/ {\\
+        proxy_pass http://$VITE_HOST:5173;\\
+        proxy_http_version 1.1;\\
+        proxy_set_header Host \$host;\\
+    }\\
+" /etc/nginx/conf.d/default.conf
+fi
+
 PROXY_URL=""
 if [ ! -z "$SHM_URL" ]; then
     PROXY_URL="$SHM_URL"
@@ -39,6 +74,7 @@ window.__APP_CONFIG__ = {
   LOGO_URL: "${LOGO_URL:-}",
   TELEGRAM_BOT_NAME: "${TELEGRAM_BOT_NAME:-}",
   TELEGRAM_BOT_AUTH_ENABLE: "${TELEGRAM_BOT_AUTH_ENABLE:-false}",
+  TELEGRAM_OIDC_AUTH_ENABLE: "${TELEGRAM_OIDC_AUTH_ENABLE:-false}",
   TELEGRAM_BOT_AUTH_PROFILE: "${TELEGRAM_BOT_AUTH_PROFILE:-}",
   TELEGRAM_WEBAPP_AUTH_ENABLE: "${TELEGRAM_WEBAPP_AUTH_ENABLE:-false}",
   TELEGRAM_WEBAPP_AUTO_AUTH_ENABLE: "${TELEGRAM_WEBAPP_AUTO_AUTH_ENABLE:-false}",

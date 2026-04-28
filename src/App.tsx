@@ -1,7 +1,7 @@
 import '@mantine/core/styles.css';
 import '@mantine/notifications/styles.css';
-import { useEffect, useState } from 'react';
-import { MantineProvider, AppShell, Group, Text, ActionIcon, useMantineColorScheme, useComputedColorScheme, Center, Loader, Box, Button, Modal, TextInput, Stack } from '@mantine/core';
+import { useEffect, useState, Suspense, lazy } from 'react';
+import { MantineProvider, DirectionProvider, AppShell, Group, Text, ActionIcon, useMantineColorScheme, useComputedColorScheme, Center, Loader, Box, Button, Modal, TextInput, Stack } from '@mantine/core';
 import { legacyTheme, glassTheme } from './theme';
 import { Notifications } from '@mantine/notifications';
 import { useMediaQuery, useHotkeys, useLongPress } from '@mantine/hooks';
@@ -16,17 +16,17 @@ import { config } from './config';
 import LanguageSwitcher from './components/LanguageSwitcher';
 import { hasTelegramWebAppAutoAuth, isTelegramWebApp } from './constants/webapp';
 import { useEmailRequired } from './hooks/useEmailRequired';
-import PayHistoryModal from './components/PayHistoryModal';
-import WithdrawHistoryModal from './components/WithdrawHistoryModal';
+const PayHistoryModal = lazy(() => import('./components/PayHistoryModal'));
+const WithdrawHistoryModal = lazy(() => import('./components/WithdrawHistoryModal'));
 
 parseAndSaveSessionId();
 parseAndSavePartnerId();
 
-import Services from './pages/Services';
-import Profile from './pages/Profile';
-import Login from './pages/Login';
-import NotFound from './pages/NotFound';
-import Dashboard from './pages/Dashboard';
+const Services = lazy(() => import('./pages/Services'));
+const Profile = lazy(() => import('./pages/Profile'));
+const Login = lazy(() => import('./pages/Login'));
+const NotFound = lazy(() => import('./pages/NotFound'));
+const Dashboard = lazy(() => import('./pages/Dashboard'));
 
 const dashboardEnabled = config.DASHBOARD_PAGE_ENABLE === 'true';
 
@@ -115,8 +115,14 @@ function BottomNavigation({ onPayments, onWithdrawals }: { onPayments: () => voi
   const navigate = useNavigate();
   const computedColorScheme = useComputedColorScheme('light');
   const { t } = useTranslation();
+  const { userEmail, isEmailLoaded, setOpenEmailModal } = useStore();
+  const emailBlocked = config.EMAIL_REQUIRED === 'true' && isEmailLoaded && !userEmail;
 
   const handleClick = (path: string) => {
+    if (emailBlocked && (path === '/payments' || path === '/withdrawals')) {
+      setOpenEmailModal(true);
+      return;
+    }
     if (path === '/payments') { onPayments(); }
     else if (path === '/withdrawals') { onWithdrawals(); }
     else { navigate(path); }
@@ -165,6 +171,7 @@ function BottomNavigation({ onPayments, onWithdrawals }: { onPayments: () => voi
             const isGlass = config.THEME_GLASSMORPHISM_ENABLE === 'true';
             const activeColor = isGlass ? 'var(--shm-accent-500, #10B981)' : 'var(--mantine-color-blue-6)';
             const inactiveColor = computedColorScheme === 'dark' ? 'rgba(255,255,255,0.45)' : '#6b7280';
+            const isItemBlocked = emailBlocked && (item.path === '/payments' || item.path === '/withdrawals');
             return (
               <Box
                 key={item.path}
@@ -176,7 +183,8 @@ function BottomNavigation({ onPayments, onWithdrawals }: { onPayments: () => voi
                   justifyContent: 'center',
                   padding: '10px 16px',
                   borderRadius: 16,
-                  cursor: 'pointer',
+                  cursor: isItemBlocked ? 'not-allowed' : 'pointer',
+                  opacity: isItemBlocked ? 0.4 : 1,
                   position: 'relative',
                   background: isActive
                     ? (isGlass ? 'rgba(16, 185, 129, 0.12)' : (computedColorScheme === 'dark' ? 'rgba(59, 130, 246, 0.15)' : 'rgba(59, 130, 246, 0.1)'))
@@ -217,7 +225,8 @@ function BottomNavigation({ onPayments, onWithdrawals }: { onPayments: () => voi
 function AppContent() {
   const location = useLocation();
   const navigate = useNavigate();
-  const { user, userEmail, isAuthenticated, isLoading, setUser, setIsLoading, logout } = useStore();
+  const { user, userEmail, isAuthenticated, isLoading, isEmailLoaded, setUser, setIsLoading, logout, setOpenEmailModal } = useStore();
+  const emailBlocked = config.EMAIL_REQUIRED === 'true' && isEmailLoaded && !userEmail;
   const isMobile = useMediaQuery('(max-width: 768px)');
   const { t } = useTranslation();
   const {
@@ -335,20 +344,21 @@ function AppContent() {
   }
 
   if (!isAuthenticated) {
-    return <Login />;
+    return (
+      <Suspense fallback={<Center h="100vh"><Loader /></Center>}>
+        <Login />
+      </Suspense>
+    );
   }
 
   const emailRequiredModal = (
     <Modal
       opened={globalEmailModalOpen}
-      onClose={() => {
-        if (config.EMAIL_REQUIRED === 'true' && !userEmail) return;
-        setGlobalEmailModalOpen(false);
-      }}
+      onClose={() => setGlobalEmailModalOpen(false)}
       title={t('profile.linkEmail')}
-      closeOnClickOutside={!(config.EMAIL_REQUIRED === 'true' && !userEmail)}
-      closeOnEscape={!(config.EMAIL_REQUIRED === 'true' && !userEmail)}
-      withCloseButton={!(config.EMAIL_REQUIRED === 'true' && !userEmail)}
+      closeOnClickOutside
+      closeOnEscape
+      withCloseButton
     >
       <Stack gap="md">
         <TextInput
@@ -365,7 +375,7 @@ function AppContent() {
           {t('profile.emailHint')}
         </Text>
         <Group justify="flex-end">
-          <Button variant="light" onClick={() => setGlobalEmailModalOpen(false)} disabled={config.EMAIL_REQUIRED === 'true' && !userEmail}>
+          <Button variant="light" onClick={() => setGlobalEmailModalOpen(false)}>
             {t('common.cancel')}
           </Button>
           <Button onClick={handleGlobalSaveEmail} loading={globalEmailSaving} disabled={!isValidEmail(globalEmailInput)}>
@@ -436,23 +446,27 @@ function AppContent() {
         <Box style={{ minHeight: '100vh', paddingBottom: 100 }}>
           <WebAppHeader onShowVersion={showVersion} />
           <Box px="md">
-            <Routes>
-              {dashboardEnabled ? (
-                <>
-                  <Route path="/" element={<Dashboard />} />
-                  <Route path="/services" element={<Services />} />
-                </>
-              ) : (
-                <Route path="/" element={<Services />} />
-              )}
-              <Route path="/profile" element={<Profile />} />
-              <Route path="*" element={<NotFound />} />
-            </Routes>
+            <Suspense fallback={<Center mih="50vh"><Loader /></Center>}>
+              <Routes>
+                {dashboardEnabled ? (
+                  <>
+                    <Route path="/" element={<Dashboard />} />
+                    <Route path="/services" element={<Services />} />
+                  </>
+                ) : (
+                  <Route path="/" element={<Services />} />
+                )}
+                <Route path="/profile" element={<Profile />} />
+                <Route path="*" element={<NotFound />} />
+              </Routes>
+            </Suspense>
           </Box>
           <BottomNavigation onPayments={() => setPayHistoryOpen(true)} onWithdrawals={() => setWithdrawHistoryOpen(true)} />
         </Box>
-        <PayHistoryModal opened={payHistoryOpen} onClose={() => setPayHistoryOpen(false)} />
-        <WithdrawHistoryModal opened={withdrawHistoryOpen} onClose={() => setWithdrawHistoryOpen(false)} />
+        <Suspense fallback={null}>
+          <PayHistoryModal opened={payHistoryOpen} onClose={() => setPayHistoryOpen(false)} />
+          <WithdrawHistoryModal opened={withdrawHistoryOpen} onClose={() => setWithdrawHistoryOpen(false)} />
+        </Suspense>
       </>
     );
   }
@@ -521,14 +535,14 @@ function AppContent() {
                 const isActive = location.pathname === item.path;
                 if (item.path === '/payments') {
                   return (
-                    <Button key={item.path} leftSection={<Icon size={16} />} variant="subtle" size="xs" radius="md" onClick={() => setPayHistoryOpen(true)}>
+                    <Button key={item.path} leftSection={<Icon size={16} />} variant="subtle" size="xs" radius="md" style={emailBlocked ? { opacity: 0.5 } : undefined} onClick={() => emailBlocked ? setOpenEmailModal(true) : setPayHistoryOpen(true)}>
                       {t(item.labelKey)}
                     </Button>
                   );
                 }
                 if (item.path === '/withdrawals') {
                   return (
-                    <Button key={item.path} leftSection={<Icon size={16} />} variant="subtle" size="xs" radius="md" onClick={() => setWithdrawHistoryOpen(true)}>
+                    <Button key={item.path} leftSection={<Icon size={16} />} variant="subtle" size="xs" radius="md" style={emailBlocked ? { opacity: 0.5 } : undefined} onClick={() => emailBlocked ? setOpenEmailModal(true) : setWithdrawHistoryOpen(true)}>
                       {t(item.labelKey)}
                     </Button>
                   );
@@ -575,28 +589,34 @@ function AppContent() {
         </AppShell.Header>
 
         <AppShell.Main>
-          <Routes>
-            {dashboardEnabled ? (
-              <>
-                <Route path="/" element={<Dashboard />} />
-                <Route path="/services" element={<Services />} />
-              </>
-            ) : (
-              <Route path="/" element={<Services />} />
-            )}
-            <Route path="/profile" element={<Profile />} />
-            <Route path="*" element={<NotFound />} />
-          </Routes>
+          <Suspense fallback={<Center mih="50vh"><Loader /></Center>}>
+            <Routes>
+              {dashboardEnabled ? (
+                <>
+                  <Route path="/" element={<Dashboard />} />
+                  <Route path="/services" element={<Services />} />
+                </>
+              ) : (
+                <Route path="/" element={<Services />} />
+              )}
+              <Route path="/profile" element={<Profile />} />
+              <Route path="*" element={<NotFound />} />
+            </Routes>
+          </Suspense>
         </AppShell.Main>
       </AppShell>
-      <PayHistoryModal opened={payHistoryOpen} onClose={() => setPayHistoryOpen(false)} />
-      <WithdrawHistoryModal opened={withdrawHistoryOpen} onClose={() => setWithdrawHistoryOpen(false)} />
+      <Suspense fallback={null}>
+        <PayHistoryModal opened={payHistoryOpen} onClose={() => setPayHistoryOpen(false)} />
+        <WithdrawHistoryModal opened={withdrawHistoryOpen} onClose={() => setWithdrawHistoryOpen(false)} />
+      </Suspense>
     </>
   );
 }
 
 function App() {
   const basePath = config.SHM_BASE_PATH && config.SHM_BASE_PATH !== '/' ? config.SHM_BASE_PATH : undefined;
+  const { i18n } = useTranslation();
+  const isRtl = i18n.language === 'ar';
 
   useEffect(() => {
     if (config.BITRIX_WIDGET_SCRIPT_URL) {
@@ -613,12 +633,14 @@ function App() {
   }, []);
 
   return (
-    <MantineProvider theme={theme} defaultColorScheme={glassEnabled ? 'dark' : 'auto'}>
-      <Notifications position="top-right" />
-      <BrowserRouter basename={basePath}>
-        <AppContent />
-      </BrowserRouter>
-    </MantineProvider>
+    <DirectionProvider initialDirection={isRtl ? 'rtl' : 'ltr'}>
+      <MantineProvider theme={theme} defaultColorScheme={glassEnabled ? 'dark' : 'auto'}>
+        <Notifications position="top-right" />
+        <BrowserRouter basename={basePath}>
+          <AppContent />
+        </BrowserRouter>
+      </MantineProvider>
+    </DirectionProvider>
   );
 }
 

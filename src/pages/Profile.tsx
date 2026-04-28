@@ -1,4 +1,4 @@
-import { useState, useEffect, useCallback } from 'react';
+import { useState, useEffect, useCallback, useRef } from 'react';
 import { Card, Text, Stack, Group, Divider, Grid, Button, TextInput, Tooltip, ActionIcon, Avatar, Title, Modal, Loader, Center, Collapse, Alert, Skeleton, useMantineColorScheme, Badge } from '@mantine/core';
 import { IconUser, IconPhone, IconCopy, IconCheck, IconBrandTelegram, IconCreditCard, IconReceipt, IconChevronDown, IconChevronUp, IconMail, IconAlertCircle } from '@tabler/icons-react';
 import { notifications } from '@mantine/notifications';
@@ -11,6 +11,7 @@ import PromoModal from '../components/PromoModal';
 import SecuritySettings from '../components/security/SecuritySettings';
 import { useStore } from '../store/useStore';
 import { config } from '../config';
+import { hasTelegramOidcAuth, hasTelegramWidget } from '../constants/webapp';
 
 const RESEND_COOLDOWN_MS = 3 * 60 * 1000;
 const RESEND_STORAGE_KEY = 'email_verify_last_sent';
@@ -77,6 +78,16 @@ export default function Profile() {
   const [telegramModalOpen, setTelegramModalOpen] = useState(false);
   const [telegramInput, setTelegramInput] = useState('');
   const [telegramSaving, setTelegramSaving] = useState(false);
+  const [telegramWaitingOpen, setTelegramWaitingOpen] = useState(false);
+  const [unbindConfirmOpen, setUnbindConfirmOpen] = useState(false);
+  const [telegramMergeOpen, setTelegramMergeOpen] = useState(false);
+  const [mergeHasServices, setMergeHasServices] = useState<boolean | null>(null);
+  const [mergeTgUsername, setMergeTgUsername] = useState('');
+  const [mergeSending, setMergeSending] = useState(false);
+  const [mergeSent, setMergeSent] = useState(false);
+  const useTelegramAuthBind = hasTelegramOidcAuth || hasTelegramWidget;
+  const showTelegramCard = config.ALLOW_TELEGRAM_PIN === 'true' || useTelegramAuthBind;
+  const showMergeQuestionnaire = !useTelegramAuthBind && config.ALLOW_TELEGRAM_PIN === 'true';
   const [emailModalOpen, setEmailModalOpen] = useState(false);
   const [emailInput, setEmailInput] = useState('');
   const [emailSaving, setEmailSaving] = useState(false);
@@ -97,6 +108,7 @@ export default function Profile() {
   const [resendCooldown, setResendCooldown] = useState(0);
   const [forecast, setForecast] = useState<ForecastData | null>(null);
   const [forecastOpen, setForecastOpen] = useState(false);
+  const oidcPollTimerRef = useRef<number | null>(null);
   const { colorScheme } = useMantineColorScheme();
   const clipboardId = useClipboard({ timeout: 1000 });
   const clipboardLink = useClipboard({ timeout: 1000 });
@@ -148,26 +160,83 @@ export default function Profile() {
     fetchProfile();
   }, []);
 
+  const loadTelegramSettings = useCallback(async () => {
+    setTelegramLoading(true);
+    try {
+      const telegramResponse = await Promise.race([
+        telegramApi.getSettings(),
+        new Promise<never>((_, reject) => setTimeout(() => reject(new Error('telegram settings timeout')), 10000)),
+      ]);
+      setTelegramUsername(telegramResponse.data.username || null);
+    } catch {
+    } finally {
+      setTelegramLoading(false);
+    }
+  }, []);
+
   useEffect(() => {
     if (!profile) return;
 
     const loadExtras = async () => {
-      if ( config.ALLOW_TELEGRAM_PIN === 'true') {
-        setTelegramLoading(true);
-        try {
-          const telegramResponse = await telegramApi.getSettings();
-          setTelegramUsername(telegramResponse.data.username || null);
-        } catch {
-        } finally {
-          setTelegramLoading(false);
-        }
+      if (showTelegramCard) {
+        await loadTelegramSettings();
       }
 
       // email уже загружен в стор при старте (App.tsx checkAuth)
     };
 
     loadExtras();
-  }, [profile]);
+  }, [profile, showTelegramCard, loadTelegramSettings]);
+
+  useEffect(() => {
+    const params = new URLSearchParams(window.location.search);
+    const tgStatus = params.get('tg_status');
+
+    if (!tgStatus) return;
+
+    params.delete('tg_status');
+    params.delete('session_id');
+    params.delete('msg');
+    params.delete('error');
+    const nextSearch = params.toString();
+    window.history.replaceState({}, '', window.location.pathname + (nextSearch ? `?${nextSearch}` : '') + window.location.hash);
+
+    if (tgStatus === 'success') {
+      notifications.show({
+        title: t('common.success'),
+        message: t('auth.telegramBind'),
+        color: 'green',
+      });
+      if (showTelegramCard) {
+        loadTelegramSettings();
+      }
+      return;
+    }
+
+    if (tgStatus === 'already_bound') {
+      notifications.show({
+        title: t('common.error'),
+        message: t('profile.telegramAlreadyBound'),
+        color: 'orange',
+      });
+      return;
+    }
+
+    notifications.show({
+      title: t('common.error'),
+      message: t('auth.telegramBindError'),
+      color: 'red',
+    });
+  }, [t, loadTelegramSettings, showTelegramCard]);
+
+  useEffect(() => {
+    return () => {
+      if (oidcPollTimerRef.current !== null) {
+        window.clearInterval(oidcPollTimerRef.current);
+        oidcPollTimerRef.current = null;
+      }
+    };
+  }, []);
 
   const handleSave = async () => {
     try {
@@ -198,6 +267,78 @@ export default function Profile() {
   const openTelegramModal = () => {
     setTelegramInput(telegramUsername || '');
     setTelegramModalOpen(true);
+  };
+
+  const handleTelegramOidcBind = () => {
+    if (!profile) return;
+
+    setTelegramWaitingOpen(true);
+    try {
+      const params = new URLSearchParams({
+        uid: String(profile.user_id),
+        return_url: `${window.location.origin}${window.location.pathname}${window.location.search}`,
+        profile: config.TELEGRAM_BOT_AUTH_PROFILE,
+        bind_to_profile: '1',
+        register_if_not_exists: '0',
+      });
+      const startUrl = `/shm/v1/telegram/web/auth/start?${params.toString()}`;
+
+      const popup = window.open(startUrl, 'telegram-oidc-auth', 'popup=yes,width=520,height=760');
+      if (!popup) {
+        throw new Error('Telegram OIDC popup blocked');
+      }
+
+      const startedAt = Date.now();
+      oidcPollTimerRef.current = window.setInterval(async () => {
+        if (!popup.closed) {
+          if (Date.now() - startedAt < 180000) {
+            return;
+          }
+          if (oidcPollTimerRef.current !== null) {
+            window.clearInterval(oidcPollTimerRef.current);
+            oidcPollTimerRef.current = null;
+          }
+          setTelegramWaitingOpen(false);
+          return;
+        }
+
+        if (oidcPollTimerRef.current !== null) {
+          window.clearInterval(oidcPollTimerRef.current);
+          oidcPollTimerRef.current = null;
+        }
+        setTelegramWaitingOpen(false);
+        await loadTelegramSettings();
+      }, 700);
+    } catch {
+      setTelegramWaitingOpen(false);
+      notifications.show({
+        title: t('common.error'),
+        message: t('auth.telegramBindError'),
+        color: 'red',
+      });
+    }
+  };
+
+  const handleTelegramUnbind = async () => {
+    setTelegramLoading(true);
+    try {
+      await telegramApi.unbindAccount();
+      setTelegramUsername(null);
+      setUnbindConfirmOpen(false);
+      notifications.show({
+        title: t('common.success'),
+        message: t('profile.telegramUnbindSuccess'),
+        color: 'green',
+      });
+    } catch {
+      notifications.show({
+        title: t('common.error'),
+        message: t('profile.telegramUnbindError'),
+        color: 'red',
+      });
+    } finally {
+      setTelegramLoading(false);
+    }
   };
 
   const handleSaveTelegram = async () => {
@@ -664,12 +805,28 @@ export default function Profile() {
         </Card>
       )}
 
-    { config.ALLOW_TELEGRAM_PIN === 'true' && (
+    { showTelegramCard && (
       <Card withBorder radius="md" p="lg">
         <Group justify="space-between" mb="md">
           <Text fw={500}>{t('profile.telegram')}</Text>
           {telegramLoading ? (
             <Skeleton width={100} height={32} />
+          ) : useTelegramAuthBind ? (
+            telegramUsername ? (
+              <Button variant="light" size="xs" color="red" onClick={() => setUnbindConfirmOpen(true)}>
+                {t('profile.telegramUnbind')}
+              </Button>
+            ) : (
+              <Button variant="light" size="xs" onClick={handleTelegramOidcBind}>
+                {t('profile.telegramAuthLink')}
+              </Button>
+            )
+          ) : showMergeQuestionnaire ? (
+            telegramUsername ? (
+              <Button variant="light" size="xs" onClick={openTelegramModal}>
+                {t('profile.change')}
+              </Button>
+            ) : null
           ) : (
             <Button variant="light" size="xs" onClick={openTelegramModal}>
               {telegramUsername ? t('profile.change') : t('profile.link')}
@@ -691,7 +848,41 @@ export default function Profile() {
         </Group>
         { telegramLoading ? (
           <Skeleton width="70%" mt={10} height={16} />
-        ) : !telegramUsername ? (
+        ) : telegramUsername ? (
+          <Text size="xs" c="dimmed" mt="md">
+            {t('profile.telegramDescription')}
+          </Text>
+        ) : showMergeQuestionnaire ? (
+          <Stack gap="md" mt="md">
+            <Alert variant="light" color="blue" icon={<IconBrandTelegram size={16} />} radius="md">
+              {t('profile.telegramAlert')}
+            </Alert>
+            <Text fw={500} size="sm">{t('profile.telegramLinkQuestion')}</Text>
+            <Group gap="sm">
+              <Button
+                variant="light"
+                color="teal"
+                leftSection={<IconBrandTelegram size={16} />}
+                onClick={() => {
+                  const botName = config.TELEGRAM_BOT_NAME;
+                  if (botName) {
+                    window.open(`https://t.me/${botName}?start=link`, '_blank');
+                  }
+                  openTelegramModal();
+                }}
+              >
+                {t('profile.telegramLinkNo')}
+              </Button>
+              <Button
+                variant="light"
+                color="orange"
+                onClick={() => setTelegramMergeOpen(true)}
+              >
+                {t('profile.telegramLinkYes')}
+              </Button>
+            </Group>
+          </Stack>
+        ) : (
           <Alert
             variant="light"
             color="blue"
@@ -699,12 +890,8 @@ export default function Profile() {
             mt="md"
             radius="md"
           >
-            {t('profile.telegramAlert', 'Привяжите Telegram, чтобы получать уведомления о статусе услуг, платежах, а также оплачивать подписку Telegram-звёздами.')}
+            {t('profile.telegramAlert')}
           </Alert>
-        ) : (
-          <Text size="xs" c="dimmed" mt="md">
-            {t('profile.telegramDescription')}
-          </Text>
         )}
       </Card>
     )}
@@ -741,6 +928,123 @@ export default function Profile() {
             </Button>
             <Button onClick={handleSaveTelegram} loading={telegramSaving}>
               {t('common.save')}
+            </Button>
+          </Group>
+        </Stack>
+      </Modal>
+
+      <Modal
+        opened={telegramMergeOpen}
+        onClose={() => { setTelegramMergeOpen(false); setMergeHasServices(null); setMergeTgUsername(''); setMergeSent(false); }}
+        title={t('profile.telegramMergeTitle')}
+      >
+        {mergeSent ? (
+          <Stack gap="md" align="center" py="md">
+            <IconCheck size={48} color="var(--mantine-color-teal-6)" />
+            <Text ta="center" fw={500}>{t('profile.telegramMergeSent')}</Text>
+            <Text ta="center" size="sm" c="dimmed">
+              {t('profile.telegramMergeSentDesc')}
+            </Text>
+            <Button variant="light" onClick={() => { setTelegramMergeOpen(false); setMergeSent(false); setMergeHasServices(null); setMergeTgUsername(''); }}>
+              {t('common.close')}
+            </Button>
+          </Stack>
+        ) : mergeHasServices === null ? (
+          <Stack gap="md">
+            <Text size="sm">{t('profile.telegramMergeQ1')}</Text>
+            <Group gap="sm">
+              <Button variant="light" color="orange" onClick={() => setMergeHasServices(true)} style={{ flex: 1 }}>
+                {t('common.yes')}
+              </Button>
+              <Button variant="light" onClick={() => setMergeHasServices(false)} style={{ flex: 1 }}>
+                {t('common.no')}
+              </Button>
+            </Group>
+          </Stack>
+        ) : (
+          <Stack gap="md">
+            {mergeHasServices && (
+              <Alert variant="light" color="orange" icon={<IconAlertCircle size={16} />} radius="md">
+                {t('profile.telegramMergeWarning')}
+              </Alert>
+            )}
+            <TextInput
+              label={t('profile.telegramLogin')}
+              placeholder="@username"
+              value={mergeTgUsername}
+              onChange={(e) => setMergeTgUsername(e.target.value)}
+            />
+            <Text size="xs" c="dimmed">
+              {t('profile.telegramMergeHint')}
+            </Text>
+            <Button
+              fullWidth
+              loading={mergeSending}
+              disabled={!mergeTgUsername.trim()}
+              onClick={async () => {
+                setMergeSending(true);
+                try {
+                  await telegramApi.updateSettings({
+                    merge_request: {
+                      tg_username: mergeTgUsername.trim().replace('@', ''),
+                      has_services: mergeHasServices,
+                      requested_at: new Date().toISOString(),
+                    },
+                  });
+                  setMergeSent(true);
+                  notifications.show({
+                    title: t('common.success'),
+                    message: t('profile.telegramMergeSent'),
+                    color: 'green',
+                  });
+                } catch {
+                  notifications.show({
+                    title: t('common.error'),
+                    message: t('profile.telegramMergeSendError'),
+                    color: 'red',
+                  });
+                } finally {
+                  setMergeSending(false);
+                }
+              }}
+            >
+              {t('profile.telegramMergeSend')}
+            </Button>
+          </Stack>
+        )}
+      </Modal>
+
+      <Modal
+        opened={telegramWaitingOpen}
+        onClose={() => setTelegramWaitingOpen(false)}
+        title={t('profile.telegramWaitTitle')}
+        withCloseButton
+        closeOnClickOutside
+        closeOnEscape
+      >
+        <Stack gap="sm" align="center" py="sm">
+          <Loader size="sm" />
+          <Text size="sm" ta="center">
+            {t('profile.telegramWaitDescription')}
+          </Text>
+        </Stack>
+      </Modal>
+
+      <Modal
+        opened={unbindConfirmOpen}
+        onClose={() => setUnbindConfirmOpen(false)}
+        title={t('common.confirmation')}
+      >
+        <Stack gap="md">
+          <Text size="sm">
+            {t('profile.telegramUnbindConfirm')}
+          </Text>
+          <Group justify="flex-end">
+            <Button variant="light" onClick={() => setUnbindConfirmOpen(false)}>
+              {t('common.cancel')}
+            </Button>
+            <Button color="red" onClick={handleTelegramUnbind} loading={telegramLoading}>
+              {t('profile.telegramUnbind')}
             </Button>
           </Group>
         </Stack>
