@@ -1,6 +1,6 @@
 import '@mantine/core/styles.css';
 import '@mantine/notifications/styles.css';
-import { useEffect, useState } from 'react';
+import { useEffect, useState, Suspense, lazy } from 'react';
 import { MantineProvider, DirectionProvider, AppShell, Group, Text, ActionIcon, useMantineColorScheme, useComputedColorScheme, Center, Loader, Box, Button, Modal, TextInput, Stack } from '@mantine/core';
 import { legacyTheme, glassTheme } from './theme';
 import { Notifications } from '@mantine/notifications';
@@ -22,11 +22,11 @@ import WithdrawHistoryModal from './components/WithdrawHistoryModal';
 parseAndSaveSessionId();
 parseAndSavePartnerId();
 
-import Services from './pages/Services';
-import Profile from './pages/Profile';
-import Login from './pages/Login';
-import NotFound from './pages/NotFound';
-import Dashboard from './pages/Dashboard';
+const Services = lazy(() => import('./pages/Services'));
+const Profile = lazy(() => import('./pages/Profile'));
+const Login = lazy(() => import('./pages/Login'));
+const NotFound = lazy(() => import('./pages/NotFound'));
+const Dashboard = lazy(() => import('./pages/Dashboard'));
 
 const dashboardEnabled = config.DASHBOARD_PAGE_ENABLE === 'true';
 
@@ -344,7 +344,11 @@ function AppContent() {
   }
 
   if (!isAuthenticated) {
-    return <Login />;
+    return (
+      <Suspense fallback={<Center h="100vh"><Loader /></Center>}>
+        <Login />
+      </Suspense>
+    );
   }
 
   const emailRequiredModal = (
@@ -442,18 +446,20 @@ function AppContent() {
         <Box style={{ minHeight: '100vh', paddingBottom: 100 }}>
           <WebAppHeader onShowVersion={showVersion} />
           <Box px="md">
-            <Routes>
-              {dashboardEnabled ? (
-                <>
-                  <Route path="/" element={<Dashboard />} />
-                  <Route path="/services" element={<Services />} />
-                </>
-              ) : (
-                <Route path="/" element={<Services />} />
-              )}
-              <Route path="/profile" element={<Profile />} />
-              <Route path="*" element={<NotFound />} />
-            </Routes>
+            <Suspense fallback={<Center mih="50vh"><Loader /></Center>}>
+              <Routes>
+                {dashboardEnabled ? (
+                  <>
+                    <Route path="/" element={<Dashboard />} />
+                    <Route path="/services" element={<Services />} />
+                  </>
+                ) : (
+                  <Route path="/" element={<Services />} />
+                )}
+                <Route path="/profile" element={<Profile />} />
+                <Route path="*" element={<NotFound />} />
+              </Routes>
+            </Suspense>
           </Box>
           <BottomNavigation onPayments={() => setPayHistoryOpen(true)} onWithdrawals={() => setWithdrawHistoryOpen(true)} />
         </Box>
@@ -581,18 +587,20 @@ function AppContent() {
         </AppShell.Header>
 
         <AppShell.Main>
-          <Routes>
-            {dashboardEnabled ? (
-              <>
-                <Route path="/" element={<Dashboard />} />
-                <Route path="/services" element={<Services />} />
-              </>
-            ) : (
-              <Route path="/" element={<Services />} />
-            )}
-            <Route path="/profile" element={<Profile />} />
-            <Route path="*" element={<NotFound />} />
-          </Routes>
+          <Suspense fallback={<Center mih="50vh"><Loader /></Center>}>
+            <Routes>
+              {dashboardEnabled ? (
+                <>
+                  <Route path="/" element={<Dashboard />} />
+                  <Route path="/services" element={<Services />} />
+                </>
+              ) : (
+                <Route path="/" element={<Services />} />
+              )}
+              <Route path="/profile" element={<Profile />} />
+              <Route path="*" element={<NotFound />} />
+            </Routes>
+          </Suspense>
         </AppShell.Main>
       </AppShell>
       <PayHistoryModal opened={payHistoryOpen} onClose={() => setPayHistoryOpen(false)} />
