@@ -39,6 +39,8 @@ interface AppState {
   setWithdrawHistoryOpen: (v: boolean) => void;
   openVerifyModal: boolean;
   setOpenVerifyModal: (open: boolean) => void;
+  openEmailModal: boolean;
+  setOpenEmailModal: (open: boolean) => void;
   logout: () => void;
 }
 
@@ -55,6 +57,7 @@ export const useStore = create<AppState>((set) => ({
   payHistoryOpen: false,
   withdrawHistoryOpen: false,
   openVerifyModal: false,
+  openEmailModal: false,
 
   setUser: (user) => set({
     user,
@@ -80,9 +83,10 @@ export const useStore = create<AppState>((set) => ({
   setPayHistoryOpen: (open) => set({ payHistoryOpen: open }),
   setWithdrawHistoryOpen: (open) => set({ withdrawHistoryOpen: open }),
   setOpenVerifyModal: (open) => set({ openVerifyModal: open }),
+  setOpenEmailModal: (open) => set({ openEmailModal: open }),
   logout: () => {
     removeCookie();
     localStorage.removeItem('shm_telegram_photo');
-    set({ user: null, isAuthenticated: false, telegramPhoto: null, hasNewTicketMessages: false, userEmail: null, userEmailVerified: null, isEmailLoaded: false, payHistoryOpen: false, withdrawHistoryOpen: false, openVerifyModal: false });
+    set({ user: null, isAuthenticated: false, telegramPhoto: null, hasNewTicketMessages: false, userEmail: null, userEmailVerified: null, isEmailLoaded: false, payHistoryOpen: false, withdrawHistoryOpen: false, openVerifyModal: false, openEmailModal: false });
   },
 }));
