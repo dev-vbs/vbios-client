@@ -1,7 +1,7 @@
 import '@mantine/core/styles.css';
 import '@mantine/notifications/styles.css';
 import { useEffect, useState } from 'react';
-import { MantineProvider, AppShell, Group, Text, ActionIcon, useMantineColorScheme, useComputedColorScheme, Center, Loader, Box, Button, Modal, TextInput, Stack } from '@mantine/core';
+import { MantineProvider, DirectionProvider, AppShell, Group, Text, ActionIcon, useMantineColorScheme, useComputedColorScheme, Center, Loader, Box, Button, Modal, TextInput, Stack } from '@mantine/core';
 import { legacyTheme, glassTheme } from './theme';
 import { Notifications } from '@mantine/notifications';
 import { useMediaQuery, useHotkeys, useLongPress } from '@mantine/hooks';
@@ -597,6 +597,8 @@ function AppContent() {
 
 function App() {
   const basePath = config.SHM_BASE_PATH && config.SHM_BASE_PATH !== '/' ? config.SHM_BASE_PATH : undefined;
+  const { i18n } = useTranslation();
+  const isRtl = i18n.language === 'ar';
 
   useEffect(() => {
     if (config.BITRIX_WIDGET_SCRIPT_URL) {
@@ -613,12 +615,14 @@ function App() {
   }, []);
 
   return (
-    <MantineProvider theme={theme} defaultColorScheme={glassEnabled ? 'dark' : 'auto'}>
-      <Notifications position="top-right" />
-      <BrowserRouter basename={basePath}>
-        <AppContent />
-      </BrowserRouter>
-    </MantineProvider>
+    <DirectionProvider initialDirection={isRtl ? 'rtl' : 'ltr'}>
+      <MantineProvider theme={theme} defaultColorScheme={glassEnabled ? 'dark' : 'auto'}>
+        <Notifications position="top-right" />
+        <BrowserRouter basename={basePath}>
+          <AppContent />
+        </BrowserRouter>
+      </MantineProvider>
+    </DirectionProvider>
   );
 }
 
