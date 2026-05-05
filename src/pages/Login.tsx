@@ -346,8 +346,13 @@ export default function Login() {
       }
 
       notifications.show({ title: t('common.success'), message: t('auth.telegramAuth'), color: 'green' });
-    } catch {
-      notifications.show({ title: t('common.error'), message: t('auth.telegramAuthError'), color: 'red' });
+    } catch (error: unknown) {
+      const status = (error as { response?: { status?: number } }).response?.status;
+      if (status === 429) {
+        notifications.show({ title: t('common.error'), message: t('auth.tooManyRequests'), color: 'red' });
+      } else {
+        notifications.show({ title: t('common.error'), message: t('auth.telegramAuthError'), color: 'red' });
+      }
     } finally {
       setLoading(false);
     }
@@ -381,8 +386,13 @@ export default function Login() {
       }
 
       notifications.show({ title: t('common.success'), message: t('auth.telegramAuth'), color: 'green' });
-    } catch {
-      notifications.show({ title: t('common.error'), message: t('auth.telegramAuthError'), color: 'red' });
+    } catch (error: unknown) {
+      const status = (error as { response?: { status?: number } }).response?.status;
+      if (status === 429) {
+        notifications.show({ title: t('common.error'), message: t('auth.tooManyRequests'), color: 'red' });
+      } else {
+        notifications.show({ title: t('common.error'), message: t('auth.telegramAuthError'), color: 'red' });
+      }
       setShowLoginForm(true);
     } finally {
       setLoading(false);
