@@ -38,3 +38,4 @@ vite.config-s.ts
 /public/config.js
 build.sh
 *.tpl
+privkey
