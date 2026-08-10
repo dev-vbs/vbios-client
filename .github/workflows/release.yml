@@ -1,0 +1,193 @@
+name: Build and Push Docker Images
+
+on:
+  push:
+    tags:
+      - '*'
+
+env:
+  REGISTRY: docker.io
+  IMAGE_NAME: danuk/shm
+
+jobs:
+  validate:
+    runs-on: ubuntu-latest
+    steps:
+      - name: Checkout repository
+        uses: actions/checkout@v4
+        with:
+          fetch-depth: 0
+
+      - name: Validate tag format and branch restrictions
+        run: |
+          # Get the tag name
+          TAG_NAME="${GITHUB_REF#refs/tags/}"
+          echo "Tag: $TAG_NAME"
+
+          # Tag must start with a digit
+          if [[ ! "$TAG_NAME" =~ ^[0-9] ]]; then
+            echo "❌ ERROR: Tag '$TAG_NAME' does not start with a digit"
+            echo "Tags must start with a digit (e.g., 1.0.0, 2.10.1), not with 'v' or other prefix"
+
+            # Delete invalid tag from remote
+            echo "🗑️ Deleting invalid tag from origin..."
+            git push origin --delete "refs/tags/$TAG_NAME" || true
+
+            exit 1
+          fi
+
+          # Get the commit hash for this tag
+          COMMIT_HASH=$(git rev-list -n 1 "$TAG_NAME")
+          echo "Commit: $COMMIT_HASH"
+
+          # Check if tag has a suffix (contains dash followed by letters)
+          if [[ "$TAG_NAME" =~ -[a-zA-Z]+ ]]; then
+            echo "✅ Tag has suffix (e.g., -beta, -rc, -alpha) - allowed from any branch"
+          else
+            echo "Tag has no suffix - checking if from main branch"
+
+            # Tags without suffix only allowed from main branch
+            if git merge-base --is-ancestor "$COMMIT_HASH" origin/main 2>/dev/null; then
+              echo "✅ Tag '$TAG_NAME' is from main branch - allowed"
+            else
+              echo "❌ ERROR: Tag '$TAG_NAME' has no suffix and is NOT from main branch"
+              echo "Tags without suffix (e.g., 1.0.0, 2.10.1) are only allowed from 'main' branch"
+              echo "Use -beta, -rc, or -alpha suffix for tags from other branches"
+
+              # Delete invalid tag from remote
+              echo "🗑️ Deleting invalid tag from origin..."
+              git push origin --delete "refs/tags/$TAG_NAME" || true
+
+              exit 1
+            fi
+          fi
+
+  build:
+    needs: validate
+    runs-on: ubuntu-latest
+    permissions:
+      contents: write
+      packages: write
+
+    steps:
+    - name: Checkout repository
+      uses: actions/checkout@v4
+      with:
+        fetch-depth: 0
+
+    - name: Set up QEMU
+      uses: docker/setup-qemu-action@v3
+
+    - name: Set up Docker Buildx
+      uses: docker/setup-buildx-action@v3
+
+    - name: Log in to Docker Hub
+      uses: docker/login-action@v3
+      with:
+        username: ${{ secrets.DOCKERHUB_USERNAME }}
+        password: ${{ secrets.DOCKERHUB_TOKEN }}
+
+    - name: Extract version info
+      id: version
+      run: |
+        # Get the tag name
+        TAG=${GITHUB_REF#refs/tags/}
+        echo "tag=${TAG}" >> $GITHUB_OUTPUT
+
+        # Get minor version (1.2 from 1.2.3)
+        VERSION_MINOR=$(echo $TAG | cut -d '.' -f 1,2)
+        echo "minor=${VERSION_MINOR}" >> $GITHUB_OUTPUT
+
+        # Get git revision
+        REV=$(git rev-parse --short HEAD)
+        echo "rev=${REV}" >> $GITHUB_OUTPUT
+
+        # Create version string
+        VERSION_STRING="${TAG}-${REV}"
+        echo "version_string=${VERSION_STRING}" >> $GITHUB_OUTPUT
+
+        # Extract tag suffix (e.g., 'beta' from '2.10.1-beta')
+        TAG_SUFFIX=""
+        if [[ "$TAG" =~ -([a-zA-Z]+)$ ]]; then
+          TAG_SUFFIX="${BASH_REMATCH[1]}"
+        fi
+        echo "tag_suffix=${TAG_SUFFIX}" >> $GITHUB_OUTPUT
+
+        # Create minor version with suffix (e.g., '3.0-rc' from '3.0.1-rc')
+        if [ -n "$TAG_SUFFIX" ]; then
+          MINOR_WITH_SUFFIX="${VERSION_MINOR}-${TAG_SUFFIX}"
+        else
+          MINOR_WITH_SUFFIX=""
+        fi
+        echo "minor_with_suffix=${MINOR_WITH_SUFFIX}" >> $GITHUB_OUTPUT
+
+        # Check if tag is from main branch
+        IS_RELEASE="false"
+        if git merge-base --is-ancestor HEAD origin/main 2>/dev/null; then
+          BRANCH=$(git branch -r --contains HEAD | grep -E 'origin/main$' | head -n1)
+          if [ -n "$BRANCH" ]; then
+            IS_RELEASE="true"
+            echo "Tag is from main branch - will push 'latest' tag"
+          fi
+        fi
+
+        if [ "$IS_RELEASE" = "false" ]; then
+          echo "Tag is NOT from main branch - will push suffix tag instead"
+        fi
+
+        echo "is_release=${IS_RELEASE}" >> $GITHUB_OUTPUT
+        echo "Building version: ${VERSION_STRING}"
+
+    - name: Create version.json
+      run: |
+        cat > public/version.json << EOF
+        {
+            "version": "${{ steps.version.outputs.version_string }}",
+            "commitSha": "${{ github.sha }}"
+        }
+        EOF
+        cat public/version.json
+
+    - name: Build and push client-2 image
+      uses: docker/build-push-action@v5
+      with:
+        context: .
+        platforms: linux/amd64,linux/arm64
+        push: true
+        target: client
+        tags: |
+          ${{ format('{0}-client-2:{1}', env.IMAGE_NAME, steps.version.outputs.tag) }}
+          ${{ steps.version.outputs.is_release == 'true' && format('{0}-client-2:{1}', env.IMAGE_NAME, steps.version.outputs.minor) || '' }}
+          ${{ format('{0}-client-2:{1}', env.IMAGE_NAME, steps.version.outputs.is_release == 'true' && 'latest' || steps.version.outputs.tag_suffix) }}
+          ${{ steps.version.outputs.minor_with_suffix != '' && format('{0}-client-2:{1}', env.IMAGE_NAME, steps.version.outputs.minor_with_suffix) || '' }}
+        cache-from: type=gha,scope=client-2
+        cache-to: type=gha,mode=max,scope=client-2
+
+    - name: Create GitHub Release
+      uses: softprops/action-gh-release@v1
+      with:
+        tag_name: ${{ steps.version.outputs.tag }}
+        name: Release ${{ steps.version.outputs.tag }}
+        generate_release_notes: true
+        body: |
+          ## Docker Image Built
+
+          ### client-2 Image
+          ${{ steps.version.outputs.is_release == 'true' && format('- `{0}-client-2:{1}`', env.IMAGE_NAME, steps.version.outputs.tag) || '' }}
+          ${{ steps.version.outputs.is_release == 'true' && format('- `{0}-client-2:{1}`', env.IMAGE_NAME, steps.version.outputs.minor) || format('- `{0}-client-2:{1}`', env.IMAGE_NAME, steps.version.outputs.tag) }}
+          - `${{ env.IMAGE_NAME }}-client-2:${{ steps.version.outputs.is_release == 'true' && 'latest' || steps.version.outputs.tag_suffix }}`
+
+          **Version:** `${{ steps.version.outputs.version_string }}`
+          **Git Revision:** `${{ steps.version.outputs.rev }}`
+          ${{ steps.version.outputs.is_release != 'true' && format('**Note:** This release is from a non-release branch. Only {0} tags are created.', steps.version.outputs.tag_suffix) || '' }}
+
+          ## What's Changed
+
+          *Changelog will be generated automatically below based on commits and pull requests.*
+      env:
+        GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+
+  notify:
+    needs: build
+    uses: ./.github/workflows/telegram-release-notify.yml
+    secrets: inherit
