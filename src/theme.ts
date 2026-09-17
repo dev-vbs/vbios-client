@@ -1,9 +1,9 @@
 import { createTheme } from '@mantine/core';
 
 export const theme = createTheme({
-  primaryColor: 'green',
-  fontFamily: 'Inter, -apple-system, BlinkMacSystemFont, Segoe UI, Roboto, sans-serif',
-  defaultRadius: 'md',
+  primaryColor: 'violet',
+  fontFamily: 'Inter, ui-sans-serif, system-ui, -apple-system, BlinkMacSystemFont, "Segoe UI", sans-serif',
+  defaultRadius: 'sm',
   colors: {
     dark: [
       '#C1C2C5',
@@ -20,13 +20,13 @@ export const theme = createTheme({
   },
   components: {
     Button: {
-      defaultProps: { radius: 'md' },
+      defaultProps: { radius: 'sm' },
     },
     Card: {
-      defaultProps: { radius: 'md', withBorder: true },
+      defaultProps: { radius: 'sm', withBorder: true },
     },
     Paper: {
-      defaultProps: { radius: 'md', withBorder: true },
+      defaultProps: { radius: 'sm', withBorder: true },
     },
     Modal: {
       defaultProps: {

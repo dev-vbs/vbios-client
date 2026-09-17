@@ -291,17 +291,17 @@ function AppContent() {
         navbar={{ width: 250, breakpoint: 'sm' }}
         footer={hasLegalLinks ? { height: 'auto' } : undefined}
         padding="md"
-        className="apex-shell"
+        className="laravel-shell"
       >
         <AppShell.Header>
           <Group h="100%" px="md" justify="space-between" wrap="nowrap">
             <Group gap="xs" onClick={() => navigate('/')} style={{ cursor: 'pointer' }} {...longPressProps}>
-              <Box className="apex-logo" w={32} h={32}>S</Box>
+              <Box className="laravel-logo" w={32} h={32}>S</Box>
               <Text size="lg" fw={700} visibleFrom="sm">
                 {config.APP_NAME}
               </Text>
             </Group>
-            <TextInput className="apex-search" visibleFrom="sm" placeholder="Поиск по сервисам..." leftSection={<IconSearch size={16} />} rightSection={<Text size="xs" c="dimmed">Ctrl K</Text>} />
+            <TextInput className="laravel-search" visibleFrom="sm" placeholder="Поиск по услугам..." leftSection={<IconSearch size={16} />} rightSection={<Text size="xs" c="dimmed">Ctrl K</Text>} />
             <Group>
               {user && (
                 <Button
@@ -365,7 +365,7 @@ function AppContent() {
               const Icon = item.icon;
               const active = location.pathname === item.path;
               const action = item.path === '/payments' ? () => emailBlocked ? setOpenEmailModal(true) : setPayHistoryOpen(true) : item.path === '/withdrawals' ? () => emailBlocked ? setOpenEmailModal(true) : setWithdrawHistoryOpen(true) : undefined;
-              const buttonProps = { justify: 'flex-start' as const, leftSection: <Icon size={18} stroke={1.7} />, variant: 'subtle' as const, className: 'apex-nav-link', 'data-active': active, fullWidth: true };
+              const buttonProps = { justify: 'flex-start' as const, leftSection: <Icon size={18} stroke={1.7} />, variant: 'subtle' as const, className: 'laravel-nav-link', 'data-active': active, fullWidth: true };
               return action
                 ? <Button key={item.path} {...buttonProps} onClick={action}>{t(item.labelKey)}</Button>
                 : <Button key={item.path} {...buttonProps} component={Link} to={item.path}>{t(item.labelKey)}</Button>;
@@ -415,7 +415,7 @@ function App() {
 
   return (
     <DirectionProvider initialDirection={isRtl ? 'rtl' : 'ltr'}>
-      <MantineProvider theme={theme} defaultColorScheme="dark">
+      <MantineProvider theme={theme} defaultColorScheme="light">
         <Notifications position="top-right" />
         <BrowserRouter basename={basePath}>
           <AppContent />

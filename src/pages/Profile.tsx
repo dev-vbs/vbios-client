@@ -514,7 +514,7 @@ export default function Profile() {
                 <Text fw={700} size="xl" truncate>{profile.full_name || profile.login || t('profile.user')}</Text>
                 <Text c="dimmed" size="sm" truncate>@{profile.login || '-'}</Text>
                 <Group gap={6} mt={8}>
-                  <IconShieldCheck size={16} color="#20d287" />
+                  <IconShieldCheck size={16} color="#7c3aed" />
                   <Text size="xs" c="green" fw={600}>Аккаунт активен</Text>
                 </Group>
               </div>
@@ -562,7 +562,7 @@ export default function Profile() {
             <Title order={2} size="h3" id="account-guide-title">Начните с главного</Title>
             <Text size="sm" c="dimmed">Три шага, чтобы быстро настроить и начать пользоваться услугой</Text>
           </div>
-          <IconListCheck size={24} color="#20d287" />
+          <IconListCheck size={24} color="#7c3aed" />
         </Group>
         <Grid>
           <Grid.Col span={{ base: 12, sm: 4 }}><Card className="guide-step" p="md"><Text className="guide-step-number">01</Text><Text fw={700} mt="xs">Выберите услугу</Text><Text size="sm" c="dimmed" mt={4}>Откройте список услуг, выберите подходящий тариф и оформите заказ.</Text><Button variant="subtle" size="xs" rightSection={<IconArrowRight size={14} />} mt="sm" px={0} onClick={() => navigate('/')}>К услугам</Button></Card></Grid.Col>
@@ -596,17 +596,17 @@ export default function Profile() {
           <Card className="profile-section" p="lg" style={{ flex: 1 }}>
             <Group justify="space-between" mb="lg">
               <div><Text fw={700}>Контакты и доступ</Text><Text size="xs" c="dimmed">Привязки для восстановления и уведомлений</Text></div>
-              <IconMail size={20} color="#20d287" />
+              <IconMail size={20} color="#7c3aed" />
             </Group>
             <Stack gap="md">
               <div className="profile-connection-row">
-                <IconMail size={21} color={emailVerified ? '#20d287' : '#9aa3a3'} />
+                <IconMail size={21} color={emailVerified ? '#7c3aed' : '#9aa3a3'} />
                 <div style={{ flex: 1, minWidth: 0 }}>{profileEmail ? <><Text size="sm" fw={600} truncate>{profileEmail}</Text><Text size="xs" c={emailVerified ? 'green' : 'orange'}>{emailVerified ? t('profile.emailVerified') : t('profile.emailNotVerified')}</Text></> : <Text size="sm" c="dimmed">{t('profile.emailNotLinked')}</Text>}</div>
                 <Button variant="default" size="xs" onClick={openEmailModal}>{profileEmail ? t('profile.change') : t('profile.link')}</Button>
               </div>
               <Divider />
               <div className="profile-connection-row">
-                <IconLink size={21} color="#20d287" />
+                <IconLink size={21} color="#7c3aed" />
                 <div style={{ flex: 1, minWidth: 0 }}>
                   <Text
                     size="sm"
@@ -756,7 +756,7 @@ export default function Profile() {
       <div id="account-security"><SecuritySettings /></div>
 
       <section className="account-faq" aria-labelledby="account-faq-title">
-        <Group gap="xs" mb="sm"><IconHelpCircle size={22} color="#20d287" /><div><Title order={2} size="h3" id="account-faq-title">Вопросы и ответы</Title><Text size="sm" c="dimmed">Короткие ответы на основные вопросы о личном кабинете</Text></div></Group>
+        <Group gap="xs" mb="sm"><IconHelpCircle size={22} color="#7c3aed" /><div><Title order={2} size="h3" id="account-faq-title">Вопросы и ответы</Title><Text size="sm" c="dimmed">Короткие ответы на основные вопросы о личном кабинете</Text></div></Group>
         <Accordion variant="separated" radius="md" className="faq-list">
           <Accordion.Item value="service"><Accordion.Control>Как начать пользоваться услугой?</Accordion.Control><Accordion.Panel>Откройте раздел «Услуги», нажмите «Заказать услугу», выберите тариф и период. После успешной оплаты услуга появится в списке со статусом «Активна».</Accordion.Panel></Accordion.Item>
           <Accordion.Item value="connect"><Accordion.Control>Где взять данные для подключения?</Accordion.Control><Accordion.Panel>Откройте нужную активную услугу и выберите вкладку «Подключение». Для VPN можно скачать конфигурацию или открыть QR-код. Для Proxy доступна ссылка подписки, QR-код и настройка в приложении.</Accordion.Panel></Accordion.Item>

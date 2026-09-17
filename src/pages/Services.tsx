@@ -409,7 +409,7 @@ function ServiceDetail({ service, onDelete, onChangeTariff }: ServiceDetailProps
         </Group>
         <Group mt="md" gap="xl" className="service-detail-summary">
           <div><Text size="xs" c="dimmed">{t('services.cost')}</Text><Text fw={700}>{service.service.cost} {t('common.currency')}</Text></div>
-          {service.expire && <div><Text size="xs" c="dimmed">{t('services.validUntil')}</Text><Group gap={5}><IconCalendar size={14} color="#20d287" /><Text size="sm" fw={600}>{new Date(service.expire as string).toLocaleDateString(i18n.language === 'ru' ? 'ru-RU' : 'en-US')}</Text></Group></div>}
+          {service.expire && <div><Text size="xs" c="dimmed">{t('services.validUntil')}</Text><Group gap={5}><IconCalendar size={14} color="#7c3aed" /><Text size="sm" fw={600}>{new Date(service.expire as string).toLocaleDateString(i18n.language === 'ru' ? 'ru-RU' : 'en-US')}</Text></Group></div>}
         </Group>
       </Paper>
 
@@ -429,7 +429,7 @@ function ServiceDetail({ service, onDelete, onChangeTariff }: ServiceDetailProps
             {service.next && (
               <Paper className="service-next-panel" p="md">
                 <Text size="xs" c="dimmed" mb={6}>{t('services.validUntilNext')}</Text>
-                <Group justify="space-between" wrap="nowrap"><Group gap={7} wrap="nowrap"><IconArrowRight size={16} color="#20d287" />{nextServiceLoading ? <Text size="sm">{t('common.loading')}</Text> : <Text size="sm" fw={600}>{nextServiceInfo ? nextServiceInfo.name : service.next}</Text>}</Group>{nextServiceInfo && <Text size="sm" c="dimmed">{nextServiceInfo.cost} {t('common.currency')}</Text>}</Group>
+                <Group justify="space-between" wrap="nowrap"><Group gap={7} wrap="nowrap"><IconArrowRight size={16} color="#7c3aed" />{nextServiceLoading ? <Text size="sm">{t('common.loading')}</Text> : <Text size="sm" fw={600}>{nextServiceInfo ? nextServiceInfo.name : service.next}</Text>}</Group>{nextServiceInfo && <Text size="sm" c="dimmed">{nextServiceInfo.cost} {t('common.currency')}</Text>}</Group>
               </Paper>
             )}
             {service.children && service.children.length > 0 && (
