@@ -1,0 +1,147 @@
+name: 'Telegram Release Notification'
+
+on:
+  workflow_call:
+  workflow_dispatch:
+    inputs:
+      tag_name:
+        description: 'Тег релиза'
+        required: true
+        default: 'v1.0.0'
+      release_name:
+        description: 'Название релиза'
+        required: true
+        default: 'Релиз v1.0.0'
+      body:
+        description: 'Описание релиза (changelog)'
+        required: true
+        default: |
+          ## Что изменилось
+          * Новая функция 1
+          * Новая функция 2
+          * Исправления ошибок
+
+jobs:
+  notify-telegram:
+    runs-on: ubuntu-latest
+    steps:
+      - name: Получение репозитория
+        uses: actions/checkout@v4
+        with:
+          fetch-depth: 0
+
+      - name: Получение информации о релизе
+        id: release_info
+        run: |
+          if [ "${{ github.event_name }}" = "workflow_dispatch" ]; then
+            echo "tag_name=${{ github.event.inputs.tag_name }}" >> $GITHUB_OUTPUT
+            echo "name=${{ github.event.inputs.release_name }}" >> $GITHUB_OUTPUT
+            echo "prerelease=false" >> $GITHUB_OUTPUT
+            BODY=$(echo '${{ github.event.inputs.body }}' | sed ':a;N;$!ba;s/\n/\\n/g' | sed 's/"/\\"/g')
+            echo "body=$BODY" >> $GITHUB_OUTPUT
+          else
+            # workflow_call - получаем информацию из тега
+            TAG_NAME="${GITHUB_REF##*/}"
+            echo "tag_name=$TAG_NAME" >> $GITHUB_OUTPUT
+            echo "name=Release $TAG_NAME" >> $GITHUB_OUTPUT
+            echo "prerelease=false" >> $GITHUB_OUTPUT
+            echo "body=" >> $GITHUB_OUTPUT
+          fi
+
+      - name: Форматирование сообщения для Telegram
+        id: format_message
+        run: |
+          TAG_NAME="${{ steps.release_info.outputs.tag_name }}"
+          RELEASE_NAME="${{ steps.release_info.outputs.name }}"
+          PRERELEASE="${{ steps.release_info.outputs.prerelease }}"
+          BODY="${{ steps.release_info.outputs.body }}"
+          REPO_NAME="${{ github.repository }}"
+          REPO_URL="https://github.com/${{ github.repository }}"
+
+          # Определение типа релиза и эмодзи
+          if [ "$PRERELEASE" = "true" ]; then
+            EMOJI="🧪"
+            RELEASE_TYPE="Пред-релиз"
+          else
+            EMOJI="🚀"
+            RELEASE_TYPE="Релиз"
+          fi
+
+          # Получение коммитов для релиза
+          echo "Получение списка коммитов..."
+
+          # Получаем предыдущий тег
+          PREVIOUS_TAG=$(git describe --tags --abbrev=0 HEAD^ 2>/dev/null || echo "")
+
+          if [ -n "$PREVIOUS_TAG" ]; then
+            # Получаем коммиты между предыдущим и текущим тегом
+            COMMITS=$(git log --pretty=format:"• %s" ${PREVIOUS_TAG}..HEAD 2>/dev/null || echo "")
+          else
+            # Если предыдущего тега нет, получаем все коммиты
+            COMMITS=$(git log --pretty=format:"• %s" HEAD 2>/dev/null || echo "")
+          fi
+
+          # Ограничиваем количество коммитов (последние 100)
+          if [ -n "$COMMITS" ]; then
+            # Исключаем строки, начинающиеся на 'Merge pull request'
+            COMMITS=$(echo "$COMMITS" | grep -v '^• Merge pull request')
+            COMMITS=$(echo "$COMMITS" | head -100)
+            COMMITS_SECTION="$COMMITS"
+          else
+            COMMITS_SECTION="Нет изменений в коде"
+          fi
+
+          # Форматирование сообщения (используем plain text без Markdown)
+          MESSAGE="${EMOJI} ${RELEASE_TYPE} ${TAG_NAME}\n\n📦 Репозиторий: ${REPO_NAME}\n\n📋 Changelog:\n${COMMITS_SECTION}\n\n🔗 Посмотреть релиз: ${REPO_URL}/releases/tag/${TAG_NAME}"
+
+          # Escape the message for JSON
+          MESSAGE=$(echo "$MESSAGE" | sed ':a;N;$!ba;s/\n/\\n/g' | sed 's/"/\\"/g')
+          echo "message=$MESSAGE" >> $GITHUB_OUTPUT
+
+      - name: Отправка в Telegram
+        env:
+          TELEGRAM_BOT_TOKEN: ${{ secrets.TELEGRAM_BOT_TOKEN }}
+          TELEGRAM_CHAT_ID: ${{ secrets.TELEGRAM_CHAT_ID }}
+          TELEGRAM_THREAD_ID: ${{ secrets.TELEGRAM_THREAD_ID }}
+        run: |
+          if [ -z "$TELEGRAM_BOT_TOKEN" ]; then
+            echo "❌ Секрет TELEGRAM_BOT_TOKEN не найден"
+            echo "Пожалуйста, добавьте токен Telegram бота в секреты репозитория"
+            exit 1
+          fi
+
+          if [ -z "$TELEGRAM_CHAT_ID" ]; then
+            echo "❌ Секрет TELEGRAM_CHAT_ID не найден"
+            echo "Пожалуйста, добавьте ID чата/канала Telegram в секреты репозитория"
+            exit 1
+          fi
+
+          MESSAGE="${{ steps.format_message.outputs.message }}"
+
+          # Отправка сообщения в Telegram
+          RESPONSE=$(curl -s -X POST \
+            "https://api.telegram.org/bot${TELEGRAM_BOT_TOKEN}/sendMessage" \
+            -H "Content-Type: application/json" \
+            -d "{
+              \"chat_id\": \"${TELEGRAM_CHAT_ID}\",
+              \"message_thread_id\": \"${TELEGRAM_THREAD_ID}\",
+              \"text\": \"${MESSAGE}\",
+              \"disable_notification\": true,
+              \"disable_web_page_preview\": true
+            }")
+
+          # Проверка успешной отправки сообщения
+          if echo "$RESPONSE" | grep -q '"ok":true'; then
+            echo "✅ Уведомление о релизе успешно отправлено в Telegram!"
+            echo "Ответ: $RESPONSE"
+          else
+            echo "❌ Не удалось отправить сообщение в Telegram"
+            echo "Ответ: $RESPONSE"
+            exit 1
+          fi
+
+      - name: Тестовое сообщение (только при ручном запуске)
+        if: github.event_name == 'workflow_dispatch'
+        run: |
+          echo "🧪 Это был тестовый запуск, выполненный вручную"
+          echo "В продакшене этот workflow будет запускаться автоматически при создании релиза"
