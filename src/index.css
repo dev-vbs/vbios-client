@@ -1,0 +1,46 @@
+:root {
+  font-family: Inter, -apple-system, BlinkMacSystemFont, "Segoe UI", sans-serif;
+  line-height: 1.5;
+  font-weight: 400;
+
+  color-scheme: dark;
+  color: #f4f6f8;
+  background-color: #080909;
+
+  font-synthesis: none;
+  text-rendering: optimizeLegibility;
+  -webkit-font-smoothing: antialiased;
+  -moz-osx-font-smoothing: grayscale;
+}
+
+body {
+  margin: 0;
+  min-width: 320px;
+  min-height: 100vh;
+  background: #080909;
+}
+
+#root { min-height: 100vh; }
+
+.apex-shell { background: #080909; }
+.apex-shell .mantine-AppShell-header { background: #0b0d0d; border-bottom: 1px solid #202424; }
+.apex-shell .mantine-AppShell-navbar { background: #0b0d0d; border-right: 1px solid #202424; }
+.apex-shell .mantine-AppShell-main { background: #080909; }
+.apex-shell .mantine-AppShell-footer { background: #080909; border-top: 1px solid #202424; }
+.apex-shell .mantine-Card-root,
+.apex-shell .mantine-Paper-root,
+.apex-shell .mantine-Accordion-item { background: #141616; border-color: #292d2d; box-shadow: none; }
+.apex-shell .mantine-Accordion-control:hover { background: #1a1d1d; }
+.apex-shell .mantine-Input-input,
+.apex-shell .mantine-Select-input { background: #101212; border-color: #303434; color: #f4f6f8; }
+.apex-shell .mantine-Modal-content { background: #141616; }
+.apex-shell .mantine-Button-root[data-variant="filled"] { background: #00b96b; color: #02170e; font-weight: 700; }
+.apex-shell .mantine-Button-root[data-variant="filled"]:hover { background: #10cb7c; }
+.apex-nav-link { color: #919999; border-radius: 7px; font-size: 13px; font-weight: 600; }
+.apex-nav-link:hover { background: #171a1a; color: #f4f6f8; }
+.apex-nav-link[data-active="true"] { background: #15271f; color: #20d287; }
+.apex-logo { background: #00b96b; color: #04150d; border-radius: 10px; display: grid; place-items: center; font-weight: 800; letter-spacing: 0; }
+.apex-search { width: min(360px, 34vw); }
+@media (max-width: 768px) {
+  .apex-shell .mantine-Card-root, .apex-shell .mantine-Paper-root { border-radius: 8px; }
+}
