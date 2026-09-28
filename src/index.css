@@ -1,0 +1,8 @@
+:root { font-synthesis: none; text-rendering: optimizeLegibility; -webkit-font-smoothing: antialiased; }
+html, body, #root { min-width: 320px; min-height: 100vh; margin: 0; }
+body { overflow-x: hidden; }
+body::before { content: ''; position: fixed; z-index: -1; inset: 0; background: radial-gradient(circle at 12% -10%, rgba(121, 90, 236, .22), transparent 30%), radial-gradient(circle at 94% 8%, rgba(87, 58, 172, .16), transparent 25%); pointer-events: none; }
+.mantine-AppShell-main { background: transparent; }
+.mantine-Card-root, .mantine-Paper-root, .mantine-Accordion-item { border-color: rgba(151, 130, 232, .18) !important; box-shadow: 0 18px 42px rgba(4, 3, 10, .15); }
+[data-mantine-color-scheme='dark'] .mantine-Card-root, [data-mantine-color-scheme='dark'] .mantine-Paper-root, [data-mantine-color-scheme='dark'] .mantine-Accordion-item { background: rgba(31, 28, 45, .78); backdrop-filter: blur(18px); }
+[data-mantine-color-scheme='dark'] .mantine-Accordion-control:hover { background: rgba(121, 90, 236, .10); }
