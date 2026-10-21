@@ -1,1 +1,21 @@
 .auth-screen{background:radial-gradient(circle at 50% -5%,rgba(50,130,153,.34),transparent 42%),#0e1011!important}.auth-card{border-color:#31515c!important;background:linear-gradient(145deg,#1a1e20,#141718)!important;box-shadow:0 24px 70px rgba(0,0,0,.32)!important}.auth-card .mantine-Input-input:focus{border-color:#65cbe8;box-shadow:0 0 0 2px rgba(101,203,232,.12)}.auth-card .mantine-Button-root{border-radius:9px}.auth-card .mantine-Divider-label{background:#171a1b;color:#879397}@media(max-width:768px){.auth-card{border-radius:18px!important}}
+
+/* Authentication: a compact, calm entry card in the same cabinet system. */
+.auth-screen { isolation: isolate; }
+.auth-screen::before, .auth-screen::after { content: ""; position: fixed; z-index: -1; pointer-events: none; border-radius: 50%; filter: blur(1px); }
+.auth-screen::before { width: 440px; height: 440px; top: -240px; left: calc(50% - 220px); background: color-mix(in srgb, var(--ui-accent) 16%, transparent); }
+.auth-screen::after { width: 260px; height: 260px; bottom: -150px; right: 10%; background: color-mix(in srgb, var(--ui-accent) 8%, transparent); }
+.auth-card { overflow: hidden; position: relative; border-radius: 22px !important; }
+.auth-card::before { content: ""; position: absolute; inset: 0 0 auto; height: 3px; background: linear-gradient(90deg, var(--ui-accent), color-mix(in srgb, var(--ui-accent) 25%, transparent)); }
+.auth-card .mantine-Title-root { color: var(--ui-text); }
+.auth-card .mantine-Button-root { min-height: 44px; font-weight: 650; }
+.auth-card .mantine-Button-root[data-variant="default"] { background: var(--ui-surface); border-color: var(--ui-border-strong); color: var(--ui-text); }
+.auth-card .mantine-Button-root[data-variant="default"]:hover { background: var(--ui-surface-hover); border-color: var(--ui-accent); }
+.auth-card .mantine-Input-input, .auth-card .mantine-PasswordInput-input { min-height: 46px; }
+.auth-card .mantine-Divider-root { border-color: var(--ui-border); }
+.auth-card a, .auth-card [role="button"] { text-underline-offset: 3px; }
+@media (max-width: 768px) {
+  .auth-screen { align-items: flex-start; padding-top: max(28px, env(safe-area-inset-top)) !important; }
+  .auth-card { border-radius: 18px !important; }
+  .auth-card .mantine-Button-root { min-height: 43px; }
+}

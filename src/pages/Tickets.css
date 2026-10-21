@@ -13,3 +13,20 @@
   .tickets-page .mantine-Modal-content { border-radius: 0; }
   .tickets-page .mantine-Button-root { min-height: 42px; }
 }
+
+/* Support workspace: list, conversation and reply form use a focused card layout. */
+.tickets-page .page-header { margin-bottom: 4px; }
+.tickets-page .mantine-Card-root { border-radius: 18px !important; box-shadow: var(--ui-shadow); }
+.tickets-page .mantine-Card-root > .mantine-Group-root:first-child { padding-bottom: 12px; border-bottom: 1px solid var(--ui-border); }
+.tickets-page .mantine-ScrollArea-root { border: 1px solid var(--ui-border); border-radius: 13px; padding: 4px; }
+.tickets-page .mantine-UnstyledButton-root { color: var(--ui-text); }
+.tickets-page .mantine-UnstyledButton-root[data-active="true"] { background: var(--ui-accent-soft); }
+.tickets-page .mantine-Textarea-input { min-height: 124px; padding: 13px; }
+.tickets-page .mantine-Textarea-wrapper + .mantine-Group-root { margin-top: 10px; }
+.tickets-page .mantine-Badge-root { font-weight: 700; }
+.tickets-page .mantine-Modal-content { background: var(--ui-surface); }
+@media (max-width: 768px) {
+  .tickets-page .mantine-Card-root { border-radius: 15px !important; }
+  .tickets-page .mantine-Card-root > .mantine-Group-root:first-child { gap: 10px; }
+  .tickets-page .mantine-ScrollArea-root { border-radius: 11px; }
+}
