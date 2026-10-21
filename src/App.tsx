@@ -249,6 +249,7 @@ function AppContent() {
             <Routes>
               <Route path="/" element={<Dashboard />} />
               <Route path="/services" element={<Services />} />
+              <Route path="/services/:serviceId" element={<Services />} />
               <Route path="/profile" element={<Profile />} />
               <Route path="/tickets" element={<Tickets />} />
               <Route path="*" element={<NotFound />} />
@@ -274,6 +275,7 @@ function AppContent() {
         <Routes>
           <Route path="/" element={<Dashboard />} />
           <Route path="/services" element={<Services />} />
+              <Route path="/services/:serviceId" element={<Services />} />
           <Route path="/profile" element={<Profile />} />
           <Route path="/tickets" element={<Tickets />} />
           <Route path="*" element={<NotFound />} />

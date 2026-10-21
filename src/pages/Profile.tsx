@@ -1,6 +1,6 @@
 import axios from 'axios';
 import { useState, useEffect, useCallback } from 'react';
-import { Card, Text, Stack, Group, Divider, Grid, Button, TextInput, Tooltip, ActionIcon, Avatar, Title, Modal, Loader, Center, Collapse, Alert, Skeleton, useMantineColorScheme } from '@mantine/core';
+import { Card, Badge, Text, Stack, Group, Divider, Grid, Button, TextInput, Tooltip, ActionIcon, Avatar, Title, Modal, Loader, Center, Collapse, Alert, Skeleton, useMantineColorScheme } from '@mantine/core';
 import { IconUser, IconPhone, IconCopy, IconCheck, IconBrandTelegram, IconCreditCard, IconChevronDown, IconChevronUp, IconMail, IconAlertCircle, IconEdit } from '@tabler/icons-react';
 import { notifications } from '@mantine/notifications';
 import { useClipboard } from '@mantine/hooks';
@@ -540,6 +540,16 @@ export default function Profile() {
     <Stack gap="lg" className="profile-page">
       <header className="page-header"><div><span className="cabinet-breadcrumb">Личный кабинет</span><Title className="page-header__title" order={2}>{t('profile.title')}</Title><p className="page-header__description">Управляйте данными аккаунта, безопасностью и оплатой.</p></div></header>
 
+
+      <Card className="profile-card profile-completeness" withBorder radius="lg" p="lg" mb="md">
+        <Group justify="space-between" align="flex-start"><div><Title order={3} size="h4">Готовность профиля</Title><Text size="sm" c="dimmed" mt={4}>Заполните контакты, чтобы получать уведомления и быстрее обращаться в поддержку.</Text></div><Badge color="cyan" variant="light">{[profile.phone, profileEmail, telegramUsername].filter(Boolean).length}/3 настроено</Badge></Group>
+        <Stack gap="xs" mt="md">
+          <Group justify="space-between"><Group gap="sm"><IconPhone size={18} color={profile.phone ? '#46c47b' : '#d8a94b'} /><Text size="sm">{profile.phone ? 'Телефон добавлен' : 'Добавьте номер телефона'}</Text></Group>{!profile.phone && <Button size="xs" variant="light" onClick={() => setEditing(true)}>Заполнить</Button>}</Group>
+          <Group justify="space-between"><Group gap="sm"><IconMail size={18} color={profileEmail && emailVerified ? '#46c47b' : '#d8a94b'} /><Text size="sm">{profileEmail ? (emailVerified ? 'Email подтверждён' : 'Подтвердите email') : 'Добавьте email'}</Text></Group>{(!profileEmail || !emailVerified) && <Button size="xs" variant="light" onClick={openEmailModal}>{profileEmail ? 'Проверить' : 'Добавить'}</Button>}</Group>
+          {(config.ALLOW_TELEGRAM_PIN === 'true' || hasTelegramWidget) && <Group justify="space-between"><Group gap="sm"><IconBrandTelegram size={18} color={telegramUsername ? '#46c47b' : '#d8a94b'} /><Text size="sm">{telegramUsername ? 'Telegram подключён' : 'Подключите Telegram'}</Text></Group>{!telegramUsername && <Button size="xs" variant="light" onClick={handleTelegramOidcBind}>Подключить</Button>}</Group>}
+          <Group gap="sm"><IconAlertCircle size={18} color="#83d5ea" /><Text size="sm">Безопасность и способы входа доступны ниже.</Text></Group>
+        </Stack>
+      </Card>
 
       <Grid>
         <Grid.Col span={{ base: 12, md: 6 }} style={{ display: 'flex' }}>

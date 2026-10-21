@@ -1,7 +1,7 @@
 import { useState, useEffect, useRef } from 'react';
-import { useNavigate } from 'react-router-dom';
-import { Card, Timeline, Text, Stack, Group, Badge, Button, Divider, Modal, ActionIcon, Loader, Center, Paper, Title, Tabs, Code, Tooltip, Accordion, Box, Select, NumberInput, Pagination, Alert } from '@mantine/core';
-import { IconQrcode, IconCopy, IconCheck, IconDownload, IconRefresh, IconTrash, IconPlus, IconPlayerStop, IconExchange, IconCreditCard, IconWallet, IconDeviceMobileCog } from '@tabler/icons-react';
+import { useNavigate, useParams, Link } from 'react-router-dom';
+import { Card, Timeline, Text, Stack, Group, Badge, Button, Divider, ActionIcon, Loader, Center, Paper, Title, Tabs, Code, Tooltip, Accordion, Box, Select, NumberInput, Pagination, Alert, TextInput, Skeleton } from '@mantine/core';
+import { IconQrcode, IconCopy, IconCheck, IconDownload, IconRefresh, IconTrash, IconPlus, IconPlayerStop, IconExchange, IconCreditCard, IconWallet, IconDeviceMobileCog, IconArrowLeft, IconSearch, IconCalendarTime } from '@tabler/icons-react';
 import { useDisclosure, useClipboard } from '@mantine/hooks';
 import { useTranslation } from 'react-i18next';
 import { api, servicesApi, storageApi, userApi } from '../api/client';
@@ -700,6 +700,16 @@ function ServiceDetail({ service, onDelete, onChangeTariff }: ServiceDetailProps
   );
 }
 
+function getExpiryState(expire: string | null): { label: string | null; tone: 'success' | 'warning' | 'danger' } {
+  if (!expire) return { label: null, tone: 'success' };
+  const date = new Date(expire);
+  if (Number.isNaN(date.getTime())) return { label: null, tone: 'success' };
+  const days = Math.ceil((date.getTime() - Date.now()) / 86_400_000);
+  if (days < 0) return { label: 'Срок действия закончился', tone: 'danger' };
+  if (days === 0) return { label: 'Заканчивается сегодня', tone: 'danger' };
+  if (days <= 3) return { label: `Осталось ${days} дн.`, tone: 'warning' };
+  return { label: `Активна ещё ${days} дн.`, tone: 'success' };
+}
 function ServiceCard({ service, onClick, isChild = false, isLastChild = false }: { service: UserService; onClick: () => void; isChild?: boolean; isLastChild?: boolean }) {
   const { t, i18n } = useTranslation();
   const statusColor = statusColors[service.status] || 'gray';
@@ -797,15 +807,15 @@ function ServiceCard({ service, onClick, isChild = false, isLastChild = false }:
 }
 
 export default function Services() {
+  const { serviceId } = useParams();
   const [services, setServices] = useState<UserService[]>([]);
   const [loading, setLoading] = useState(true);
-  const [selectedService, setSelectedService] = useState<UserService | null>(null);
-  const [opened, { open, close }] = useDisclosure(false);
   const [orderModalOpened, { open: openOrderModal, close: closeOrderModal }] = useDisclosure(false);
   const [changeModalOpened, { open: openChangeModal, close: closeChangeModal }] = useDisclosure(false);
   const [changeService, setChangeService] = useState<UserService | null>(null);
   const refreshAttemptsRef = useRef(0);
   const [categoryPages, setCategoryPages] = useState<Record<string, number>>({});
+  const [search, setSearch] = useState('');
   const perPage = 5;
   const { t } = useTranslation();
   const { userEmailVerified, setOpenVerifyModal, userEmail: storeEmail, isEmailLoaded, setOpenEmailModal } = useStore();
@@ -909,17 +919,28 @@ export default function Services() {
   }, [services, loading]);
 
   const handleServiceClick = (service: UserService) => {
-    setSelectedService(service);
-    open();
+    navigate(`/services/${service.user_service_id}`);
   };
 
   const handleChangeTariff = (service: UserService) => {
     setChangeService(service);
-    close();
+    if (serviceId) navigate('/services');
     openChangeModal();
   };
 
-  const groupedServices = services.reduce((acc, service) => {
+  const flatServices = services.flatMap((service) => [service, ...(service.children || [])]);
+  const detailService = serviceId ? flatServices.find((service) => String(service.user_service_id) === serviceId) : undefined;
+  const searchValue = search.trim().toLowerCase();
+  const visibleServices = searchValue
+    ? services.filter((service) =>
+      `${service.service.name} ${service.user_service_id}`.toLowerCase().includes(searchValue)
+      || (service.children || []).some((child) =>
+        `${child.service.name} ${child.user_service_id}`.toLowerCase().includes(searchValue),
+      ),
+    )
+    : services;
+
+  const groupedServices = visibleServices.reduce((acc, service) => {
     const category = normalizeCategory(service.service.category);
 
     if (!acc[category]) {
@@ -930,11 +951,14 @@ export default function Services() {
   }, {} as Record<string, UserService[]>);
 
   if (loading) {
-    return (
-      <Center h={300}>
-        <Loader size="lg" />
-      </Center>
-    );
+    return <Stack gap="sm" className="services-overview services-skeletons"><Skeleton height={86} radius="lg" /><Skeleton height={66} radius="lg" /><Skeleton height={148} radius="lg" /><Skeleton height={148} radius="lg" /></Stack>;
+  }
+
+  if (serviceId) {
+    if (!detailService) return <Stack className="service-detail-page" gap="md"><Button component={Link} to="/services" variant="subtle" leftSection={<IconArrowLeft size={16} />}>Все услуги</Button><Paper withBorder p="xl" radius="lg"><Title order={3}>Услуга не найдена</Title><Text c="dimmed" mt="xs">Обновите список услуг и попробуйте ещё раз.</Text><Button mt="md" onClick={() => void fetchServices()}>Обновить список</Button></Paper></Stack>;
+    const statusLabel = t(`status.${detailService.status}`, detailService.status);
+    const expiry = getExpiryState(detailService.expire);
+    return <Stack gap="lg" className="service-detail-page"><Button component={Link} to="/services" variant="subtle" className="service-detail-page__back" leftSection={<IconArrowLeft size={16} />}>Все услуги</Button><Paper withBorder radius="lg" p="xl" className="service-detail-page__summary"><Group justify="space-between" align="flex-start"><div><Text c="dimmed" size="sm">Услуга #{detailService.user_service_id}</Text><Title order={2}>{detailService.service.name}</Title><Text c="dimmed" mt="xs">Управление подпиской, устройствами и тарифом.</Text></div><Stack gap="xs" align="flex-end"><Badge color={statusColors[detailService.status] || 'gray'} size="lg" variant="light">{statusLabel}</Badge>{expiry.label && <Text className={`expiry-indicator expiry-indicator--${expiry.tone}`}><IconCalendarTime size={15} />{expiry.label}</Text>}</Stack></Group></Paper><ServiceDetail service={detailService} onDelete={() => { void fetchServices(); navigate('/services'); }} onChangeTariff={handleChangeTariff} /></Stack>;
   }
 
   return (
@@ -955,6 +979,8 @@ export default function Services() {
           </Button>
         </Group>
       </Group>
+
+      <TextInput className="services-search" value={search} onChange={(event) => setSearch(event.currentTarget.value)} placeholder="Поиск по названию или номеру услуги" leftSection={<IconSearch size={16} />} />
 
       {Object.keys(groupedServices).length === 0 ? (
         <Paper withBorder p="xl" radius="md">
@@ -1029,20 +1055,6 @@ export default function Services() {
           })}
         </Accordion>
       )}
-
-      <Modal opened={opened} onClose={close} title={t('services.serviceDetails')} size="lg">
-        {selectedService && (
-          <ServiceDetail
-            service={selectedService}
-            onDelete={() => {
-              close();
-              refreshAttemptsRef.current = 0;
-              fetchServices();
-            }}
-            onChangeTariff={handleChangeTariff}
-          />
-        )}
-      </Modal>
 
       <OrderServiceModal
         opened={orderModalOpened}
