@@ -1,38 +1,26 @@
 import { useLocation, useNavigate } from 'react-router-dom';
 import { Box, Group, Text, Indicator, useComputedColorScheme } from '@mantine/core';
 import { useTranslation } from 'react-i18next';
-import { useStore } from '../store/useStore';
-import { config } from '../config';
 import { NAV_ITEMS } from '../constants/navigation';
+import { useStore } from '../store/useStore';
 
-interface BottomNavigationProps {
-  onPayments: () => void;
-  onWithdrawals: () => void;
-}
-
-export function BottomNavigation({ onPayments, onWithdrawals }: BottomNavigationProps) {
+export function BottomNavigation() {
   const location = useLocation();
   const navigate = useNavigate();
   const computedColorScheme = useComputedColorScheme('light');
   const { t } = useTranslation();
   const hasNewTicketMessages = useStore((s) => s.hasNewTicketMessages);
-  const { userEmail, isEmailLoaded, setOpenEmailModal } = useStore();
-  const emailBlocked = config.EMAIL_REQUIRED === 'true' && isEmailLoaded && !userEmail;
 
-  const handleClick = (path: string) => {
-    if (emailBlocked && (path === '/payments' || path === '/withdrawals')) { setOpenEmailModal(true); return; }
-    if (path === '/payments') { onPayments(); }
-    else if (path === '/withdrawals') { onWithdrawals(); }
-    else { navigate(path); }
-  };
+  const handleClick = (path: string) => navigate(path);
+
 
   return (
     <Box
       style={{
         position: 'fixed',
-        bottom: 16,
-        left: 16,
-        right: 16,
+        bottom: 10,
+        left: 12,
+        right: 12,
         paddingBottom: 'env(safe-area-inset-bottom, 0px)',
         zIndex: 100,
       }}
@@ -51,15 +39,15 @@ export function BottomNavigation({ onPayments, onWithdrawals }: BottomNavigation
           boxShadow: computedColorScheme === 'dark'
             ? '0 8px 32px rgba(0, 0, 0, 0.4)'
             : '0 8px 32px rgba(0, 0, 0, 0.12)',
-          padding: '7px 6px',
+          padding: '7px 4px',
         }}
       >
         <Group justify="space-around" gap={0}>
           {NAV_ITEMS.map((item) => {
-            const isActive = location.pathname === item.path;
+            const isActive = item.path === '/' ? location.pathname === '/' : location.pathname.startsWith(item.path);
             const Icon = item.icon;
             const showDot = (item.path as string) === '/tickets' && hasNewTicketMessages;
-            const isItemBlocked = emailBlocked && (item.path === '/payments' || item.path === '/withdrawals');
+            const isItemBlocked = false;
             return (
               <Box
                 key={item.path}
@@ -69,7 +57,9 @@ export function BottomNavigation({ onPayments, onWithdrawals }: BottomNavigation
                   flexDirection: 'column',
                   alignItems: 'center',
                   justifyContent: 'center',
-                  padding: '7px 6px',
+                  padding: '8px 4px',
+                  minWidth: 58,
+                  flex: 1,
                   borderRadius: 12,
                   cursor: isItemBlocked ? 'not-allowed' : 'pointer',
                   opacity: isItemBlocked ? 0.4 : 1,

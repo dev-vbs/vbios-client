@@ -38,9 +38,10 @@ export function WebAppHeader() {
 
   return (
     <>
-    <Group className="mobile-topbar" justify="space-between" p="sm" gap="xs"><Group gap="xs" className="mobile-brand">{config.LOGO_URL && <img src={config.LOGO_URL} alt="" />}<Box><Text fw={700} size="sm">{config.APP_NAME}</Text><Text size="xs" c="dimmed">Личный кабинет</Text></Box></Group><Group gap="xs">
+    <Group className="mobile-topbar" justify="space-between" p="sm" gap="xs"><Group gap="xs" className="mobile-brand">{config.LOGO_URL && <img src={config.LOGO_URL} alt="" />}<Box><Text fw={700} size="sm">{config.APP_NAME}</Text><Text size="xs" c="dimmed">Личный кабинет</Text></Box></Group><Group gap="xs" className="mobile-topbar__actions">
       {user && (
         <Button
+          className="mobile-balance"
           leftSection={<IconWallet size={16} />}
           variant="light"
           color="cyan"
@@ -80,12 +81,12 @@ export function WebAppHeader() {
         </Tooltip>
       )}
       {config.SUPPORT_LINK && (
-        <ActionIcon onClick={handleSupportLink} variant="subtle" size="lg" color="blue">
+        <ActionIcon className="mobile-support" onClick={handleSupportLink} variant="subtle" size="lg" color="blue">
           <IconHeadset size={20} />
         </ActionIcon>
       )}
-      <LanguageSwitcher />
-      <ActionIcon
+      <span className="mobile-language"><LanguageSwitcher /></span>
+      <ActionIcon className="mobile-theme"
         onClick={() => setColorScheme(computedColorScheme === 'light' ? 'dark' : 'light')}
         variant="subtle"
         size="lg"

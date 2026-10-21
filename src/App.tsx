@@ -254,7 +254,7 @@ function AppContent() {
         {versionModal}
         <Box style={{ minHeight: '100vh', paddingBottom: 150 }}>
           <WebAppHeader />
-          <Box px="md">
+          <Box className="mobile-route-shell">
             <Routes>
               <Route path="/" element={<Dashboard />} />
               <Route path="/services" element={<Services />} />
@@ -265,7 +265,7 @@ function AppContent() {
             </Routes>
           </Box>
           <LegalLinks />
-          <BottomNavigation onPayments={() => setPayHistoryOpen(true)} onWithdrawals={() => setWithdrawHistoryOpen(true)} />
+          <BottomNavigation />
         </Box>
         <PayHistoryModal opened={payHistoryOpen} onClose={() => setPayHistoryOpen(false)} />
         <WithdrawHistoryModal opened={withdrawHistoryOpen} onClose={() => setWithdrawHistoryOpen(false)} />
