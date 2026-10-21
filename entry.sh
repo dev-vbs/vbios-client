@@ -145,8 +145,8 @@ window.__APP_CONFIG__ = {
   DEVICE_CONFIG_TEXT: "${DEVICE_CONFIG_TEXT:-}",
   CAPTCHA_ENABLED: "${CAPTCHA_ENABLED:-false}",
   ORDER_SORTING: "${ORDER_SORTING:-cost_asc}",
-  ORDER_COST_DISCOUNT: "${ORDER_SORTING:-true}",
-  ORDER_COST_WITH_BONUSES: "${ORDER_SORTING:-false}",
+  ORDER_COST_DISCOUNT: "${ORDER_COST_DISCOUNT:-true}",
+  ORDER_COST_WITH_BONUSES: "${ORDER_COST_WITH_BONUSES:-false}",
   CONTACT_EMAIL: "${CONTACT_EMAIL:-}",
   CONTACT_PHONE: "${CONTACT_PHONE:-}",
   WEB_PUSH_ENABLE: "${WEB_PUSH_ENABLE:-false}",
@@ -181,3 +181,4 @@ EOF
 chmod 644 /app/locales/*.json 2>/dev/null || true
 
 nginx -g "daemon off;"
+

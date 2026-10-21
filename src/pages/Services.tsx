@@ -12,6 +12,7 @@ import ConfirmModal from '../components/ConfirmModal';
 import { config } from '../config';
 import { useStore } from '../store/useStore';
 import { isTelegramWebApp } from '../constants/webapp';
+import './Services.css';
 
 interface ForecastItem {
   name: string;
@@ -671,7 +672,7 @@ function ServiceCard({ service, onClick, isChild = false, isLastChild = false }:
           withBorder
           radius="md"
           p="sm"
-          style={{ cursor: 'pointer', flex: 1 }}
+          className="service-overview-card service-overview-card--child" style={{ cursor: 'pointer', flex: 1 }}
           onClick={onClick}
         >
           <Group justify="space-between">
@@ -702,7 +703,7 @@ function ServiceCard({ service, onClick, isChild = false, isLastChild = false }:
       withBorder
       radius="md"
       p="md"
-      style={{ cursor: 'pointer' }}
+      className="service-overview-card" style={{ cursor: 'pointer' }}
       onClick={onClick}
     >
       <Group justify="space-between">
@@ -869,7 +870,7 @@ export default function Services() {
   }
 
   return (
-    <Stack gap="lg">
+    <Stack gap="lg" className="services-overview">
       <Group justify="space-between">
         <Title order={2}>{t('services.title')}</Title>
         <Group>
@@ -1021,3 +1022,5 @@ export default function Services() {
     </Stack>
   );
 }
+
+
