@@ -14,6 +14,7 @@ import { useTelegramWebApp } from '../hooks/useTelegramWebApp';
 import LanguageSwitcher from '../components/LanguageSwitcher';
 import DocumentModal from '../components/DocumentModal';
 import { hasTelegramOidcAuth, hasTelegramWebAppAutoAuth, hasTelegramWidget, hasTelegramWebAppAuth } from '../constants/webapp';
+import './Login.css';
 
 function isPdf(value: string) {
   return value.toLowerCase().endsWith('.pdf');
@@ -513,8 +514,8 @@ const handleOAuthLogin = (provider: 'yandex' | 'google' | 'vk' | 'github') => {
   };
 
   return (
-    <Center style={{ minHeight: '100svh', padding: isMobile ? '20px 16px 88px' : '32px', position: 'relative', background: 'radial-gradient(circle at 50% 0%, rgba(34, 139, 230, 0.15), transparent 42%), var(--mantine-color-body)' }}>
-      <Card withBorder radius="xl" p={isMobile ? 'lg' : 'xl'} w={400} shadow="xl" style={{ width: 'min(100%, 400px)', borderColor: 'var(--mantine-color-default-border)', backdropFilter: 'blur(12px)' }}>
+    <Center className="auth-screen" style={{ minHeight: '100svh', padding: isMobile ? '20px 16px 88px' : '32px', position: 'relative', background: 'radial-gradient(circle at 50% 0%, rgba(34, 139, 230, 0.15), transparent 42%), var(--mantine-color-body)' }}>
+      <Card className="auth-card" withBorder radius="xl" p={isMobile ? 'lg' : 'xl'} w={400} shadow="xl" style={{ width: 'min(100%, 400px)', borderColor: 'var(--mantine-color-default-border)', backdropFilter: 'blur(12px)' }}>
         <Stack gap="lg">
           <Group justify="space-between" align="center" wrap="nowrap">
             <div style={{ flex: 1, display: 'flex', justifyContent: 'flex-start' }}>

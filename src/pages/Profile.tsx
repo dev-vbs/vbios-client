@@ -1,7 +1,7 @@
 import axios from 'axios';
 import { useState, useEffect, useCallback } from 'react';
 import { Card, Text, Stack, Group, Divider, Grid, Button, TextInput, Tooltip, ActionIcon, Avatar, Title, Modal, Loader, Center, Collapse, Alert, Skeleton, useMantineColorScheme } from '@mantine/core';
-import { IconUser, IconPhone, IconCopy, IconCheck, IconBrandTelegram, IconCreditCard, IconChevronDown, IconChevronUp, IconMail, IconAlertCircle } from '@tabler/icons-react';
+import { IconUser, IconPhone, IconCopy, IconCheck, IconBrandTelegram, IconCreditCard, IconChevronDown, IconChevronUp, IconMail, IconAlertCircle, IconEdit } from '@tabler/icons-react';
 import { notifications } from '@mantine/notifications';
 import { useClipboard } from '@mantine/hooks';
 import { useTranslation } from 'react-i18next';
@@ -13,6 +13,7 @@ import SecuritySettings from '../components/security/SecuritySettings';
 import { useStore } from '../store/useStore';
 import { config } from '../config';
 import { hasTelegramWidget } from '../constants/webapp';
+import './Profile.css';
 
 const RESEND_COOLDOWN_MS = 3 * 60 * 1000;
 const RESEND_STORAGE_KEY = 'email_verify_last_sent';
@@ -239,12 +240,15 @@ export default function Profile() {
 
     setSavingProfile(true);
     try {
-      const response = await userApi.updateProfile({
+      await userApi.updateProfile({
         full_name: formData.full_name.trim(),
         phone,
       });
-      const responseData = response.data.data;
+      // SHM can return a status object after an update. Read the saved record again.
+      const profileResponse = await userApi.getProfile();
+      const responseData = profileResponse.data.data;
       const freshProfile = Array.isArray(responseData) ? responseData[0] : responseData;
+      if (!freshProfile?.user_id) throw new Error('Profile was not returned after update');
       setProfile(freshProfile);
       setUser(freshProfile);
       setFormData((current) => ({
@@ -269,6 +273,12 @@ export default function Profile() {
       });    } finally {
       setSavingProfile(false);
     }
+  };
+
+  const cancelEditing = () => {
+    if (!profile) return;
+    setFormData({ full_name: profile.full_name || '', phone: profile.phone || '', login2: profile.login2 || '' });
+    setEditing(false);
   };
 
   const refreshProfile = async () => {
@@ -533,7 +543,7 @@ export default function Profile() {
 
       <Grid>
         <Grid.Col span={{ base: 12, md: 6 }} style={{ display: 'flex' }}>
-          <Card withBorder radius="md" p="lg" style={{ flex: 1, display: 'flex', flexDirection: 'column' }}>
+          <Card className="profile-card profile-card--account" withBorder radius="lg" p="lg" style={{ flex: 1, display: 'flex', flexDirection: 'column' }}>
             <Group>
               <Avatar
                 size={80}
@@ -618,16 +628,16 @@ export default function Profile() {
         </Grid.Col>
 
         <Grid.Col span={{ base: 12, md: 6 }} style={{ display: 'flex' }}>
-          <Card withBorder radius="md" p="lg" style={{ flex: 1, display: 'flex', flexDirection: 'column' }}>
+          <Card className="profile-card profile-card--details" withBorder radius="lg" p="lg" style={{ flex: 1, display: 'flex', flexDirection: 'column' }}>
             <Group justify="space-between" mb="md">
               <Text fw={500}>{t('profile.personalData')}</Text>
               {!editing ? (
-                <Button variant="light" size="xs" onClick={() => setEditing(true)}>
+                <Button variant="light" size="xs" leftSection={<IconEdit size={14} />} onClick={() => setEditing(true)}>
                   {t('common.edit')}
                 </Button>
               ) : (
                 <Group gap="xs">
-                  <Button variant="light" size="xs" color="gray" onClick={() => setEditing(false)}>
+                  <Button variant="light" size="xs" color="gray" onClick={cancelEditing}>
                     {t('common.cancel')}
                   </Button>
                   <Button size="xs" onClick={handleSave} loading={savingProfile}>
@@ -637,7 +647,7 @@ export default function Profile() {
               )}
             </Group>
 
-            <Stack gap="md" style={{ flex: 1 }}>
+            <Stack gap="md" className="profile-form" style={{ flex: 1 }}>
               <TextInput
                 label={t('profile.fullName')}
                 leftSection={<IconUser size={16} />}

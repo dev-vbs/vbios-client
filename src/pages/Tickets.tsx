@@ -25,6 +25,7 @@ import {
 import { useMediaQuery, getHotkeyHandler } from '@mantine/hooks';
 import { notifications } from '@mantine/notifications';
 import { useTranslation } from 'react-i18next';
+import './Tickets.css';
 import {
   IconMessageCircle,
   IconChevronUp,
