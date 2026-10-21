@@ -1,6 +1,6 @@
 import { useState, useEffect, useRef } from 'react';
 import { useNavigate } from 'react-router-dom';
-import { Card, Timeline, Text, Stack, Group, Badge, Button, Divider, Modal, ActionIcon, Loader, Center, Paper, Title, Tabs, Code, Tooltip, Accordion, Box, Select, NumberInput, Pagination } from '@mantine/core';
+import { Card, Timeline, Text, Stack, Group, Badge, Button, Divider, Modal, ActionIcon, Loader, Center, Paper, Title, Tabs, Code, Tooltip, Accordion, Box, Select, NumberInput, Pagination, Alert } from '@mantine/core';
 import { IconQrcode, IconCopy, IconCheck, IconDownload, IconRefresh, IconTrash, IconPlus, IconPlayerStop, IconExchange, IconCreditCard, IconWallet, IconDeviceMobileCog } from '@tabler/icons-react';
 import { useDisclosure, useClipboard } from '@mantine/hooks';
 import { useTranslation } from 'react-i18next';
@@ -387,12 +387,6 @@ function ServiceDetail({ service, onDelete, onChangeTariff }: ServiceDetailProps
   const statusColor = statusColors[service.status] || 'gray';
   const statusLabel = t(`status.${service.status}`, service.status);
   const urlSchema = isProxy && config[`${detectPlatform()}_PROXY_URL_SCHEMA` as keyof typeof config];
-  const hasProxyAppUrls = [
-    config.PROXY_APP_WINDOWS_URL, config.PROXY_APP_LINUX_URL, config.PROXY_APP_MAC_URL, config.PROXY_APP_IOS_URL, config.PROXY_APP_ANDROID_URL,
-  ].some(Boolean);
-  const hasVpnAppUrls = [
-    config.VPN_APP_WINDOWS_URL, config.VPN_APP_LINUX_URL, config.VPN_APP_MAC_URL, config.VPN_APP_IOS_URL, config.VPN_APP_ANDROID_URL,
-  ].some(Boolean);
 
   return (
     <Stack gap="md">
@@ -457,141 +451,66 @@ function ServiceDetail({ service, onDelete, onChangeTariff }: ServiceDetailProps
           </Stack>
         </Tabs.Panel>
 
-        { service.status === 'ACTIVE' && (
+        { service.status === 'ACTIVE' && isVpnOrProxy && (
           <Tabs.Panel value="config" pt="md">
-            <Stack gap="md">
-              {isProxy && subscriptionUrl && (
-                <Paper withBorder p="md" radius="md">
-                  { config.SHOW_PROXY_SUB_LINK === 'true' && (
-                    <>
-                    <Text size="sm" fw={500} mb="xs">{t('services.subscriptionLink')}</Text>
-                    <Group gap="xs">
-                      <Code style={{ flex: 1, wordBreak: 'break-all' }}>{subscriptionUrl}</Code>
+            <Paper withBorder p="lg" radius="md">
+              <Stack gap="md">
+                <Group justify="space-between" align="flex-start">
+                  <div>
+                    <Text fw={700} size="lg">Подключение к {service.service.name}</Text>
+                    <Text size="sm" c="dimmed">{isProxy ? 'Ссылка подписки обновляет конфигурацию автоматически.' : 'Скачайте конфигурацию или отсканируйте QR-код.'}</Text>
+                  </div>
+                  <Badge color="green" variant="light">Активна</Badge>
+                </Group>
+
+                {isProxy && subscriptionUrl && (
+                  <Paper withBorder p="sm" radius="sm" bg="var(--mantine-color-default-hover)">
+                    <Text size="xs" fw={700} tt="uppercase" c="dimmed" mb={6}>Ссылка на подписку</Text>
+                    <Group wrap="nowrap">
+                      <Code style={{ flex: 1, wordBreak: 'break-all', whiteSpace: 'normal' }}>{subscriptionUrl}</Code>
                       <Tooltip label={clipboard.copied ? t('common.copied') : t('common.copy')}>
-                        <ActionIcon color={clipboard.copied ? 'teal' : 'gray'} variant="subtle" onClick={() => clipboard.copy(subscriptionUrl)}>
-                          {clipboard.copied ? <IconCheck size={16} /> : <IconCopy size={16} />}
+                        <ActionIcon color={clipboard.copied ? 'teal' : 'blue'} variant="light" onClick={() => clipboard.copy(subscriptionUrl)}>
+                          {clipboard.copied ? <IconCheck size={17} /> : <IconCopy size={17} />}
                         </ActionIcon>
                       </Tooltip>
                     </Group>
-                    <Divider my="xs" />
-                    </>
-                  )}
+                  </Paper>
+                )}
 
-                  <Group gap="xs">
-                    {hasProxyAppUrls ? (
-                      <Timeline active={1} bulletSize={24} lineWidth={2}>
-                        <Timeline.Item bullet={<IconDownload size={12} />} title={t('services.stepDownloadApp')}>
-                          <AppDownloadBlock type="proxy" />
-                        </Timeline.Item>
-                        <Timeline.Item bullet={<IconDeviceMobileCog size={12} />} title={t('services.stepConfigureApp') + ' ' + (urlSchema ? t('services.deviceConfig') : t('services.openSubLink'))}>
-                          <Group gap="xs" mt="xs">
-                            { config.SHOW_PROXY_QR === 'true' && (
-                              <Button
-                                leftSection={<IconQrcode size={16} />}
-                                variant="light"
-                                onClick={() => setQrModalOpen(true)}
-                              >
-                                {t('services.qrCode')}
-                            </Button>
-                            )}
-                            <Button
-                              component="a"
-                              color="green"
-                              onClick={() => urlSchema ? handleOpenUrlSchema() : handleConfigure()}
-                              leftSection={<IconDeviceMobileCog size={16} />}
-                              variant="light"
-                            >
-                              {urlSchema ? (config.DEVICE_CONFIG_TEXT ? config.DEVICE_CONFIG_TEXT : t('services.deviceConfig')) : t('services.openSubLink')}
-                            </Button>
-                          </Group>
-                        </Timeline.Item>
-                      </Timeline>
-                    ) : (
-                    <Group gap="xs" mt="xs">
-                      {config.SHOW_PROXY_QR === 'true' && (
-                        <Button
-                          leftSection={<IconQrcode size={16} />}
-                          variant="light"
-                          onClick={() => setQrModalOpen(true)}
-                        >
-                          {t('services.qrCode')}
-                        </Button>
-                      )}
-                      <Button
-                        component="a"
-                        color="green"
-                        onClick={() => handleConfigure()}
-                        leftSection={<IconDeviceMobileCog size={16} />}
-                        variant="light"
-                      >
-                        {t('services.openSubLink')}
-                      </Button>
-                    </Group>
-                    )}
-                  </Group>
-                </Paper>
-              )}
-              { isVpn && storageData && (
-                <Paper withBorder p="md" radius="md">
-                  {hasVpnAppUrls ? (
-                    <Timeline active={1} bulletSize={24} lineWidth={2}>
-                      <Timeline.Item bullet={<IconDownload size={12} />} title={t('services.stepDownloadApp')}>
-                        <AppDownloadBlock type="vpn" />
+                {isProxy && !subscriptionUrl && <Alert color="orange" title="Ссылка пока не готова">Не удалось получить данные подключения. Нажмите «Обновить» на странице услуг или обратитесь в поддержку.</Alert>}
+                {isVpn && !storageData && <Alert color="orange" title="Конфигурация пока не готова">Не удалось получить файл конфигурации. Нажмите «Обновить» на странице услуг или обратитесь в поддержку.</Alert>}
+
+                <Group grow align="stretch">
+                  <Button leftSection={<IconQrcode size={17} />} variant="light" disabled={isProxy ? !subscriptionUrl : !storageData} onClick={() => setQrModalOpen(true)}>{t('services.qrCode')}</Button>
+                  {isProxy ? <Button leftSection={<IconDeviceMobileCog size={17} />} disabled={!subscriptionUrl} onClick={() => urlSchema ? handleOpenUrlSchema() : handleConfigure()}>Открыть в приложении</Button> : <Button leftSection={<IconDownload size={17} />} disabled={!storageData} onClick={downloadConfig} loading={downloading}>Скачать конфигурацию</Button>}
+                </Group>
+
+                {isProxy && subscriptionUrl && (
+                  <>
+                    <Divider />
+                    <Text fw={600}>Как подключиться</Text>
+                    <Timeline active={3} bulletSize={25} lineWidth={2}>
+                      <Timeline.Item bullet={<IconDownload size={13} />} title="1. Установите приложение">
+                        <Text size="sm" c="dimmed">HAPP, INCY или v2rayNG / v2rayN — выберите приложение для своего устройства.</Text>
                       </Timeline.Item>
-                      <Timeline.Item bullet={<IconDeviceMobileCog size={12} />} title={t('services.stepConfigureApp') + ' ' +  (t('services.downloadConfig'))}>
-                        <Group gap="xs" mt="xs">
-                          <Button
-                            leftSection={<IconQrcode size={16} />}
-                            variant="light"
-                            onClick={() => setQrModalOpen(true)}
-                            >
-                              {t('services.qrCode')}
-                            </Button>
-                          <Button
-                            leftSection={<IconDownload size={16} />}
-                            variant="light"
-                            onClick={downloadConfig}
-                            loading={downloading}
-                          >
-                            {t('services.downloadConfig')}
-                          </Button>
-                        </Group>
+                      <Timeline.Item bullet={<IconCopy size={13} />} title="2. Скопируйте ссылку подписки">
+                        <Text size="sm" c="dimmed">Нажмите значок копирования рядом со ссылкой выше.</Text>
+                      </Timeline.Item>
+                      <Timeline.Item bullet={<IconDeviceMobileCog size={13} />} title="3. Добавьте подписку в приложение">
+                        <Text size="sm" c="dimmed">В HAPP: «Добавить» → «По ссылке». В INCY: «Subscriptions» → «+» → вставьте ссылку. В v2rayNG/v2rayN: «Subscription group» → «Add» → вставьте ссылку.</Text>
+                      </Timeline.Item>
+                      <Timeline.Item bullet={<IconCheck size={13} />} title="4. Обновите подписку и подключитесь">
+                        <Text size="sm" c="dimmed">Выберите сервер после обновления списка и включите подключение. QR-код можно использовать вместо копирования.</Text>
                       </Timeline.Item>
                     </Timeline>
-                    ) : (
-                    <Group gap="xs" mt="xs">
-                      <Button
-                        leftSection={<IconQrcode size={16} />}
-                        variant="light"
-                        onClick={() => setQrModalOpen(true)}
-                      >
-                        {t('services.qrCode')}
-                      </Button>
-                      <Button
-                        leftSection={<IconDownload size={16} />}
-                        variant="light"
-                        onClick={downloadConfig}
-                        loading={downloading}
-                      >
-                        {t('services.downloadConfig')}
-                      </Button>
-                    </Group>
-                  )}
-                </Paper>
-              )}
-
-              <QrModal
-                opened={qrModalOpen}
-                onClose={() => setQrModalOpen(false)}
-                data={isVpn ? (storageData || '') : (subscriptionUrl || '')}
-                title={isVpn ? t('services.vpnQrTitle') : t('services.subscriptionQrTitle')}
-                onDownload={isVpn ? downloadConfig : undefined}
-              />
-            </Stack>
+                  </>
+                )}
+              </Stack>
+            </Paper>
+            <QrModal opened={qrModalOpen} onClose={() => setQrModalOpen(false)} data={isVpn ? (storageData || '') : (subscriptionUrl || '')} title={isVpn ? t('services.vpnQrTitle') : t('services.subscriptionQrTitle')} onDownload={isVpn ? downloadConfig : undefined} />
           </Tabs.Panel>
         )}
       </Tabs>
-
       {isNotPaid && (
         <Paper withBorder p="md" radius="md" mt="md">
           <Stack gap="sm">
