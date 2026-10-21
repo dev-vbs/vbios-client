@@ -4,7 +4,7 @@ import { Card, Timeline, Text, Stack, Group, Badge, Button, Divider, Modal, Acti
 import { IconQrcode, IconCopy, IconCheck, IconDownload, IconRefresh, IconTrash, IconPlus, IconPlayerStop, IconExchange, IconCreditCard, IconWallet, IconDeviceMobileCog } from '@tabler/icons-react';
 import { useDisclosure, useClipboard } from '@mantine/hooks';
 import { useTranslation } from 'react-i18next';
-import { api, servicesApi, userApi } from '../api/client';
+import { api, servicesApi, storageApi, userApi } from '../api/client';
 import { notifications } from '@mantine/notifications';
 import QrModal from '../components/QrModal';
 import OrderServiceModal from '../components/OrderServiceModal';
@@ -89,12 +89,69 @@ interface ServiceDetailProps {
   onChangeTariff?: (service: UserService) => void;
 }
 
+type ConnectionStatus = 'loading' | 'ready' | 'missing' | 'error';
+type StorageValue = string | number | boolean | null | StorageValue[] | { [key: string]: StorageValue };
+
+const subscriptionFields = ['subscription_url', 'subscriptionurl', 'subscription', 'sub_url', 'suburl', 'link', 'url'];
+const configFields = ['config', 'configuration', 'wg_config', 'wireguard_config', 'value', 'content'];
+
+function parseStorageValue(value: unknown): StorageValue | undefined {
+  if (typeof value === 'string') {
+    const trimmed = value.trim();
+    if (!trimmed) return undefined;
+    if ((trimmed.startsWith('{') && trimmed.endsWith('}')) || (trimmed.startsWith('[') && trimmed.endsWith(']'))) {
+      try { return parseStorageValue(JSON.parse(trimmed)); } catch { return trimmed; }
+    }
+    return trimmed;
+  }
+  if (typeof value === 'number' || typeof value === 'boolean' || value === null) return value;
+  if (Array.isArray(value)) return value as StorageValue[];
+  if (typeof value === 'object' && value !== null) return value as { [key: string]: StorageValue };
+  return undefined;
+}
+
+function findStorageString(value: StorageValue | undefined, fieldNames: string[], accept: (candidate: string) => boolean): string | null {
+  if (typeof value === 'string') return accept(value) ? value : null;
+  if (Array.isArray(value)) {
+    for (const item of value) { const result = findStorageString(item, fieldNames, accept); if (result) return result; }
+    return null;
+  }
+  if (!value || typeof value !== 'object') return null;
+  for (const [key, candidate] of Object.entries(value)) {
+    if (fieldNames.includes(key.toLowerCase()) && typeof candidate === 'string' && accept(candidate.trim())) return candidate.trim();
+  }
+  for (const candidate of Object.values(value)) { const result = findStorageString(candidate, fieldNames, accept); if (result) return result; }
+  return null;
+}
+
+function extractSubscriptionUrl(payload: unknown): string | null {
+  return findStorageString(parseStorageValue(payload), subscriptionFields, (candidate) => /^(https?:\/\/|happ:\/\/)/i.test(candidate));
+}
+
+function extractConfiguration(payload: unknown): string | null {
+  return findStorageString(parseStorageValue(payload), configFields, (candidate) => candidate.length > 0);
+}
+
+function getStorageKeys(category: string, userServiceId: number): string[] {
+  const id = String(userServiceId);
+  const prefixes = category === 'proxy'
+    ? [config.PROXY_STORAGE_PREFIX || 'vpn_mrzb_', 'vpn_mrzb_', 'vpn_remna_']
+    : [config.VPN_STORAGE_PREFIX || 'vpn', 'vpn'];
+  return [...new Set(prefixes.map((prefix) => `${prefix}${id}`))];
+}
+
+function wasNotFound(error: unknown): boolean {
+  if (!error || typeof error !== 'object' || !('response' in error)) return false;
+  return (error as { response?: { status?: number } }).response?.status === 404;
+}
+
 function ServiceDetail({ service, onDelete, onChangeTariff }: ServiceDetailProps) {
   const [storageData, setStorageData] = useState<string | null>(null);
   const [subscriptionUrl, setSubscriptionUrl] = useState<string | null>(null);
   const [nextServiceInfo, setNextServiceInfo] = useState<{ name: string; cost: number } | null>(null);
   const [nextServiceLoading, setNextServiceLoading] = useState(false);
-  const [, setLoading] = useState(true);
+  const [connectionStatus, setConnectionStatus] = useState<ConnectionStatus>('loading');
+  const [connectionReload, setConnectionReload] = useState(0);
   const [activeTab, setActiveTab] = useState<string | null>('info');
   const [qrModalOpen, setQrModalOpen] = useState(false);
   const [deleting, setDeleting] = useState(false);
@@ -316,44 +373,32 @@ function ServiceDetail({ service, onDelete, onChangeTariff }: ServiceDetailProps
   const category = normalizeCategory(service.service.category);
 
   useEffect(() => {
-    const fetchData = async () => {
-      if (category === 'proxy') {
-        const prefix = config.PROXY_STORAGE_PREFIX ? config.PROXY_STORAGE_PREFIX : 'vpn_mrzb_';
+    let cancelled = false;
+    const loadConnection = async () => {
+      if (category !== 'proxy' && category !== 'vpn') return;
+      setConnectionStatus('loading');
+      setSubscriptionUrl(null);
+      setStorageData(null);
+      setActiveTab('config');
+      let hadRequestError = false;
+      for (const key of getStorageKeys(category, service.user_service_id)) {
         try {
-          const mzResponse = await api.get(`/storage/manage/${prefix}${service.user_service_id}?format=json`);
-          const url = mzResponse.data.subscription_url || mzResponse.data.response?.subscriptionUrl;
-          if (url) {
-            setSubscriptionUrl(url);
-          }
-          setActiveTab('config');
-        } catch {
-        }
-        if (!subscriptionUrl ) {
-          try {
-            const remnaResponse = await api.get(`/storage/manage/vpn_remna_${service.user_service_id}?format=json`);
-            const url = remnaResponse.data.subscription_url || remnaResponse.data.response?.subscriptionUrl;
-            if (url) {
-              setSubscriptionUrl(url);
-            }
-          } catch {
-          }
-        }
-      } else if (category === 'vpn') {
-        const prefix = config.VPN_STORAGE_PREFIX ? config.VPN_STORAGE_PREFIX : 'vpn';
-        try {
-          const vpnResponse = await api.get(`/storage/manage/${prefix}${service.user_service_id}`);
-          const configData = vpnResponse.data;
-          if (configData) {
-            setStorageData(configData);
-          }
-          setActiveTab('config');
-        } catch {
+          const response = await storageApi.get(key, { format: 'json' });
+          const value = category === 'proxy' ? extractSubscriptionUrl(response.data) : extractConfiguration(response.data);
+          if (!value) continue;
+          if (cancelled) return;
+          if (category === 'proxy') setSubscriptionUrl(value); else setStorageData(value);
+          setConnectionStatus('ready');
+          return;
+        } catch (error) {
+          if (!wasNotFound(error)) hadRequestError = true;
         }
       }
-      setLoading(false);
+      if (!cancelled) setConnectionStatus(hadRequestError ? 'error' : 'missing');
     };
-    fetchData();
-  }, [service.user_service_id, category]);
+    void loadConnection();
+    return () => { cancelled = true; };
+  }, [service.user_service_id, category, connectionReload]);
 
   useEffect(() => {
     const fetchNextService = async () => {
@@ -453,19 +498,19 @@ function ServiceDetail({ service, onDelete, onChangeTariff }: ServiceDetailProps
 
         { service.status === 'ACTIVE' && isVpnOrProxy && (
           <Tabs.Panel value="config" pt="md">
-            <Paper withBorder p="lg" radius="md">
+            <Paper withBorder p="lg" radius="md" className="service-connection-card">
               <Stack gap="md">
                 <Group justify="space-between" align="flex-start">
                   <div>
-                    <Text fw={700} size="lg">Подключение к {service.service.name}</Text>
-                    <Text size="sm" c="dimmed">{isProxy ? 'Ссылка подписки обновляет конфигурацию автоматически.' : 'Скачайте конфигурацию или отсканируйте QR-код.'}</Text>
+                    <Text fw={700} size="lg">{t('services.connectionTo', { service: service.service.name, defaultValue: `Подключение к ${service.service.name}` })}</Text>
+                    <Text size="sm" c="dimmed">{isProxy ? t('services.subscriptionHint', { defaultValue: 'Ссылка подписки обновляет конфигурацию автоматически.' }) : t('services.vpnConfigHint', { defaultValue: 'Скачайте конфигурацию или отсканируйте QR-код.' })}</Text>
                   </div>
-                  <Badge color="green" variant="light">Активна</Badge>
+                  <Badge color="green" variant="light">{statusLabel}</Badge>
                 </Group>
 
                 {isProxy && subscriptionUrl && (
                   <Paper withBorder p="sm" radius="sm" bg="var(--mantine-color-default-hover)">
-                    <Text size="xs" fw={700} tt="uppercase" c="dimmed" mb={6}>Ссылка на подписку</Text>
+                    <Text size="xs" fw={700} tt="uppercase" c="dimmed" mb={6}>{t('services.subscriptionLink')}</Text>
                     <Group wrap="nowrap">
                       <Code style={{ flex: 1, wordBreak: 'break-all', whiteSpace: 'normal' }}>{subscriptionUrl}</Code>
                       <Tooltip label={clipboard.copied ? t('common.copied') : t('common.copy')}>
@@ -477,18 +522,29 @@ function ServiceDetail({ service, onDelete, onChangeTariff }: ServiceDetailProps
                   </Paper>
                 )}
 
-                {isProxy && !subscriptionUrl && <Alert color="orange" title="Ссылка пока не готова">Не удалось получить данные подключения. Нажмите «Обновить» на странице услуг или обратитесь в поддержку.</Alert>}
-                {isVpn && !storageData && <Alert color="orange" title="Конфигурация пока не готова">Не удалось получить файл конфигурации. Нажмите «Обновить» на странице услуг или обратитесь в поддержку.</Alert>}
+                {connectionStatus === 'loading' && (
+                  <Group gap="xs" className="connection-loading"><Loader size="sm" /><Text size="sm" c="dimmed">{t('common.loading')}</Text></Group>
+                )}
+                {connectionStatus !== 'loading' && isProxy && !subscriptionUrl && (
+                  <Alert color={connectionStatus === 'error' ? 'red' : 'orange'} title={t('services.connectionUnavailableTitle', { defaultValue: 'Ссылка пока не готова' })}>
+                    <Stack gap="sm"><Text size="sm">{t('services.connectionUnavailableDescription', { defaultValue: 'Данные подключения пока не появились в хранилище. Обновите данные или обратитесь в поддержку.' })}</Text><Button variant="light" size="xs" leftSection={<IconRefresh size={14} />} onClick={() => setConnectionReload((value) => value + 1)}>{t('common.refresh')}</Button></Stack>
+                  </Alert>
+                )}
+                {connectionStatus !== 'loading' && isVpn && !storageData && (
+                  <Alert color={connectionStatus === 'error' ? 'red' : 'orange'} title={t('services.configUnavailableTitle', { defaultValue: 'Конфигурация пока не готова' })}>
+                    <Stack gap="sm"><Text size="sm">{t('services.configUnavailableDescription', { defaultValue: 'Файл конфигурации пока не появился в хранилище. Обновите данные или обратитесь в поддержку.' })}</Text><Button variant="light" size="xs" leftSection={<IconRefresh size={14} />} onClick={() => setConnectionReload((value) => value + 1)}>{t('common.refresh')}</Button></Stack>
+                  </Alert>
+                )}
 
                 <Group grow align="stretch">
                   <Button leftSection={<IconQrcode size={17} />} variant="light" disabled={isProxy ? !subscriptionUrl : !storageData} onClick={() => setQrModalOpen(true)}>{t('services.qrCode')}</Button>
-                  {isProxy ? <Button leftSection={<IconDeviceMobileCog size={17} />} disabled={!subscriptionUrl} onClick={() => urlSchema ? handleOpenUrlSchema() : handleConfigure()}>Открыть в приложении</Button> : <Button leftSection={<IconDownload size={17} />} disabled={!storageData} onClick={downloadConfig} loading={downloading}>Скачать конфигурацию</Button>}
+                  {isProxy ? <Button leftSection={<IconDeviceMobileCog size={17} />} disabled={!subscriptionUrl} onClick={() => urlSchema ? handleOpenUrlSchema() : handleConfigure()}>{t('services.openInApp', { defaultValue: 'Открыть в приложении' })}</Button> : <Button leftSection={<IconDownload size={17} />} disabled={!storageData} onClick={downloadConfig} loading={downloading}>{t('services.downloadConfig')}</Button>}
                 </Group>
 
                 {isProxy && subscriptionUrl && (
                   <>
                     <Divider />
-                    <Text fw={600}>Как подключиться</Text>
+                    <Text fw={600}>{t('services.howToConnect', { defaultValue: 'Как подключиться' })}</Text>
                     <Timeline active={3} bulletSize={25} lineWidth={2}>
                       <Timeline.Item bullet={<IconDownload size={13} />} title="1. Установите приложение">
                         <Text size="sm" c="dimmed">HAPP, INCY или v2rayNG / v2rayN — выберите приложение для своего устройства.</Text>

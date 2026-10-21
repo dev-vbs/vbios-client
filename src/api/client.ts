@@ -238,7 +238,7 @@ export const referralsApi = {
 };
 
 export const storageApi = {
-  get: (name: string) => api.get(`/storage/manage/${name}`),
+  get: (name: string, params?: Record<string, string>) => api.get(`/storage/manage/${name}`, { params }),
   list: () => api.get('/storage/manage'),
 };
 
