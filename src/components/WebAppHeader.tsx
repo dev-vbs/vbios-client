@@ -38,7 +38,7 @@ export function WebAppHeader() {
 
   return (
     <>
-    <Group className="mobile-topbar" justify="space-between" p="sm" gap="xs"><Group gap="xs" className="mobile-brand">{config.LOGO_URL && <img src={config.LOGO_URL} alt="" />}<Box><Text fw={700} size="sm">{config.APP_NAME}</Text><Text size="xs" c="dimmed">Личный кабинет</Text></Box></Group><Group gap="xs" className="mobile-topbar__actions">
+    <Group className="mobile-topbar" justify="space-between" p="sm" gap="xs"><Group gap="xs" className="mobile-brand"><Box><Text fw={700} size="sm">{config.APP_NAME}</Text><Text size="xs" c="dimmed">Личный кабинет</Text></Box></Group><Group gap="xs" className="mobile-topbar__actions">
       {user && (
         <Button
           className="mobile-balance"
