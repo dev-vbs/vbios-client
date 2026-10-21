@@ -64,7 +64,7 @@ interface ForecastData {
 }
 
 export default function Profile() {
-  const { telegramPhoto, userEmail: storeEmail, userEmailVerified: storeEmailVerified, setUserEmail, setUserEmailVerified, isEmailLoaded, setOpenEmailModal } = useStore();
+  const { telegramPhoto, userEmail: storeEmail, userEmailVerified: storeEmailVerified, setUserEmail, setUserEmailVerified, setUser, isEmailLoaded, setOpenEmailModal } = useStore();
   const emailBlocked = config.EMAIL_REQUIRED === 'true' && isEmailLoaded && !storeEmail;
   const [profile, setProfile] = useState<UserProfile | null>(null);
   const [loading, setLoading] = useState(true);
@@ -246,6 +246,7 @@ export default function Profile() {
       const responseData = response.data.data;
       const freshProfile = Array.isArray(responseData) ? responseData[0] : responseData;
       setProfile(freshProfile);
+      setUser(freshProfile);
       setFormData((current) => ({
         ...current,
         full_name: freshProfile.full_name || '',

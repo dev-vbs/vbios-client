@@ -3,84 +3,43 @@ import { Link } from 'react-router-dom';
 import { notifications } from '@mantine/notifications';
 import { userApi } from '../api/client';
 import { useStore } from '../store/useStore';
-import { config } from '../config';
-import {
-  IconArrowRight, IconBell, IconCalendar, IconChartLine, IconChevronDown, IconCopy,
-  IconFileText, IconGrid4x4, IconHeadset, IconLogout,
-  IconRefresh, IconServer, IconSettings
-} from '@tabler/icons-react';
+import { IconArrowRight, IconCalendarEvent, IconCircleCheck, IconCreditCard, IconHeadset, IconLogout, IconRefresh, IconServer, IconSettings, IconShieldCheck, IconSparkles, IconWallet } from '@tabler/icons-react';
+import PayModal from '../components/PayModal';
 import './Dashboard.css';
 
-type Payment = { amount?: number; sum?: number; cost?: number; created?: string; date?: string; status?: string };
-type Service = { user_service_id: number; status: string; service?: { name?: string; cost?: number }; name?: string; expire?: string | null };
-
-const nav = [
-  { label: 'Кабинет', icon: IconGrid4x4, path: '/' },
-  { label: 'Услуги и подключение', icon: IconServer, path: '/services' },
-  { label: 'Поддержка', icon: IconHeadset, path: '/tickets' },
-  { label: 'Настройки профиля', icon: IconSettings, path: '/profile' },
-];
-
-function money(value: number) { return new Intl.NumberFormat('ru-RU', { maximumFractionDigits: 2 }).format(value); }
-function dateLabel(value?: string) { return value ? new Date(value).toLocaleDateString('ru-RU', { day: '2-digit', month: '2-digit' }) : ''; }
+type Payment = { amount?: number; sum?: number; cost?: number; created?: string; date?: string };
+type Service = { user_service_id: number; status?: string; service?: { name?: string }; name?: string; expire?: string | null };
+type Forecast = { total?: number; dept?: number };
+const navigation = [{ label: 'Обзор', icon: IconSparkles, path: '/' }, { label: 'Мои услуги', icon: IconServer, path: '/services' }, { label: 'Поддержка', icon: IconHeadset, path: '/tickets' }, { label: 'Профиль', icon: IconSettings, path: '/profile' }];
+const rubles = (value: number) => new Intl.NumberFormat('ru-RU', { maximumFractionDigits: 2 }).format(value);
+const formatDate = (value?: string | null) => value ? new Date(value).toLocaleDateString('ru-RU', { day: 'numeric', month: 'long' }) : 'не указана';
+const paymentAmount = (payment: Payment) => Number(payment.amount ?? payment.sum ?? payment.cost ?? 0);
 
 export default function Dashboard() {
   const { user, logout } = useStore();
-  const [payments, setPayments] = useState<Payment[]>([]);
   const [services, setServices] = useState<Service[]>([]);
+  const [payments, setPayments] = useState<Payment[]>([]);
+  const [forecast, setForecast] = useState<Forecast | null>(null);
   const [loading, setLoading] = useState(true);
-  const [range, setRange] = useState('7д');
-  const [copied, setCopied] = useState(false);
-
+  const [payModalOpen, setPayModalOpen] = useState(false);
   const load = useCallback(async () => {
     setLoading(true);
-    try {
-      const [pay, service] = await Promise.all([userApi.getPayments({ limit: 100, sort_field: 'created', sort_direction: 'desc' }), userApi.getServices()]);
-      setPayments((pay.data?.data || []) as Payment[]);
-      setServices((service.data?.data || []) as Service[]);
-    } catch {
-      notifications.show({ title: 'Не удалось обновить данные', message: 'Проверьте соединение с API', color: 'red' });
-    } finally { setLoading(false); }
+    const [servicesResult, paymentsResult, forecastResult] = await Promise.allSettled([userApi.getServices(), userApi.getPayments({ limit: 5, sort_field: 'created', sort_direction: 'desc' }), userApi.getForecast()]);
+    if (servicesResult.status === 'fulfilled') setServices((servicesResult.value.data?.data || []) as Service[]);
+    if (paymentsResult.status === 'fulfilled') setPayments((paymentsResult.value.data?.data || []) as Payment[]);
+    if (forecastResult.status === 'fulfilled') { const data = forecastResult.value.data?.data; setForecast(Array.isArray(data) ? data[0] : data); }
+    if (servicesResult.status === 'rejected') notifications.show({ title: 'Не удалось обновить кабинет', message: 'Проверьте соединение с сервером и повторите попытку.', color: 'red' });
+    setLoading(false);
   }, []);
-  useEffect(() => { load(); }, [load]);
-
-  const totalSpent = useMemo(() => payments.reduce((sum, item) => sum + Number(item.amount ?? item.sum ?? item.cost ?? 0), 0), [payments]);
-  const chart = useMemo(() => {
-    const points = Array.from({ length: 17 }, (_, i) => {
-      const value = payments[i]?.amount ?? payments[i]?.sum ?? 0;
-      return Math.min(100, Math.max(4, Number(value) * 3 + (i > 13 ? 36 : 0)));
-    });
-    return points.map((value, index) => `${(index / (points.length - 1)) * 100},${100 - value}`).join(' ');
-  }, [payments]);
-
-  const copyKey = async () => {
-    await navigator.clipboard?.writeText('tc_live_••••••••••••••••1eb0');
-    setCopied(true); setTimeout(() => setCopied(false), 1400);
-  };
-
-  return <div className="dashboard-shell">
-    <aside className="dashboard-sidebar">
-      <div className="brand">{config.APP_NAME || 'Token Club'}<button className="collapse" aria-label="Свернуть меню">‹</button></div>
-      <nav className="side-nav">{nav.map(({ label, icon: Icon, path }) => <Link key={label} to={path} className={`side-item ${path === '/' ? 'active' : ''}`}><Icon size={17} /><span>{label}</span></Link>)}</nav>
-      <div className="side-bottom"><a href="#channel">↗ <span>Наш ТГ канал</span></a><a href="#support">◌ <span>Поддержка 24/7</span></a></div>
-    </aside>
-    <main className="dashboard-main">
-      <header className="dashboard-topbar"><div /> <div className="top-actions"><button aria-label="Уведомления"><IconBell size={18} /></button><span className="lang">RU</span><button onClick={logout} className="logout"><IconLogout size={17} /> Выйти</button></div></header>
-      <div className="dashboard-content">
-        <div className="welcome"><div><h1>Личный кабинет — <strong>@{user?.login || 'пользователь'}</strong> <button className="copy-mini" onClick={copyKey}><IconCopy size={14} /></button></h1><p>Управляйте токенами и следите за статистикой API.</p></div><button className="refresh" onClick={load} disabled={loading}><IconRefresh size={17} className={loading ? 'spin' : ''} /> Обновить</button></div>
-        <section className="stats-grid">
-          <article className="stat-card balance-card"><div className="card-label">Баланс <button onClick={load}><IconRefresh size={16} /></button></div><div className="stat-value">{money(Number(user?.balance || 0))} <small>₽</small></div><button className="outline-btn" onClick={() => notifications.show({ message: 'Выберите платёжную систему в разделе платежей', color: 'blue' })}>Пополнить токены <span>＋</span></button></article>
-          <article className="stat-card"><div className="card-label">Запросы <div className="range-switch">{['1дн','7д','30д'].map(item => <button key={item} className={range === item ? 'selected' : ''} onClick={() => setRange(item)}>{item}</button>)}</div></div><div className="stat-value">{payments.length ? payments.length * 43 : 0}</div><div className="muted-note">за период {range}</div></article>
-          <article className="stat-card"><div className="card-label">Потратили бы <span>по API OpenAI</span></div><div className="stat-value">{money(totalSpent || 0)} <small>₽</small></div><div className="muted-note">Расчёт токены × тариф API</div></article>
-          <article className="stat-card key-card"><div className="card-label">Ваш API ключ</div><div className="key-value">tc_live_••••••••••••••••1eb0</div><button className="key-btn" onClick={copyKey}>{copied ? 'Скопировано' : 'Настроить ключ'} <IconArrowRight size={17} /></button></article>
-        </section>
-        <section className="lower-grid">
-          <article className="panel chart-panel"><div className="panel-heading"><h2>Расход токенов по моделям</h2><button className="date-btn"><IconCalendar size={15} /> Сегодня <IconChevronDown size={15} /></button></div><div className="chart-wrap"><div className="grid-lines"><i/><i/><i/><i/></div><svg viewBox="0 0 100 100" preserveAspectRatio="none" className="chart"><polyline points={chart} fill="none" stroke="#3d88a6" strokeWidth="1.2" vectorEffect="non-scaling-stroke" /></svg><div className="chart-axis"><span>02:00</span><span>06:00</span><span>10:00</span><span>14:00</span><span>18:00</span></div></div><div className="chart-total"><span>Всего за период</span><strong>{money(totalSpent || 0)} токенов</strong></div><div className="legend"><span><i className="dot blue"/> GPT-6.1 Sol <b>{money(totalSpent * .97 || 0)} токенов</b></span><span><i className="dot gray"/> GPT-6 Luna <b>{money(totalSpent * .03 || 0)} токенов</b></span></div></article>
-          <article className="panel quick-panel"><h2>Быстрые действия</h2>{[['Доступные модели', IconServer], ['История запросов', IconRefresh], ['История обновлений', IconFileText], ['Стабильность моделей', IconChartLine]].map(([label, Icon]: any) => <Link to="/profile" className="quick-row" key={label as string}><Icon size={19}/><span>{label}</span><IconArrowRight size={17}/></Link>)}</article>
-        </section>
-        <section className="panel service-panel"><div className="panel-heading"><h2>Активные услуги</h2><Link to="/" className="text-link">Все услуги <IconArrowRight size={15}/></Link></div>{services.length === 0 ? <div className="empty">{loading ? 'Загрузка данных…' : 'Активных услуг пока нет'}</div> : <div className="service-list">{services.slice(0, 4).map(service => <div className="service-row" key={service.user_service_id}><div><strong>{service.service?.name || service.name || `Услуга #${service.user_service_id}`}</strong><span>до {dateLabel(service.expire || undefined)}</span></div><span className={`status ${service.status === 'ACTIVE' ? 'ok' : ''}`}>{service.status}</span></div>)}</div>}</section>
-      </div>
-    </main>
-    <button className="support-fab" onClick={() => notifications.show({ message: 'Чат поддержки скоро откроется', color: 'blue' })}><IconHeadset size={18}/> Помощник Token</button>
-  </div>;
+  useEffect(() => { void load(); }, [load]);
+  const activeServices = useMemo(() => services.filter((service) => service.status === 'ACTIVE' || service.status === 'active'), [services]);
+  const hasBalance = Number(user?.balance || 0) > 0;
+  return <div className="cabinet-shell">
+    <aside className="cabinet-sidebar"><Link className="cabinet-brand" to="/">SHM<span>.</span></Link><p className="cabinet-caption">Личный кабинет</p><nav className="cabinet-nav" aria-label="Основная навигация">{navigation.map(({ label, icon: Icon, path }) => <Link key={path} to={path} className={`cabinet-nav-item ${path === '/' ? 'is-active' : ''}`}><Icon size={19} stroke={1.8} /><span>{label}</span></Link>)}</nav><div className="cabinet-sidebar-footer"><Link to="/tickets"><IconHeadset size={17} />Нужна помощь?</Link><button type="button" onClick={logout}><IconLogout size={17} />Выйти</button></div></aside>
+    <main className="cabinet-main"><header className="cabinet-header"><div><span className="cabinet-breadcrumb">Личный кабинет</span><h1>Добрый день, {user?.full_name || user?.login || 'пользователь'}</h1></div><button type="button" className="refresh-button" onClick={() => void load()} disabled={loading}><IconRefresh className={loading ? 'spin' : ''} size={17} />Обновить</button></header>
+      <section className="cabinet-hero"><div className="hero-copy"><div className="hero-icon"><IconShieldCheck size={26} /></div><div><h2>Ваше подключение под контролем</h2><p>{activeServices.length ? `Активных услуг: ${activeServices.length}. Откройте услугу, чтобы подключить устройства или изменить тариф.` : 'Выберите подходящую услугу, чтобы получить безопасное подключение.'}</p></div></div><Link className="hero-action" to="/services">{activeServices.length ? 'Открыть подключения' : 'Выбрать услугу'}<IconArrowRight size={18} /></Link></section>
+      <section className="cabinet-summary"><article className="summary-card balance-summary"><span className="summary-label"><IconWallet size={17} />Баланс</span><strong>{rubles(Number(user?.balance || 0))} <small>₽</small></strong><p>{hasBalance ? 'Средства доступны для продления услуг.' : 'Пополните баланс для оплаты и продления услуг.'}</p><button type="button" onClick={() => setPayModalOpen(true)}>Пополнить баланс <IconArrowRight size={17} /></button></article><article className="summary-card"><span className="summary-label"><IconServer size={17} />Услуги</span><strong>{activeServices.length}</strong><p>{activeServices.length ? 'подключений активно сейчас' : 'активных подключений пока нет'}</p><Link to="/services">Управлять услугами <IconArrowRight size={17} /></Link></article><article className="summary-card"><span className="summary-label"><IconCalendarEvent size={17} />К оплате</span><strong>{rubles(Number(forecast?.total || 0))} <small>₽</small></strong><p>{forecast?.dept ? `Есть задолженность: ${rubles(Number(forecast.dept))} ₽` : 'Ближайшие продления и платежи'}</p><Link to="/profile">Посмотреть детали <IconArrowRight size={17} /></Link></article></section>
+      <section className="cabinet-grid"><article className="cabinet-panel services-panel"><div className="panel-title"><div><h2>Мои подключения</h2><p>Статус услуг и быстрый доступ к настройке.</p></div><Link to="/services">Все услуги <IconArrowRight size={16} /></Link></div>{loading ? <div className="panel-placeholder">Загружаем данные…</div> : activeServices.length === 0 ? <div className="empty-state"><div className="empty-state-icon"><IconServer size={24} /></div><h3>Подключений пока нет</h3><p>Оформите услугу — ссылка на подключение и инструкции появятся здесь.</p><Link to="/services">Перейти к услугам <IconArrowRight size={17} /></Link></div> : <div className="connection-list">{activeServices.slice(0, 4).map((service) => <div className="connection-row" key={service.user_service_id}><div className="connection-status"><IconCircleCheck size={18} /></div><div className="connection-name"><strong>{service.service?.name || service.name || `Услуга #${service.user_service_id}`}</strong><span>Продление до {formatDate(service.expire)}</span></div><span className="status-live">Активна</span><Link aria-label="Открыть услугу" to="/services"><IconArrowRight size={18} /></Link></div>)}</div>}</article><article className="cabinet-panel help-panel"><div className="panel-title"><div><h2>С чего начать</h2><p>Подключение займёт несколько минут.</p></div></div><ol className="start-steps"><li><span>1</span><div><strong>Откройте услугу</strong><p>Выберите активное подключение в разделе «Мои услуги».</p></div></li><li><span>2</span><div><strong>Добавьте подписку</strong><p>Скопируйте ссылку или отсканируйте QR-код в HAPP, INCY или v2ray.</p></div></li><li><span>3</span><div><strong>Проверьте подключение</strong><p>Следуйте инструкции в карточке услуги.</p></div></li></ol><Link className="help-link" to="/services">Инструкции по подключению <IconArrowRight size={17} /></Link></article></section>
+      <section className="cabinet-panel payments-panel"><div className="panel-title"><div><h2>Последние платежи</h2><p>Операции по вашему аккаунту.</p></div><Link to="/profile">История платежей <IconArrowRight size={16} /></Link></div>{payments.length === 0 ? <div className="panel-placeholder">История платежей появится после первого пополнения.</div> : <div className="payment-list">{payments.map((payment, index) => <div className="payment-row" key={`${payment.created || payment.date || index}-${index}`}><div className="payment-icon"><IconCreditCard size={18} /></div><div><strong>Пополнение баланса</strong><span>{formatDate(payment.created || payment.date)}</span></div><b>+{rubles(paymentAmount(payment))} ₽</b></div>)}</div>}</section>
+    </main><PayModal opened={payModalOpen} onClose={() => setPayModalOpen(false)} /></div>;
 }
