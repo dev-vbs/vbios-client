@@ -939,8 +939,8 @@ export default function Services() {
 
   return (
     <Stack gap="lg" className="services-overview">
-      <Group justify="space-between">
-        <Title order={2}>{t('services.title')}</Title>
+      <Group className="page-header services-overview__header" justify="space-between">
+        <div><span className="cabinet-breadcrumb">Личный кабинет</span><Title className="page-header__title" order={2}>{t('services.title')}</Title><p className="page-header__description">Подключения, подписки и настройки устройств.</p></div>
         <Group>
           <Button
             leftSection={<IconPlus size={16} />}

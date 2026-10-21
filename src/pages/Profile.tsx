@@ -527,8 +527,8 @@ export default function Profile() {
   }
 
   return (
-    <Stack gap="lg">
-      <Title order={2}>{t('profile.title')}</Title>
+    <Stack gap="lg" className="profile-page">
+      <header className="page-header"><div><span className="cabinet-breadcrumb">Личный кабинет</span><Title className="page-header__title" order={2}>{t('profile.title')}</Title><p className="page-header__description">Управляйте данными аккаунта, безопасностью и оплатой.</p></div></header>
 
 
       <Grid>

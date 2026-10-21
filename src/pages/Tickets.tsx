@@ -721,14 +721,15 @@ export default function Tickets() {
 
   return (
     <Stack
+      className="tickets-page"
       gap="md"
       pb={isMobile ? 100 : 0}
       style={!isMobile ? {
         overflow: 'hidden',
       } : undefined}
     >
-      <Group justify="space-between" align="center" wrap="nowrap">
-        <Text fw={700} size="lg">{t('tickets.title')}</Text>
+      <Group className="page-header" justify="space-between" align="center" wrap="nowrap">
+        <div><span className="cabinet-breadcrumb">Личный кабинет</span><Text className="page-header__title" fw={700}>{t('tickets.title')}</Text><p className="page-header__description">Здесь можно задать вопрос и отслеживать ответы поддержки.</p></div>
         <Button leftSection={<IconPlus size={16} />} radius="xl" onClick={openCreate}>
           {t('tickets.createTicket')}
         </Button>
