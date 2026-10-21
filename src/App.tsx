@@ -37,6 +37,7 @@ import Tickets from './pages/Tickets.tsx';
 import Login from './pages/Login';
 import NotFound from './pages/NotFound';
 import AddToHomeScreen from './pages/AddToHomeScreen';
+import Dashboard from './pages/Dashboard';
 
 function AppContent() {
   const location = useLocation();
@@ -279,6 +280,10 @@ function AppContent() {
     );
   }
 
+  if (!isTelegramWebApp && !isMobile) {
+    return <><Dashboard /><PayModal opened={payModalOpen} onClose={() => setPayModalOpen(false)} /></>;
+  }
+
   const appShellMaxWidth = 1200;
   const appShellOffset = `max(0px, calc(50% - ${appShellMaxWidth / 2}px))`;
   const hasLegalLinks = [config.PRIVACY_POLICY_URL, config.TERMS_OF_USE_URL, config.PUBLIC_OFFER_URL, config.USER_AGREEMENT_URL, config.CONTACT_EMAIL, config.CONTACT_PHONE].some(Boolean);
@@ -444,3 +449,5 @@ function App() {
 }
 
 export default App;
+
+

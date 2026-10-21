@@ -32,7 +32,7 @@
 ```yaml
 services:
   client:
-    image: ghcr.io/dev-vbs/vbios-client:latest
+    image: danuk/shm-client-2:latest
     ports:
       - "3001:80"
     environment:
@@ -179,7 +179,7 @@ services:
 ```yaml
 services:
   client:
-    image: ghcr.io/dev-vbs/vbios-client:latest
+    image: danuk/shm-client-2:latest
     environment:
       SUPPORT_WIDGET_URL: "https://widget.your-domain.com/widget.js"
       SUPPORT_WIDGET_API: "your-api-key"
@@ -303,7 +303,7 @@ volumes:
 ```yaml
 services:
   client:
-    image: ghcr.io/dev-vbs/vbios-client:latest
+    image: danuk/shm-client-2:latest
     environment:
       CUSTOM_LANGS: "cn"
     volumes:
@@ -375,33 +375,3 @@ CUSTOM_LANGS: "cn,kk"
 ## Лицензия
 
 MIT
-
-## GitHub Actions and Git Bash
-
-The workflow `.github/workflows/docker-publish.yml` builds the Docker image on pull requests and publishes it to GitHub Container Registry after every push to `main` or a `v*` tag.
-
-Published tags include the commit SHA, `main`, `latest` on the default branch, and release tags. To publish from Windows:
-
-1. Open the project folder in **Git Bash**.
-2. Sign in to GitHub: `gh auth login` (or configure an SSH remote).
-3. Run: `bash scripts/publish-to-github.sh`
-
-After the workflow completes, pull a particular commit image:
-
-```bash
-docker pull ghcr.io/dev-vbs/vbios-client:<commit-sha>
-```
-
-### Windows 11: PowerShell
-
-1. Install [Git for Windows](https://git-scm.com/download/win) and sign in to GitHub (`gh auth login`), or use a Git Credential Manager/SSH key.
-2. Open the extracted project folder in File Explorer, right-click an empty area, then select **Open in Terminal**.
-3. Run:
-
-```powershell
-Set-ExecutionPolicy -Scope Process Bypass
-.\scripts\publish-to-github.ps1
-```
-
-To use the graphical Git interface, open Git Bash in the project folder and run `git gui`. Stage files, enter a commit message, click **Commit**, then **Push**.
-
