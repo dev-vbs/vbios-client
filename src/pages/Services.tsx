@@ -1,7 +1,7 @@
 import { useState, useEffect, useRef } from 'react';
 import { useNavigate, useParams, Link } from 'react-router-dom';
 import { Card, Timeline, Text, Stack, Group, Badge, Button, Divider, ActionIcon, Loader, Center, Paper, Title, Tabs, Code, Tooltip, Accordion, Box, Select, NumberInput, Pagination, Alert, TextInput, Skeleton } from '@mantine/core';
-import { IconQrcode, IconCopy, IconCheck, IconDownload, IconRefresh, IconTrash, IconPlus, IconPlayerStop, IconExchange, IconCreditCard, IconWallet, IconDeviceMobileCog, IconArrowLeft, IconSearch, IconCalendarTime } from '@tabler/icons-react';
+import { IconQrcode, IconCopy, IconCheck, IconDownload, IconRefresh, IconTrash, IconPlus, IconPlayerStop, IconExchange, IconCreditCard, IconWallet, IconDeviceMobileCog, IconArrowLeft, IconSearch, IconCalendarTime, IconWifi, IconWifiOff } from '@tabler/icons-react';
 import { useDisclosure, useClipboard } from '@mantine/hooks';
 import { useTranslation } from 'react-i18next';
 import { api, servicesApi, storageApi, userApi } from '../api/client';
@@ -159,6 +159,8 @@ function ServiceDetail({ service, onDelete, onChangeTariff }: ServiceDetailProps
   const [nextServiceLoading, setNextServiceLoading] = useState(false);
   const [connectionStatus, setConnectionStatus] = useState<ConnectionStatus>('loading');
   const [connectionReload, setConnectionReload] = useState(0);
+  const [isOnline, setIsOnline] = useState(() => navigator.onLine);
+  const [lastConnectionUpdate, setLastConnectionUpdate] = useState<number | null>(null);
   const [activeTab, setActiveTab] = useState<string | null>('info');
   const [qrModalOpen, setQrModalOpen] = useState(false);
   const [deleting, setDeleting] = useState(false);
@@ -380,6 +382,13 @@ function ServiceDetail({ service, onDelete, onChangeTariff }: ServiceDetailProps
   const category = normalizeCategory(service.service.category);
 
   useEffect(() => {
+    const updateNetwork = () => setIsOnline(navigator.onLine);
+    window.addEventListener('online', updateNetwork);
+    window.addEventListener('offline', updateNetwork);
+    return () => { window.removeEventListener('online', updateNetwork); window.removeEventListener('offline', updateNetwork); };
+  }, []);
+
+  useEffect(() => {
     let cancelled = false;
     const loadConnection = async () => {
       if (category !== 'proxy' && category !== 'vpn') return;
@@ -390,6 +399,7 @@ function ServiceDetail({ service, onDelete, onChangeTariff }: ServiceDetailProps
       const offlineConnection = readOfflineConnection(service.user_service_id, category);
       if (!navigator.onLine && offlineConnection) {
         if (category === 'proxy') setSubscriptionUrl(offlineConnection.value); else setStorageData(offlineConnection.value);
+        setLastConnectionUpdate(offlineConnection.updatedAt);
         setConnectionStatus('ready');
         return;
       }
@@ -402,6 +412,7 @@ function ServiceDetail({ service, onDelete, onChangeTariff }: ServiceDetailProps
           if (cancelled) return;
           if (category === 'proxy') setSubscriptionUrl(value); else setStorageData(value);
           saveOfflineConnection(service.user_service_id, category, value);
+          setLastConnectionUpdate(Date.now());
           setConnectionStatus('ready');
           return;
         } catch (error) {
@@ -523,6 +534,17 @@ function ServiceDetail({ service, onDelete, onChangeTariff }: ServiceDetailProps
                   </div>
                   <Badge color="green" variant="light">{statusLabel}</Badge>
                 </Group>
+
+                <Paper withBorder p="sm" radius="sm" className="connection-diagnostics">
+                  <Group justify="space-between" align="center" wrap="nowrap">
+                    <Stack gap={3}>
+                      <Group gap="xs"><Text size="sm" fw={600}>Диагностика подключения</Text><Badge color={isOnline ? 'green' : 'orange'} variant="light" leftSection={isOnline ? <IconWifi size={12} /> : <IconWifiOff size={12} />}>{isOnline ? 'Сеть доступна' : 'Нет сети'}</Badge></Group>
+                      <Text size="xs" c="dimmed">{connectionStatus === 'ready' ? 'Данные подключения доступны.' : connectionStatus === 'loading' ? 'Проверяем хранилище…' : connectionStatus === 'missing' ? 'Данные подключения пока не найдены.' : 'Не удалось проверить хранилище.'}</Text>
+                      {lastConnectionUpdate && <Text size="xs" c="dimmed">Последнее успешное обновление: {new Date(lastConnectionUpdate).toLocaleString(i18n.language === 'ru' ? 'ru-RU' : 'en-US')}</Text>}
+                    </Stack>
+                    <Button variant="light" size="xs" leftSection={<IconRefresh size={14} />} loading={connectionStatus === 'loading'} disabled={!isOnline} onClick={() => setConnectionReload((value) => value + 1)}>Проверить</Button>
+                  </Group>
+                </Paper>
 
                 {isProxy && showProxySubscription && subscriptionUrl && (
                   <Paper withBorder p="sm" radius="sm" bg="var(--mantine-color-default-hover)">
