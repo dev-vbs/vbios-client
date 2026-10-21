@@ -1,7 +1,7 @@
 import '@mantine/core/styles.css';
 import '@mantine/notifications/styles.css';
 import { useEffect, useState } from 'react';
-import { MantineProvider, Group, Text, Button, Modal, TextInput, Stack, DirectionProvider, Center, Loader, Box } from '@mantine/core';
+import { MantineProvider, Group, Text, Button, Modal, TextInput, Stack, DirectionProvider, Center, Loader, Box, localStorageColorSchemeManager } from '@mantine/core';
 import { Notifications } from '@mantine/notifications';
 import { useMediaQuery, useHotkeys } from '@mantine/hooks';
 import { BrowserRouter, Routes, Route, Navigate, useLocation, useNavigate, useSearchParams } from 'react-router-dom';
@@ -23,6 +23,8 @@ import { LegalLinks } from './components/LegalLinks';
 import { WebAppHeader } from './components/WebAppHeader';
 import { BottomNavigation } from './components/BottomNavigation';
 import { theme } from './theme';
+
+const colorSchemeManager = localStorageColorSchemeManager({ key: 'vbios-color-scheme' });
 
 parseAndSaveSessionId();
 parseAndSavePartnerId();
@@ -115,7 +117,14 @@ function AppContent() {
         const userData: any = Array.isArray(responseData) ? responseData[0] : responseData;
         setUser(userData);
       } catch {
-        removeCookie();
+        if (!navigator.onLine) {
+          try {
+            const cachedUser = JSON.parse(localStorage.getItem('shm_offline_user_v1') || 'null');
+            if (cachedUser) setUser(cachedUser);
+          } catch { /* offline cache is optional */ }
+        } else {
+          removeCookie();
+        }
       } finally {
         setIsLoading(false);
       }
@@ -307,7 +316,7 @@ function App() {
 
   return (
     <DirectionProvider initialDirection={isRtl ? 'rtl' : 'ltr'}>
-      <MantineProvider theme={theme} defaultColorScheme="auto">
+      <MantineProvider theme={theme} defaultColorScheme="dark" colorSchemeManager={colorSchemeManager}>
         <Notifications position="top-right" />
         <BrowserRouter basename={basePath}>
           <AppContent />

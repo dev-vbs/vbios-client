@@ -1,5 +1,6 @@
 import { create } from 'zustand';
 import { removeCookie } from '../api/cookie';
+import { clearOfflineCabinet } from '../lib/offlineConnection';
 
 interface User {
   user_id: number;
@@ -53,10 +54,10 @@ export const useStore = create<AppState>((set) => ({
   openVerifyModal: false,
   openEmailModal: false,
 
-  setUser: (user) => set({
-    user,
-    isAuthenticated: !!user,
-  }),
+  setUser: (user) => {
+    if (user) localStorage.setItem('shm_offline_user_v1', JSON.stringify(user));
+    set({ user, isAuthenticated: !!user });
+  },
   setUserEmail: (email) => set({ userEmail: email }),
   setUserEmailVerified: (verified) => set({ userEmailVerified: verified }),
   setIsLoading: (loading) => set({ isLoading: loading }),
@@ -79,6 +80,7 @@ export const useStore = create<AppState>((set) => ({
   logout: () => {
     removeCookie();
     localStorage.removeItem('shm_telegram_photo');
+    clearOfflineCabinet();
     set({ user: null, isAuthenticated: false, telegramPhoto: null, hasNewTicketMessages: false, userEmail: null, userEmailVerified: null, isEmailLoaded: false });
   },
 }));

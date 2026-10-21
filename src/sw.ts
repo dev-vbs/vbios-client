@@ -6,6 +6,11 @@ declare const self: ServiceWorkerGlobalScope
 cleanupOutdatedCaches()
 precacheAndRoute(self.__WB_MANIFEST)
 
+self.addEventListener('fetch', (event) => {
+  if (event.request.mode !== 'navigate') return
+  event.respondWith(fetch(event.request).catch(async () => (await caches.match(event.request, { ignoreSearch: true })) || (await caches.match('/index.html')) || (await caches.match('/offline.html')) || Response.error()))
+})
+
 self.addEventListener('push', (event) => {
   if (!event.data) return
 

@@ -13,6 +13,7 @@ import ConfirmModal from '../components/ConfirmModal';
 import { config } from '../config';
 import { useStore } from '../store/useStore';
 import { isTelegramWebApp } from '../constants/webapp';
+import { readOfflineConnection, readOfflineServices, saveOfflineConnection, saveOfflineServices } from '../lib/offlineConnection';
 import './Services.css';
 
 interface ForecastItem {
@@ -386,6 +387,12 @@ function ServiceDetail({ service, onDelete, onChangeTariff }: ServiceDetailProps
       setSubscriptionUrl(null);
       setStorageData(null);
       setActiveTab('config');
+      const offlineConnection = readOfflineConnection(service.user_service_id, category);
+      if (!navigator.onLine && offlineConnection) {
+        if (category === 'proxy') setSubscriptionUrl(offlineConnection.value); else setStorageData(offlineConnection.value);
+        setConnectionStatus('ready');
+        return;
+      }
       let hadRequestError = false;
       for (const key of getStorageKeys(category, service.user_service_id)) {
         try {
@@ -394,6 +401,7 @@ function ServiceDetail({ service, onDelete, onChangeTariff }: ServiceDetailProps
           if (!value) continue;
           if (cancelled) return;
           if (category === 'proxy') setSubscriptionUrl(value); else setStorageData(value);
+          saveOfflineConnection(service.user_service_id, category, value);
           setConnectionStatus('ready');
           return;
         } catch (error) {
@@ -857,10 +865,17 @@ export default function Services() {
       });
 
       setServices(rootServices);
+      saveOfflineServices(data);
       return rootServices;
     } catch (error) {
       console.error('Failed to fetch services:', error);
-      return [];
+      const offline = readOfflineServices() as UserService[];
+      const offlineMap = new Map<number, UserService>();
+      offline.forEach((item) => offlineMap.set(item.user_service_id, { ...item, children: [] }));
+      const roots: UserService[] = [];
+      offlineMap.forEach((item) => { if (item.parent && offlineMap.has(item.parent)) offlineMap.get(item.parent)!.children!.push(item); else if (!item.parent) roots.push(item); });
+      setServices(roots);
+      return roots;
     } finally {
       if (!background) setLoading(false);
     }
