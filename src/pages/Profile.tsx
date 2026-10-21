@@ -68,6 +68,7 @@ export default function Profile() {
   const [profile, setProfile] = useState<UserProfile | null>(null);
   const [loading, setLoading] = useState(true);
   const [editing, setEditing] = useState(false);
+  const [savingProfile, setSavingProfile] = useState(false);
   const [formData, setFormData] = useState({ full_name: '', phone: '', login2: '' });
   const [telegramUsername, setTelegramUsername] = useState<string | null>(null);
   const [telegramLoading, setTelegramLoading] = useState(false);
@@ -225,13 +226,30 @@ export default function Profile() {
   }, [profile, loadTelegramSettings]);
 
   const handleSave = async () => {
+    const phone = formData.phone.trim();
+    if (phone && !/^\+?[0-9()\s-]{6,16}$/.test(phone)) {
+      notifications.show({
+        title: t('common.error'),
+        message: 'Введите корректный номер телефона (до 16 символов).',
+        color: 'red',
+      });
+      return;
+    }
+
+    setSavingProfile(true);
     try {
-      await userApi.updateProfile(formData);
-      setProfile((prev) => prev ? { ...prev, ...formData } : null);
+      // Backend accepts profile updates through POST /user. Send the phone
+      // explicitly so it is persisted independently of optional profile fields.
+      await userApi.updateProfile({ phone });
+      const response = await userApi.getProfile();
+      const responseData = response.data.data;
+      const freshProfile = Array.isArray(responseData) ? responseData[0] : responseData;
+      setProfile(freshProfile);
+      setFormData((current) => ({ ...current, phone: freshProfile.phone || phone }));
       setEditing(false);
       notifications.show({
         title: t('common.success'),
-        message: t('profile.profileUpdated'),
+        message: 'Номер телефона сохранён.',
         color: 'green',
       });
     } catch {
@@ -240,6 +258,8 @@ export default function Profile() {
         message: t('profile.profileUpdateError'),
         color: 'red',
       });
+    } finally {
+      setSavingProfile(false);
     }
   };
 
@@ -602,7 +622,7 @@ export default function Profile() {
                   <Button variant="light" size="xs" color="gray" onClick={() => setEditing(false)}>
                     {t('common.cancel')}
                   </Button>
-                  <Button size="xs" onClick={handleSave}>
+                  <Button size="xs" onClick={handleSave} loading={savingProfile}>
                     {t('common.save')}
                   </Button>
                 </Group>
@@ -630,6 +650,9 @@ export default function Profile() {
                 <Grid.Col span={{ base: 12, sm: 6 }}>
                   <TextInput
                     label={t('profile.phone')}
+                    type="tel"
+                    maxLength={16}
+                    placeholder="+79991234567"
                     leftSection={<IconPhone size={16} />}
                     value={formData.phone}
                     onChange={(e) => setFormData({ ...formData, phone: e.target.value })}
@@ -935,3 +958,5 @@ export default function Profile() {
     </Stack>
   );
 }
+
+
