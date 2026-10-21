@@ -6,8 +6,8 @@ import { useStore } from '../store/useStore';
 import { config } from '../config';
 import {
   IconArrowRight, IconBell, IconCalendar, IconChartLine, IconChevronDown, IconCopy,
-  IconFileText, IconGrid4x4, IconHeadset, IconKey, IconLogout,
-  IconRefresh, IconServer, IconSettings, IconStack2
+  IconFileText, IconGrid4x4, IconHeadset, IconLogout,
+  IconRefresh, IconServer, IconSettings
 } from '@tabler/icons-react';
 import './Dashboard.css';
 
@@ -15,12 +15,10 @@ type Payment = { amount?: number; sum?: number; cost?: number; created?: string;
 type Service = { user_service_id: number; status: string; service?: { name?: string; cost?: number }; name?: string; expire?: string | null };
 
 const nav = [
-  { label: 'Кабинет', icon: IconGrid4x4, active: true },
-  { label: 'Инструкции', icon: IconFileText },
-  { label: 'API ключи', icon: IconKey },
-  { label: 'Настройки', icon: IconSettings },
-  { label: 'Перепродажа', icon: IconStack2 },
-  { label: 'Чат с ИИ Free', icon: IconHeadset },
+  { label: 'Кабинет', icon: IconGrid4x4, path: '/' },
+  { label: 'Услуги и подключение', icon: IconServer, path: '/services' },
+  { label: 'Поддержка', icon: IconHeadset, path: '/tickets' },
+  { label: 'Настройки профиля', icon: IconSettings, path: '/profile' },
 ];
 
 function money(value: number) { return new Intl.NumberFormat('ru-RU', { maximumFractionDigits: 2 }).format(value); }
@@ -63,7 +61,7 @@ export default function Dashboard() {
   return <div className="dashboard-shell">
     <aside className="dashboard-sidebar">
       <div className="brand">{config.APP_NAME || 'Token Club'}<button className="collapse" aria-label="Свернуть меню">‹</button></div>
-      <nav className="side-nav">{nav.map(({ label, icon: Icon, active }) => <button key={label} className={`side-item ${active ? 'active' : ''}`}><Icon size={17} /><span>{label}</span></button>)}</nav>
+      <nav className="side-nav">{nav.map(({ label, icon: Icon, path }) => <Link key={label} to={path} className={`side-item ${path === '/' ? 'active' : ''}`}><Icon size={17} /><span>{label}</span></Link>)}</nav>
       <div className="side-bottom"><a href="#channel">↗ <span>Наш ТГ канал</span></a><a href="#support">◌ <span>Поддержка 24/7</span></a></div>
     </aside>
     <main className="dashboard-main">
@@ -86,5 +84,3 @@ export default function Dashboard() {
     <button className="support-fab" onClick={() => notifications.show({ message: 'Чат поддержки скоро откроется', color: 'blue' })}><IconHeadset size={18}/> Помощник Token</button>
   </div>;
 }
-
-

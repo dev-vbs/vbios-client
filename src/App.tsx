@@ -265,6 +265,7 @@ function AppContent() {
           <Box px="md">
             <Routes>
               <Route path="/" element={<Services />} />
+              <Route path="/services" element={<Services />} />
               <Route path="/profile" element={<Profile />} />
               <Route path="/tickets" element={<Tickets />} />
               <Route path="*" element={<NotFound />} />
@@ -280,7 +281,7 @@ function AppContent() {
     );
   }
 
-  if (!isTelegramWebApp && !isMobile) {
+  if (!isTelegramWebApp && !isMobile && location.pathname === '/') {
     return <><Dashboard /><PayModal opened={payModalOpen} onClose={() => setPayModalOpen(false)} /></>;
   }
 
@@ -402,6 +403,7 @@ function AppContent() {
         <AppShell.Main>
           <Routes>
             <Route path="/" element={<Services />} />
+              <Route path="/services" element={<Services />} />
             <Route path="/profile" element={<Profile />} />
             <Route path="/tickets" element={<Tickets />} />
             <Route path="*" element={<NotFound />} />
@@ -449,5 +451,3 @@ function App() {
 }
 
 export default App;
-
-

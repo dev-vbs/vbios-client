@@ -2,27 +2,15 @@ import { createTheme } from '@mantine/core';
 
 export const theme = createTheme({
   primaryColor: 'blue',
-  fontFamily: 'Inter, -apple-system, BlinkMacSystemFont, Segoe UI, Roboto, sans-serif',
+  primaryShade: { light: 6, dark: 5 },
+  fontFamily: 'Inter, -apple-system, BlinkMacSystemFont, "Segoe UI", sans-serif',
   defaultRadius: 'md',
   colors: {
-    dark: [
-      '#C1C2C5',
-      '#A6A7AB',
-      '#909296',
-      '#5c5f66',
-      '#373A40',
-      '#2C2E33',
-      '#25262b',
-      '#1A1B1E',
-      '#141517',
-      '#101113',
-    ],
+    dark: ['#d4d6d8', '#b2b5b8', '#92969a', '#73777b', '#505458', '#34373a', '#282a2c', '#1d1f20', '#151617', '#101112'],
   },
   components: {
-    Modal: {
-      defaultProps: {
-        lockScroll: false,
-      },
-    },
+    Card: { defaultProps: { radius: 'md', withBorder: true } },
+    Button: { defaultProps: { radius: 'md' } },
+    Modal: { defaultProps: { lockScroll: false, radius: 'md' } },
   },
 });
