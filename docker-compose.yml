@@ -1,6 +1,6 @@
 services:
   shm-client:
-    image: ghcr.io/dev-vbs/vbios-client:19c8f6449ece2459442ac37651cb875cf7faf0c2
+    image: ghcr.io/dev-vbs/vbios-client:latest
     ports:
       - "3001:80"
     volumes:
@@ -21,4 +21,5 @@ services:
       # Optional
       # LOGO_URL: "logo.png"
     restart: unless-stopped
+
 

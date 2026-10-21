@@ -1,6 +1,6 @@
 import { useState, useEffect, useCallback } from 'react';
 import { Card, Text, Stack, Group, Divider, Grid, Button, TextInput, Tooltip, ActionIcon, Avatar, Title, Modal, Loader, Center, Collapse, Alert, Skeleton, useMantineColorScheme } from '@mantine/core';
-import { IconUser, IconPhone, IconCopy, IconCheck, IconBrandTelegram, IconCreditCard, IconChevronDown, IconChevronUp, IconMail, IconAlertCircle, IconPencil, IconDeviceFloppy } from '@tabler/icons-react';
+import { IconUser, IconPhone, IconCopy, IconCheck, IconBrandTelegram, IconCreditCard, IconChevronDown, IconChevronUp, IconMail, IconAlertCircle } from '@tabler/icons-react';
 import { notifications } from '@mantine/notifications';
 import { useClipboard } from '@mantine/hooks';
 import { useTranslation } from 'react-i18next';
@@ -68,7 +68,6 @@ export default function Profile() {
   const [profile, setProfile] = useState<UserProfile | null>(null);
   const [loading, setLoading] = useState(true);
   const [editing, setEditing] = useState(false);
-  const [savingProfile, setSavingProfile] = useState(false);
   const [formData, setFormData] = useState({ full_name: '', phone: '', login2: '' });
   const [telegramUsername, setTelegramUsername] = useState<string | null>(null);
   const [telegramLoading, setTelegramLoading] = useState(false);
@@ -226,7 +225,6 @@ export default function Profile() {
   }, [profile, loadTelegramSettings]);
 
   const handleSave = async () => {
-    setSavingProfile(true);
     try {
       await userApi.updateProfile(formData);
       setProfile((prev) => prev ? { ...prev, ...formData } : null);
@@ -242,18 +240,7 @@ export default function Profile() {
         message: t('profile.profileUpdateError'),
         color: 'red',
       });
-    } finally {
-      setSavingProfile(false);
     }
-  };
-
-  const cancelEditing = () => {
-    setFormData({
-      full_name: profile?.full_name || '',
-      phone: profile?.phone || '',
-      login2: profile?.login2 || '',
-    });
-    setEditing(false);
   };
 
   const refreshProfile = async () => {
@@ -512,22 +499,15 @@ export default function Profile() {
   }
 
   return (
-    <Stack gap="lg" className="profile-page">
-      <div className="profile-page__heading">
-        <div>
-          <Text className="profile-page__eyebrow">{t('profile.title')}</Text>
-          <Title order={2}>Управляйте аккаунтом в одном месте</Title>
-        </div>
-        <Text c="dimmed" className="profile-page__subtitle">Данные, баланс и настройки безопасности всегда под рукой.</Text>
-      </div>
+    <Stack gap="lg">
+      <Title order={2}>{t('profile.title')}</Title>
 
 
       <Grid>
         <Grid.Col span={{ base: 12, md: 6 }} style={{ display: 'flex' }}>
-          <Card withBorder radius="xl" p="xl" className="profile-card profile-card--account" style={{ flex: 1, display: 'flex', flexDirection: 'column' }}>
+          <Card withBorder radius="md" p="lg" style={{ flex: 1, display: 'flex', flexDirection: 'column' }}>
             <Group>
               <Avatar
-                className="profile-card__avatar"
                 size={80}
                 radius="xl"
                 color="blue"
@@ -536,7 +516,7 @@ export default function Profile() {
                 {profile.full_name?.charAt(0) || profile.login?.charAt(0)?.toUpperCase() || '?'}
               </Avatar>
               <div>
-                <Text fw={700} size="xl">{profile.full_name || profile.login || t('profile.user')}</Text>
+                <Text fw={500} size="lg">{profile.full_name || profile.login || t('profile.user')}</Text>
                 <Text size="sm" c="cyan">{t('profile.id')}: {profile.user_id}
                   <ActionIcon color={clipboardId.copied ? 'teal' : 'cyan'} variant="subtle" onClick={() => clipboardId.copy(profile.user_id)}>                      {clipboardId.copied ? <IconCheck size={16} /> : <IconCopy size={16} />}
                   </ActionIcon>
@@ -610,19 +590,19 @@ export default function Profile() {
         </Grid.Col>
 
         <Grid.Col span={{ base: 12, md: 6 }} style={{ display: 'flex' }}>
-          <Card withBorder radius="xl" p="xl" className="profile-card profile-card--details" style={{ flex: 1, display: 'flex', flexDirection: 'column' }}>
+          <Card withBorder radius="md" p="lg" style={{ flex: 1, display: 'flex', flexDirection: 'column' }}>
             <Group justify="space-between" mb="md">
-              <div><Text fw={700} size="lg">{t('profile.personalData')}</Text><Text size="xs" c="dimmed">Основная информация профиля</Text></div>
+              <Text fw={500}>{t('profile.personalData')}</Text>
               {!editing ? (
-                <Button variant="light" size="sm" leftSection={<IconPencil size={15} />} onClick={() => setEditing(true)}>
+                <Button variant="light" size="xs" onClick={() => setEditing(true)}>
                   {t('common.edit')}
                 </Button>
               ) : (
                 <Group gap="xs">
-                  <Button variant="light" size="sm" color="gray" onClick={cancelEditing}>
+                  <Button variant="light" size="xs" color="gray" onClick={() => setEditing(false)}>
                     {t('common.cancel')}
                   </Button>
-                  <Button size="sm" leftSection={<IconDeviceFloppy size={15} />} onClick={handleSave} loading={savingProfile}>
+                  <Button size="xs" onClick={handleSave}>
                     {t('common.save')}
                   </Button>
                 </Group>
@@ -703,7 +683,7 @@ export default function Profile() {
       </Grid>
 
       {forecast && forecast.items && forecast.items.length > 0 && (
-        <Card withBorder radius="xl" p="xl" className="profile-card profile-card--forecast">
+        <Card withBorder radius="md" p="lg">
           <Group
             justify="space-between"
             style={{ cursor: 'pointer' }}
@@ -787,9 +767,9 @@ export default function Profile() {
       )}
 
       {(config.ALLOW_TELEGRAM_PIN === 'true' || hasTelegramWidget) && (
-        <Card withBorder radius="xl" p="xl" className="profile-card profile-card--telegram">
+        <Card withBorder radius="md" p="lg">
           <Group justify="space-between" mb="md">
-            <Text fw={700} size="lg">{t('profile.telegram')}</Text>
+            <Text fw={500}>{t('profile.telegram')}</Text>
             {telegramLoading ? (
               <Skeleton width={100} height={24} />
             ) : telegramUsername ? (

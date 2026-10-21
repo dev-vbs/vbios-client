@@ -38,9 +38,8 @@ export default defineConfig({
       },
     }),
   ],
-  // Absolute paths prevent blank pages after a direct visit to /profile or another SPA route.\n  base: '/',
+  base: './',
   define: {
     __APP_VERSION__: JSON.stringify(version),
   },
 })
-

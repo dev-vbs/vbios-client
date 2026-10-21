@@ -32,7 +32,7 @@
 ```yaml
 services:
   client:
-    image: ghcr.io/dev-vbs/vbios-client:19c8f6449ece2459442ac37651cb875cf7faf0c2
+    image: ghcr.io/dev-vbs/vbios-client:latest
     ports:
       - "3001:80"
     environment:
@@ -179,7 +179,7 @@ services:
 ```yaml
 services:
   client:
-    image: ghcr.io/dev-vbs/vbios-client:19c8f6449ece2459442ac37651cb875cf7faf0c2
+    image: ghcr.io/dev-vbs/vbios-client:latest
     environment:
       SUPPORT_WIDGET_URL: "https://widget.your-domain.com/widget.js"
       SUPPORT_WIDGET_API: "your-api-key"
@@ -303,7 +303,7 @@ volumes:
 ```yaml
 services:
   client:
-    image: ghcr.io/dev-vbs/vbios-client:19c8f6449ece2459442ac37651cb875cf7faf0c2
+    image: ghcr.io/dev-vbs/vbios-client:latest
     environment:
       CUSTOM_LANGS: "cn"
     volumes:
@@ -404,3 +404,4 @@ Set-ExecutionPolicy -Scope Process Bypass
 ```
 
 To use the graphical Git interface, open Git Bash in the project folder and run `git gui`. Stage files, enter a commit message, click **Commit**, then **Push**.
+
