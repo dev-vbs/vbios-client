@@ -252,7 +252,7 @@ function AppContent() {
         {emailRequiredModal}
         {verifyRequiredModal}
         {versionModal}
-        <Box style={{ minHeight: '100vh', paddingBottom: 150 }}>
+        <Box style={{ minHeight: '100vh', paddingBottom: 'calc(88px + env(safe-area-inset-bottom, 0px))' }}>
           <WebAppHeader />
           <Box className="mobile-route-shell">
             <Routes>

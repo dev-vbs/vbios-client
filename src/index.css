@@ -22,3 +22,28 @@
 @media (max-width:420px){
   .mobile-topbar{padding-inline:12px!important}.mobile-topbar .mobile-brand .mantine-Text-root:last-child{display:none}.mobile-topbar .mobile-support,.mobile-topbar .mobile-language{display:none}.mobile-topbar .mobile-balance{width:72px;padding-inline:7px}.mobile-topbar .mobile-balance .mantine-Button-label{font-size:11px}.mobile-topbar .mobile-balance .mantine-Button-section{margin-right:4px}.mobile-topbar__actions{gap:4px!important}.mobile-topbar .mantine-ActionIcon-root{width:30px;height:30px}.mantine-Title-root{font-size:23px!important}.services-overview .page-header .mantine-Button-root{font-size:12px;padding-inline:8px}.service-overview-card .mantine-Text-root{max-width:145px}.service-overview-card .mantine-Badge-root{font-size:10px;padding-inline:6px}.connection-diagnostics .mantine-Group-root{display:grid;grid-template-columns:1fr}.connection-diagnostics .mantine-Button-root{width:100%}
 }
+
+/* Mobile layout reset: pages own one consistent 16px gutter. */
+@media (max-width:768px){
+  .mobile-route-shell{width:100%;overflow-x:hidden}
+  .mobile-route-shell>.services-overview,.mobile-route-shell>.profile-page,.mobile-route-shell>.tickets-page,.mobile-route-shell>.service-detail-page{width:100%;max-width:none;margin:0;padding:18px 16px 26px}
+  .mobile-route-shell>.services-overview{padding-top:18px}
+  .mobile-route-shell>.service-detail-page{padding-top:12px}
+  .services-overview .page-header,.profile-page .page-header,.tickets-page .page-header{padding:0;margin:0 0 18px}
+  .profile-page .mantine-Grid-root{margin:0}.profile-page .mantine-Grid-col{padding:0 0 12px}
+  .profile-page .profile-card,.tickets-page .mantine-Card-root{width:100%}
+  .cabinet-header{padding:18px 16px 0;margin:0 0 18px;align-items:flex-start}.cabinet-header h1{font-size:25px;max-width:235px}.refresh-button{margin-top:2px}
+  .cabinet-hero{margin:0 16px;gap:18px}.hero-action{width:100%;justify-content:center;min-height:42px}
+  .cabinet-summary{display:grid;grid-template-columns:1fr;overflow:visible;margin:14px 16px;gap:12px;padding:0}.summary-card{min-width:0;min-height:164px}.balance-summary{grid-column:auto}
+  .cabinet-grid{display:block}.cabinet-panel{margin:14px 16px;padding:18px}.cabinet-notifications{margin:14px 16px}.payments-panel{margin-bottom:0}
+  .connection-row{min-width:0}.connection-name{flex:1}.connection-name strong{max-width:none}.connection-row>a{flex:none}
+  .services-overview__header{padding-bottom:16px}.services-overview__header>div:last-child{display:grid;grid-template-columns:1fr 1fr;width:100%}.services-overview__header>div:last-child button{min-width:0;padding-inline:9px}
+  .services-overview .mantine-Accordion-panel{padding:4px 12px 12px}.service-overview-card .mantine-Group-root{align-items:flex-start}.service-overview-card .mantine-Group-root>div:last-child{margin-left:auto;flex-wrap:wrap;justify-content:flex-end}
+  .service-detail-page .service-detail-page__summary{padding:18px!important}.service-detail-page .service-connection-card{margin:0;padding:15px!important}.service-detail-page .mantine-Timeline-item{padding-left:34px}.service-detail-page .mantine-Timeline-itemBullet{width:23px;height:23px}
+  .connection-diagnostics .mantine-Group-root{display:flex!important;align-items:flex-start}.connection-diagnostics .mantine-Stack-root{min-width:0;flex:1}.connection-diagnostics .mantine-Button-root{min-width:86px;width:auto}
+  .legal-links{margin-top:18px;padding:0 16px calc(98px + env(safe-area-inset-bottom, 0px))}
+}
+@media (max-width:380px){
+  .mobile-topbar{min-height:56px}.mobile-topbar .mobile-brand{max-width:96px;overflow:hidden}.mobile-topbar .mobile-brand .mantine-Text-root:first-child{white-space:nowrap;overflow:hidden;text-overflow:ellipsis}.mobile-topbar .mobile-balance{width:64px}.mobile-topbar .mobile-theme{display:none}
+  .cabinet-header h1{font-size:22px;max-width:210px}.cabinet-hero{padding:17px}.hero-icon{display:none}.summary-card{padding:18px}.services-overview .page-header .mantine-Button-root{font-size:11px}.service-overview-card .mantine-Text-root{max-width:130px}.connection-diagnostics .mantine-Group-root{display:grid!important}.connection-diagnostics .mantine-Button-root{width:100%}
+}
