@@ -24,7 +24,7 @@ import { WebAppHeader } from './components/WebAppHeader';
 import { BottomNavigation } from './components/BottomNavigation';
 import { theme } from './theme';
 
-const colorSchemeManager = localStorageColorSchemeManager({ key: 'vbios-color-scheme' });
+const colorSchemeManager = localStorageColorSchemeManager({ key: 'vbios-color-scheme-v2' });
 
 parseAndSaveSessionId();
 parseAndSavePartnerId();
@@ -316,7 +316,7 @@ function App() {
 
   return (
     <DirectionProvider initialDirection={isRtl ? 'rtl' : 'ltr'}>
-      <MantineProvider theme={theme} defaultColorScheme="light" colorSchemeManager={colorSchemeManager}>
+      <MantineProvider theme={theme} defaultColorScheme="dark" colorSchemeManager={colorSchemeManager}>
         <Notifications position="top-right" />
         <BrowserRouter basename={basePath}>
           <AppContent />

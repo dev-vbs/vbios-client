@@ -199,3 +199,43 @@ body { background: radial-gradient(circle at 78% -14%, var(--ui-page-glow) 0, tr
   color: var(--ui-text);
 }
 @media (max-width: 480px) { .not-found-card { min-width: calc(100vw - 32px); padding: 30px 20px; } }
+
+/* Dark cabinet is the default; every route shares these graphite surfaces. */
+:root {
+  --ui-page: #0e1011;
+  --ui-page-glow: #18292f;
+  --ui-surface: #17191a;
+  --ui-surface-soft: #1b1e20;
+  --ui-surface-hover: #202628;
+  --ui-border: #2a3235;
+  --ui-border-strong: #3b5057;
+  --ui-text: #edf3f4;
+  --ui-muted: #9aa7aa;
+  --ui-subtle: #748085;
+  --ui-accent: #65cbe8;
+  --ui-accent-strong: #91def2;
+  --ui-accent-soft: #1d3c46;
+  --ui-field: #121516;
+  --ui-code: #101718;
+  --ui-shadow: 0 16px 38px rgba(0, 0, 0, .2);
+  --ui-shadow-hover: 0 22px 46px rgba(0, 0, 0, .3);
+}
+[data-mantine-color-scheme="light"] {
+  --ui-page: #f6f8fb;
+  --ui-page-glow: #e9f5ff;
+  --ui-surface: #ffffff;
+  --ui-surface-soft: #f8fafc;
+  --ui-surface-hover: #f0f7fb;
+  --ui-border: #dce5ed;
+  --ui-border-strong: #c8d7e2;
+  --ui-text: #17212b;
+  --ui-muted: #62717d;
+  --ui-subtle: #8b9aa6;
+  --ui-accent: #147da0;
+  --ui-accent-strong: #0d6688;
+  --ui-accent-soft: #e2f5fb;
+  --ui-field: #ffffff;
+  --ui-code: #f1f7fa;
+  --ui-shadow: 0 16px 38px rgba(34, 62, 82, .09);
+  --ui-shadow-hover: 0 20px 44px rgba(34, 62, 82, .14);
+}

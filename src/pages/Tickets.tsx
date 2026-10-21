@@ -20,7 +20,6 @@ import {
   Textarea,
   ThemeIcon,
   UnstyledButton,
-  useMantineColorScheme,
 } from '@mantine/core';
 import { useMediaQuery, getHotkeyHandler } from '@mantine/hooks';
 import { notifications } from '@mantine/notifications';
@@ -165,7 +164,6 @@ function statusColor(status?: string): string {
 
 export default function Tickets() {
   const { t } = useTranslation();
-  const { colorScheme } = useMantineColorScheme();
   const isMobile = useMediaQuery('(max-width: 768px)');
   const setHasNewTicketMessages = useStore((s) => s.setHasNewTicketMessages);
 
@@ -600,16 +598,15 @@ export default function Tickets() {
         }}
       >
         <Card
+          className={`ticket-list-item ${isSelected ? 'ticket-list-item--selected' : ''} ${isWaiting ? 'ticket-list-item--waiting' : ''}`}
           withBorder
           radius={0}
           p="xs"
           style={{
             textAlign: 'left',
             position: 'relative',
-            borderColor: isSelected ? 'var(--mantine-color-blue-6)' : undefined,
-            background: isSelected
-              ? (colorScheme === 'dark' ? 'rgba(34, 139, 230, 0.12)' : 'rgba(34, 139, 230, 0.08)')
-              : undefined,
+            borderColor: isSelected ? 'var(--ui-accent)' : undefined,
+            background: isSelected ? 'var(--ui-accent-soft)' : undefined,
           }}
         >
           {isWaiting && (
@@ -621,7 +618,7 @@ export default function Tickets() {
                 width: 8,
                 height: 8,
                 borderRadius: '50%',
-                backgroundColor: 'var(--mantine-color-blue-6)',
+                backgroundColor: 'var(--ui-accent)',
               }}
             />
           )}
@@ -649,8 +646,8 @@ export default function Tickets() {
     }
 
     return (
-      <Stack gap="sm" style={{ height: '100%', overflow: 'hidden' }}>
-        <Group justify="space-between" align="center">
+      <Stack gap="sm" className="ticket-conversation" style={{ height: '100%', overflow: 'hidden' }}>
+        <Group justify="space-between" align="center" className="ticket-conversation__header">
           <Group gap="xs" style={{ minWidth: 0 }}>
             <Text fw={600} size="sm" lineClamp={1}>{getTicketIdText(selectedTicket)} {getTicketSubject(selectedTicket)}</Text>
             <Badge size="sm" color={statusColor(selectedTicket.status)}>{getTicketStatusLabel(selectedTicket.status)}</Badge>
@@ -678,15 +675,14 @@ export default function Tickets() {
               return (
                 <Card
                   key={message.message_id}
+                  className={`ticket-message ${isAdmin ? 'ticket-message--admin' : 'ticket-message--user'}`}
                   withBorder
                   p="sm"
                   radius="md"
                   style={{
                     alignSelf: isAdmin ? 'flex-start' : 'flex-end',
                     maxWidth: '72%',
-                    background: isAdmin
-                      ? (colorScheme === 'dark' ? 'rgba(255,255,255,0.04)' : 'rgba(0,0,0,0.02)')
-                      : 'var(--mantine-color-blue-light)',
+                    background: isAdmin ? 'var(--ui-surface-soft)' : 'var(--ui-accent-soft)',
                   }}
                 >
                   <Group gap={6} mb={6}>
@@ -723,7 +719,7 @@ export default function Tickets() {
         {ticketIsClosed(selectedTicket.status) ? (
           <Text size="sm" c="dimmed" ta="center" py="xs">{t('tickets.ticketClosedNote')}</Text>
         ) : (
-          <Stack gap="xs">
+          <Stack gap="xs" className="ticket-reply-box">
             {replyFiles.length > 0 && (
               <Stack gap={4}>
                 {replyFiles.map((file, index) => (
@@ -756,7 +752,7 @@ export default function Tickets() {
               <Group gap={4} style={{ position: 'absolute', bottom: 7, right: 8 }}>
                 <FileButton onChange={onPickFiles} multiple>
                   {(props) => (
-                    <ActionIcon {...props} variant="subtle" color="gray" size="sm">
+                    <ActionIcon {...props} variant="subtle" color="gray" size="sm" aria-label="Прикрепить файл">
                       <IconPaperclip size={16} />
                     </ActionIcon>
                   )}
@@ -767,6 +763,7 @@ export default function Tickets() {
                   variant="subtle"
                   color="blue"
                   size="sm"
+                  aria-label="Отправить сообщение"
                 >
                   <IconSend size={16} />
                 </ActionIcon>
@@ -804,7 +801,7 @@ export default function Tickets() {
             <Text ta="center" c="dimmed">{t('tickets.noTickets')}</Text>
           </Card>
         ) : (
-          <Stack gap="md">
+          <Stack gap="md" className="ticket-mobile-list">
             {activeTickets.length > 0 && (
               <Stack gap={0}>
                 {activeTickets.map(renderTicketCard)}
@@ -821,8 +818,8 @@ export default function Tickets() {
           </Stack>
         )
       ) : (
-        <Group align="stretch" grow={false} wrap="nowrap" style={{ height: 'calc(100vh - 226px)' }}>
-          <Card withBorder radius="lg" p={0} style={{ width: 320, display: 'flex', flexDirection: 'column' }}>
+        <Group className="ticket-layout" align="stretch" grow={false} wrap="nowrap" style={{ height: 'calc(100vh - 226px)' }}>
+          <Card className="ticket-list-panel" withBorder radius="lg" p={0} style={{ width: 320, display: 'flex', flexDirection: 'column' }}>
             <Stack gap="0" style={{ height: '100%' }}>
               <TextInput
                 placeholder={t('tickets.search')}
@@ -876,7 +873,7 @@ export default function Tickets() {
             </Stack>
           </Card>
 
-          <Card withBorder radius="lg" p="md" style={{ flex: 1, display: 'flex', flexDirection: 'column', overflow: 'hidden' }}>
+          <Card className="ticket-chat-panel" withBorder radius="lg" p="md" style={{ flex: 1, display: 'flex', flexDirection: 'column', overflow: 'hidden' }}>
             {selectedTicket ? renderChatContent() : (
               <Center style={{ flex: 1 }}>
                 <Stack gap={6} align="center">
