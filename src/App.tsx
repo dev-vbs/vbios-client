@@ -316,7 +316,7 @@ function App() {
 
   return (
     <DirectionProvider initialDirection={isRtl ? 'rtl' : 'ltr'}>
-      <MantineProvider theme={theme} defaultColorScheme="dark" colorSchemeManager={colorSchemeManager}>
+      <MantineProvider theme={theme} defaultColorScheme="light" colorSchemeManager={colorSchemeManager}>
         <Notifications position="top-right" />
         <BrowserRouter basename={basePath}>
           <AppContent />

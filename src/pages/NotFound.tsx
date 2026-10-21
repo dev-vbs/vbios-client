@@ -9,7 +9,7 @@ function NotFound() {
 
   return (
     <Center h="100vh">
-      <Box ta="center">
+      <Box ta="center" className="not-found-card">
         <Text size="64px" fw={700} mb="md">404</Text>
         <Text size="xl" mb="md">{t('common.notFound')}</Text>
         <Text size="sm" c="dimmed" mb="lg">{t('common.notFoundDesc')}</Text>

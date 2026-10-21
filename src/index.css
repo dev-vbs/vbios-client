@@ -47,3 +47,155 @@
   .mobile-topbar{min-height:56px}.mobile-topbar .mobile-brand{max-width:96px;overflow:hidden}.mobile-topbar .mobile-brand .mantine-Text-root:first-child{white-space:nowrap;overflow:hidden;text-overflow:ellipsis}.mobile-topbar .mobile-balance{width:64px}.mobile-topbar .mobile-theme{display:none}
   .cabinet-header h1{font-size:22px;max-width:210px}.cabinet-hero{padding:17px}.hero-icon{display:none}.summary-card{padding:18px}.services-overview .page-header .mantine-Button-root{font-size:11px}.service-overview-card .mantine-Text-root{max-width:130px}.connection-diagnostics .mantine-Group-root{display:grid!important}.connection-diagnostics .mantine-Button-root{width:100%}
 }
+
+/* Unified cabinet design tokens. Every route uses the same surfaces, typography and form controls. */
+:root {
+  --ui-page: #f6f8fb;
+  --ui-page-glow: #e9f5ff;
+  --ui-surface: #ffffff;
+  --ui-surface-soft: #f8fafc;
+  --ui-surface-hover: #f0f7fb;
+  --ui-border: #dce5ed;
+  --ui-border-strong: #c8d7e2;
+  --ui-text: #17212b;
+  --ui-muted: #62717d;
+  --ui-subtle: #8b9aa6;
+  --ui-accent: #147da0;
+  --ui-accent-strong: #0d6688;
+  --ui-accent-soft: #e2f5fb;
+  --ui-field: #ffffff;
+  --ui-code: #f1f7fa;
+  --ui-shadow: 0 16px 38px rgba(34, 62, 82, .09);
+  --ui-shadow-hover: 0 20px 44px rgba(34, 62, 82, .14);
+}
+
+[data-mantine-color-scheme="dark"] {
+  --ui-page: #0e1011;
+  --ui-page-glow: #18292f;
+  --ui-surface: #17191a;
+  --ui-surface-soft: #1b1e20;
+  --ui-surface-hover: #202628;
+  --ui-border: #2a3235;
+  --ui-border-strong: #3b5057;
+  --ui-text: #edf3f4;
+  --ui-muted: #9aa7aa;
+  --ui-subtle: #748085;
+  --ui-accent: #65cbe8;
+  --ui-accent-strong: #91def2;
+  --ui-accent-soft: #1d3c46;
+  --ui-field: #121516;
+  --ui-code: #101718;
+  --ui-shadow: 0 16px 38px rgba(0, 0, 0, .2);
+  --ui-shadow-hover: 0 22px 46px rgba(0, 0, 0, .3);
+}
+
+html, body, #root { background: var(--ui-page); color: var(--ui-text); }
+body { background: radial-gradient(circle at 78% -14%, var(--ui-page-glow) 0, transparent 34%), var(--ui-page); }
+
+/* Mantine primitives: cards, dialogs and all form fields share one visual system. */
+.mantine-AppShell-main { background: transparent; color: var(--ui-text); }
+.mantine-Card-root, .mantine-Paper-root, .mantine-Modal-content {
+  background: var(--ui-surface); border-color: var(--ui-border); color: var(--ui-text);
+}
+.mantine-Modal-header { background: var(--ui-surface); border-color: var(--ui-border); }
+.mantine-Input-input, .mantine-PasswordInput-input, .mantine-Textarea-input,
+.mantine-Select-input, .mantine-PillsInput-input {
+  background: var(--ui-field) !important; border-color: var(--ui-border-strong); color: var(--ui-text);
+}
+.mantine-Input-input::placeholder, .mantine-PasswordInput-input::placeholder,
+.mantine-Textarea-input::placeholder, .mantine-Select-input::placeholder { color: var(--ui-subtle); }
+.mantine-Input-input:focus, .mantine-PasswordInput-input:focus, .mantine-Textarea-input:focus,
+.mantine-Select-input:focus, .mantine-PillsInput-input:focus {
+  border-color: var(--ui-accent) !important; box-shadow: 0 0 0 3px color-mix(in srgb, var(--ui-accent) 16%, transparent);
+}
+.mantine-Input-label, .mantine-PasswordInput-label, .mantine-Textarea-label, .mantine-Select-label { color: var(--ui-text); }
+.mantine-Divider-root, .mantine-Tabs-list, .mantine-Accordion-item { border-color: var(--ui-border); }
+.mantine-Tabs-tab { color: var(--ui-muted); }
+.mantine-Tabs-tab[data-active] { color: var(--ui-accent-strong); border-color: var(--ui-accent); }
+.mantine-Button-root[data-variant="filled"] { background: var(--ui-accent); }
+.mantine-Button-root[data-variant="filled"]:hover { background: var(--ui-accent-strong); }
+.mantine-Button-root[data-variant="light"] { background: var(--ui-accent-soft); color: var(--ui-accent-strong); }
+
+/* Shared desktop cabinet shell and page headers. */
+.cabinet-shell, .cabinet-main { background: transparent; color: var(--ui-text); }
+.cabinet-sidebar { background: var(--ui-surface); border-color: var(--ui-border); }
+.cabinet-brand, .cabinet-header h1, .page-header__title { color: var(--ui-text); }
+.cabinet-caption, .cabinet-breadcrumb, .page-header__description { color: var(--ui-muted); }
+.cabinet-nav-item, .cabinet-sidebar-footer a { color: var(--ui-muted); }
+.cabinet-nav-item:hover { background: var(--ui-surface-hover); color: var(--ui-text); }
+.cabinet-nav-item.is-active { background: var(--ui-accent-soft); color: var(--ui-accent-strong); box-shadow: inset 0 0 0 1px color-mix(in srgb, var(--ui-accent) 24%, transparent); }
+.cabinet-sidebar-footer button { color: #c24d55; }
+.refresh-button { background: var(--ui-surface); border-color: var(--ui-border-strong); color: var(--ui-text); }
+.cabinet-hero { background: radial-gradient(circle at 85% -60%, color-mix(in srgb, var(--ui-accent) 25%, transparent), transparent 51%), var(--ui-accent-soft); border-color: color-mix(in srgb, var(--ui-accent) 30%, var(--ui-border)); }
+.hero-copy p, .summary-card p, .panel-title p, .connection-name span, .payment-row span, .empty-state p { color: var(--ui-muted); }
+.hero-icon, .empty-state-icon { background: color-mix(in srgb, var(--ui-accent) 14%, var(--ui-surface)); border-color: color-mix(in srgb, var(--ui-accent) 34%, var(--ui-border)); color: var(--ui-accent-strong); }
+.hero-action { background: var(--ui-accent); color: #fff; }
+.summary-card, .cabinet-panel { background: var(--ui-surface); border-color: var(--ui-border); box-shadow: var(--ui-shadow); }
+.summary-card:hover, .cabinet-panel:hover { border-color: var(--ui-border-strong); box-shadow: var(--ui-shadow-hover); }
+.balance-summary { background: linear-gradient(145deg, var(--ui-accent-soft), var(--ui-surface) 68%); border-color: color-mix(in srgb, var(--ui-accent) 26%, var(--ui-border)); }
+.balance-summary button { background: var(--ui-accent-soft); border-color: color-mix(in srgb, var(--ui-accent) 34%, var(--ui-border)); color: var(--ui-accent-strong); }
+.connection-row, .payment-row, .notification-list a, .help-link { border-color: var(--ui-border); }
+.connection-row:hover { background: var(--ui-surface-hover); }
+.connection-name strong, .payment-row strong, .notification-list strong, .panel-title h2 { color: var(--ui-text); }
+.payment-icon { background: var(--ui-accent-soft); color: var(--ui-accent-strong); border-color: color-mix(in srgb, var(--ui-accent) 24%, var(--ui-border)); }
+.status-live { background: #e7f8ed; border-color: #b6e6c4; color: #19713a; }
+[data-mantine-color-scheme="dark"] .status-live { background: #183b2c; border-color: #285841; color: #8cddb0; }
+
+/* Profile, services and tickets inherit the same elevated white/graphite cards. */
+.cabinet-page-main .mantine-Card-root, .cabinet-page-main .mantine-Paper-root,
+.profile-page .profile-card, .services-overview .mantine-Accordion-item,
+.service-overview-card, .tickets-page .mantine-Card-root {
+  background: var(--ui-surface) !important; border-color: var(--ui-border) !important; color: var(--ui-text) !important; box-shadow: var(--ui-shadow);
+}
+.profile-page .profile-card--details, .service-detail-page__summary, .service-connection-card {
+  background: radial-gradient(circle at 100% 0, color-mix(in srgb, var(--ui-accent) 16%, transparent), transparent 43%), var(--ui-surface) !important;
+  border-color: color-mix(in srgb, var(--ui-accent) 28%, var(--ui-border)) !important;
+}
+.profile-page .profile-card:hover, .service-overview-card:hover, .tickets-page .mantine-Card-root:hover {
+  border-color: var(--ui-border-strong) !important; box-shadow: var(--ui-shadow-hover) !important;
+}
+.profile-page .mantine-Avatar-root { border-color: var(--ui-accent); box-shadow: 0 0 0 5px color-mix(in srgb, var(--ui-accent) 10%, transparent); }
+.profile-page .mantine-Divider-root, .profile-completeness .mantine-Stack-root > .mantine-Group-root { border-color: var(--ui-border); }
+.profile-page .profile-form .mantine-Input-input:disabled { background: var(--ui-surface-soft); border-color: var(--ui-border); color: var(--ui-muted); }
+.services-overview__header { border-color: var(--ui-border); }
+.services-overview .mantine-Accordion-control { color: var(--ui-text); }
+.services-overview .mantine-Accordion-control:hover { background: var(--ui-surface-hover); color: var(--ui-text); }
+.service-overview-card--child { background: var(--ui-surface-soft) !important; }
+.service-connection-card .mantine-Code-root { background: var(--ui-code); border-color: var(--ui-border-strong); color: var(--ui-text); }
+.service-connection-card .mantine-Timeline-itemTitle { color: var(--ui-text); }
+.connection-diagnostics { background: var(--ui-accent-soft) !important; border-color: color-mix(in srgb, var(--ui-accent) 28%, var(--ui-border)) !important; }
+.tickets-page .mantine-ScrollArea-root { background: var(--ui-surface-soft); }
+.tickets-page .mantine-UnstyledButton-root:hover { background: var(--ui-surface-hover); }
+.tickets-page .mantine-Modal-header { border-color: var(--ui-border); }
+
+/* Sign-in, registration and password recovery use the same product surface. */
+.auth-screen { background: radial-gradient(circle at 50% -5%, color-mix(in srgb, var(--ui-accent) 19%, transparent), transparent 44%), var(--ui-page) !important; }
+.auth-card { background: var(--ui-surface) !important; border-color: var(--ui-border) !important; box-shadow: 0 24px 70px rgba(34, 62, 82, .13) !important; }
+.auth-card .mantine-Divider-label { background: var(--ui-surface); color: var(--ui-muted); }
+.auth-card .mantine-Input-input:focus { border-color: var(--ui-accent); box-shadow: 0 0 0 3px color-mix(in srgb, var(--ui-accent) 16%, transparent); }
+
+[data-mantine-color-scheme="light"] .mantine-Text-root[data-variant="dimmed"],
+[data-mantine-color-scheme="light"] .mantine-Text-root.mantine-dimmed { color: var(--ui-muted); }
+
+@media (max-width: 768px) {
+  body { background: var(--ui-page); }
+  .mobile-topbar { background: color-mix(in srgb, var(--ui-surface) 91%, transparent); border-color: var(--ui-border); }
+  .mobile-topbar .mantine-ActionIcon-root { background: var(--ui-surface-soft); color: var(--ui-text); }
+  .mantine-Card-root { background: var(--ui-surface) !important; border-color: var(--ui-border) !important; }
+  .cabinet-hero, .summary-card, .cabinet-panel, .profile-page .profile-card,
+  .services-overview .mantine-Accordion-item, .service-overview-card, .tickets-page .mantine-Card-root { box-shadow: 0 10px 26px rgba(34, 62, 82, .08) !important; }
+  .service-detail-page .service-connection-card { margin-inline: 0; }
+  .auth-screen { padding-inline: 16px; }
+  .auth-card { width: min(100%, 440px); }
+}
+
+.not-found-card {
+  min-width: min(420px, calc(100vw - 32px));
+  padding: 38px 30px;
+  background: var(--ui-surface);
+  border: 1px solid var(--ui-border);
+  border-radius: 20px;
+  box-shadow: var(--ui-shadow);
+  color: var(--ui-text);
+}
+@media (max-width: 480px) { .not-found-card { min-width: calc(100vw - 32px); padding: 30px 20px; } }
