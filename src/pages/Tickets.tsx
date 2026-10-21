@@ -21,7 +21,7 @@ import {
   ThemeIcon,
   UnstyledButton,
 } from '@mantine/core';
-import { useMediaQuery, getHotkeyHandler } from '@mantine/hooks';
+import { useMediaQuery } from '@mantine/hooks';
 import { notifications } from '@mantine/notifications';
 import { useTranslation } from 'react-i18next';
 import './Tickets.css';
@@ -776,7 +776,11 @@ export default function Tickets() {
                 placeholder={t('tickets.messagePlaceholder')}
                 value={replyMessage}
                 onChange={(event) => setReplyMessage(event.currentTarget.value.slice(0, MAX_MESSAGE_LENGTH))}
-                onKeyDown={getHotkeyHandler([['mod+Enter', () => { void sendMessage(); }]])}
+                onKeyDown={(event) => {
+                  if (event.key !== 'Enter' || event.shiftKey || event.nativeEvent.isComposing) return;
+                  event.preventDefault();
+                  if (!sending) void sendMessage();
+                }}
                 maxLength={MAX_MESSAGE_LENGTH}
                 autosize
                 minRows={1}
@@ -793,6 +797,7 @@ export default function Tickets() {
                 <ActionIcon
                   onClick={sendMessage}
                   loading={sending}
+                  disabled={!replyMessage.trim() && replyFiles.length === 0}
                   variant="subtle"
                   color="blue"
                   size="sm"
