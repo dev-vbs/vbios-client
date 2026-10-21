@@ -1,3 +1,4 @@
+import axios from 'axios';
 import { useState, useEffect, useCallback } from 'react';
 import { Card, Text, Stack, Group, Divider, Grid, Button, TextInput, Tooltip, ActionIcon, Avatar, Title, Modal, Loader, Center, Collapse, Alert, Skeleton, useMantineColorScheme } from '@mantine/core';
 import { IconUser, IconPhone, IconCopy, IconCheck, IconBrandTelegram, IconCreditCard, IconChevronDown, IconChevronUp, IconMail, IconAlertCircle } from '@tabler/icons-react';
@@ -238,27 +239,33 @@ export default function Profile() {
 
     setSavingProfile(true);
     try {
-      // Backend accepts profile updates through POST /user. Send the phone
-      // explicitly so it is persisted independently of optional profile fields.
-      await userApi.updateProfile({ phone });
-      const response = await userApi.getProfile();
+      const response = await userApi.updateProfile({
+        full_name: formData.full_name.trim(),
+        phone,
+      });
       const responseData = response.data.data;
       const freshProfile = Array.isArray(responseData) ? responseData[0] : responseData;
       setProfile(freshProfile);
-      setFormData((current) => ({ ...current, phone: freshProfile.phone || phone }));
+      setFormData((current) => ({
+        ...current,
+        full_name: freshProfile.full_name || '',
+        phone: freshProfile.phone || '',
+      }));
       setEditing(false);
       notifications.show({
         title: t('common.success'),
-        message: 'Номер телефона сохранён.',
+        message: 'Данные профиля сохранены.',
         color: 'green',
       });
-    } catch {
+    } catch (error) {
+      const message = axios.isAxiosError(error)
+        ? (error.response?.data?.error || t('profile.profileUpdateError'))
+        : t('profile.profileUpdateError');
       notifications.show({
         title: t('common.error'),
-        message: t('profile.profileUpdateError'),
+        message,
         color: 'red',
-      });
-    } finally {
+      });    } finally {
       setSavingProfile(false);
     }
   };

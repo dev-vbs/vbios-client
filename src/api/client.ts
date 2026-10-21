@@ -145,7 +145,7 @@ export const auth = {
 
 export const userApi = {
   getProfile: () => api.get('/user'),
-  updateProfile: (data: Record<string, unknown>) => api.post('/user', data),
+  updateProfile: (data: { full_name?: string; phone?: string }) => api.post('/user/profile', data),
   changePassword: (password: string) => api.post('/user/passwd', { password }),
   resetPassword: (params: { login?: string; email?: string }) => api.post('/user/passwd/reset', params),
   verifyResetToken: (token: string) => api.get('/user/passwd/reset/verify', { params: { token } }),
