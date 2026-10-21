@@ -128,7 +128,10 @@ function findStorageString(value: StorageValue | undefined, fieldNames: string[]
 }
 
 function extractSubscriptionUrl(payload: unknown): string | null {
-  return findStorageString(parseStorageValue(payload), subscriptionFields, (candidate) => /^(https?:\/\/|happ:\/\/)/i.test(candidate));
+  const value = parseStorageValue(payload);
+  const storedLink = findStorageString(value, subscriptionFields, (candidate) => candidate.length > 0);
+  if (storedLink) return storedLink;
+  return findStorageString(value, [], (candidate) => /^[a-z][a-z\d+.-]*:\/\//i.test(candidate));
 }
 
 function extractConfiguration(payload: unknown): string | null {
@@ -138,7 +141,7 @@ function extractConfiguration(payload: unknown): string | null {
 function getStorageKeys(category: string, userServiceId: number): string[] {
   const id = String(userServiceId);
   const prefixes = category === 'proxy'
-    ? [config.PROXY_STORAGE_PREFIX || 'vpn_mrzb_', 'vpn_mrzb_', 'vpn_remna_']
+    ? [config.PROXY_STORAGE_PREFIX || 'vpn_mrzb_', 'vpn_mrzb_', 'vpn_remna_', 'vpn_mz_']
     : [config.VPN_STORAGE_PREFIX || 'vpn', 'vpn'];
   return [...new Set(prefixes.map((prefix) => `${prefix}${id}`))];
 }
