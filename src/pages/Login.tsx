@@ -513,10 +513,10 @@ const handleOAuthLogin = (provider: 'yandex' | 'google' | 'vk' | 'github') => {
   };
 
   return (
-    <Center style={{ minHeight: '100svh', paddingTop: 16, paddingBottom: isMobile ? 72 : 16, position: 'relative' }}>
-      <Card withBorder radius="md" p="xl" w={400}>
+    <Center style={{ minHeight: '100svh', padding: isMobile ? '20px 16px 88px' : '32px', position: 'relative', background: 'radial-gradient(circle at 50% 0%, rgba(34, 139, 230, 0.15), transparent 42%), var(--mantine-color-body)' }}>
+      <Card withBorder radius="xl" p={isMobile ? 'lg' : 'xl'} w={400} shadow="xl" style={{ width: 'min(100%, 400px)', borderColor: 'var(--mantine-color-default-border)', backdropFilter: 'blur(12px)' }}>
         <Stack gap="lg">
-          <Group justify="space-between" align="center">
+          <Group justify="space-between" align="center" wrap="nowrap">
             <div style={{ flex: 1, display: 'flex', justifyContent: 'flex-start' }}>
               <ThemeToggle />
             </div>
@@ -525,10 +525,10 @@ const handleOAuthLogin = (provider: 'yandex' | 'google' | 'vk' | 'github') => {
                 <img
                   src={config.LOGO_URL}
                   alt=""
-                  style={{ height: 28, width: 28, objectFit: 'contain', flexShrink: 0 }}
+                  style={{ height: 36, width: 36, objectFit: 'contain', flexShrink: 0, borderRadius: 10 }}
                 />
               )}
-              <Title order={2} ta="center">{config.APP_NAME}</Title>
+              <Title order={2} ta="center" style={{ letterSpacing: '-0.02em' }}>{config.APP_NAME}</Title>
             </Group>
             <div style={{ flex: 1, display: 'flex', justifyContent: 'flex-end' }}>
               <LanguageSwitcher />
@@ -538,9 +538,9 @@ const handleOAuthLogin = (provider: 'yandex' | 'google' | 'vk' | 'github') => {
           {config.APP_DESCRIPTION && (
             <Text size="sm" c="dimmed" ta="center" style={{ flex: 'auto' }}>{config.APP_DESCRIPTION}</Text>
           )}
-          <Text size="sm" c="dimmed" ta="center">
-              {mode === 'login' ? t('auth.loginTitle') : t('auth.registerTitle')}
-          </Text>
+          <Title order={3} ta="center" style={{ lineHeight: 1.25, letterSpacing: '-0.015em' }}>
+            {mode === 'login' ? t('auth.loginTitle') : t('auth.registerTitle')}
+          </Title>
 
           {hasTelegramWebAppAuth && !showLoginForm && (
             <>
@@ -599,12 +599,12 @@ const handleOAuthLogin = (provider: 'yandex' | 'google' | 'vk' | 'github') => {
 
           {(!hasTelegramWebAppAuth || showLoginForm) && (
             <>
-              <Divider label="или войдите через" labelPosition="center" />
+              <Divider label={t('auth.loginWithProviders')} labelPosition="center" />
               <Group grow gap="xs">
-                <Tooltip label="Войти через Яндекс" withArrow><Button variant="default" px={0} onClick={() => handleOAuthLogin('yandex')} aria-label="Войти через Яндекс"><IconBrandYandex size={20} /></Button></Tooltip>
-                <Tooltip label="Войти через Google" withArrow><Button variant="default" px={0} onClick={() => handleOAuthLogin('google')} aria-label="Войти через Google"><IconBrandGoogle size={20} /></Button></Tooltip>
-                <Tooltip label="Войти через VK" withArrow><Button variant="default" px={0} onClick={() => handleOAuthLogin('vk')} aria-label="Войти через VK"><IconBrandVk size={20} /></Button></Tooltip>
-                <Tooltip label="Войти через GitHub" withArrow><Button variant="default" px={0} onClick={() => handleOAuthLogin('github')} aria-label="Войти через GitHub"><IconBrandGithub size={20} /></Button></Tooltip>
+                <Tooltip label={t('auth.loginWithYandex')} withArrow><Button variant="default" px={0} onClick={() => handleOAuthLogin('yandex')} aria-label={t('auth.loginWithYandex')}><IconBrandYandex size={20} /></Button></Tooltip>
+                <Tooltip label={t('auth.loginWithGoogle')} withArrow><Button variant="default" px={0} onClick={() => handleOAuthLogin('google')} aria-label={t('auth.loginWithGoogle')}><IconBrandGoogle size={20} /></Button></Tooltip>
+                <Tooltip label={t('auth.loginWithVk')} withArrow><Button variant="default" px={0} onClick={() => handleOAuthLogin('vk')} aria-label={t('auth.loginWithVk')}><IconBrandVk size={20} /></Button></Tooltip>
+                <Tooltip label={t('auth.loginWithGithub')} withArrow><Button variant="default" px={0} onClick={() => handleOAuthLogin('github')} aria-label={t('auth.loginWithGithub')}><IconBrandGithub size={20} /></Button></Tooltip>
               </Group>
 
               <form onSubmit={handleSubmit}>
