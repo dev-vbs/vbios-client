@@ -44,14 +44,14 @@ export function BottomNavigation({ onPayments, onWithdrawals }: BottomNavigation
             : 'rgba(255, 255, 255, 0.85)',
           backdropFilter: 'blur(20px)',
           WebkitBackdropFilter: 'blur(20px)',
-          borderRadius: 20,
+          borderRadius: 14,
           border: computedColorScheme === 'dark'
             ? '1px solid rgba(255, 255, 255, 0.1)'
             : '1px solid rgba(0, 0, 0, 0.08)',
           boxShadow: computedColorScheme === 'dark'
             ? '0 8px 32px rgba(0, 0, 0, 0.4)'
             : '0 8px 32px rgba(0, 0, 0, 0.12)',
-          padding: '6px 8px',
+          padding: '7px 6px',
         }}
       >
         <Group justify="space-around" gap={0}>
@@ -69,7 +69,7 @@ export function BottomNavigation({ onPayments, onWithdrawals }: BottomNavigation
                   flexDirection: 'column',
                   alignItems: 'center',
                   justifyContent: 'center',
-                  padding: '6px 8px',
+                  padding: '7px 6px',
                   borderRadius: 12,
                   cursor: isItemBlocked ? 'not-allowed' : 'pointer',
                   opacity: isItemBlocked ? 0.4 : 1,

@@ -1,6 +1,6 @@
 import { useState } from 'react';
 import { useNavigate } from 'react-router-dom';
-import { Group, ActionIcon, useMantineColorScheme, useComputedColorScheme, Tooltip, Indicator, Button } from '@mantine/core';
+import { Group, ActionIcon, Text, Box, useMantineColorScheme, useComputedColorScheme, Tooltip, Indicator, Button } from '@mantine/core';
 import { notifications } from '@mantine/notifications';
 import { IconSun, IconMoon, IconLogout, IconHeadset, IconBell, IconBellOff, IconWallet } from '@tabler/icons-react';
 import { useTranslation } from 'react-i18next';
@@ -38,7 +38,7 @@ export function WebAppHeader() {
 
   return (
     <>
-    <Group justify="flex-end" p="sm" gap="xs">
+    <Group className="mobile-topbar" justify="space-between" p="sm" gap="xs"><Group gap="xs" className="mobile-brand">{config.LOGO_URL && <img src={config.LOGO_URL} alt="" />}<Box><Text fw={700} size="sm">{config.APP_NAME}</Text><Text size="xs" c="dimmed">Личный кабинет</Text></Box></Group><Group gap="xs">
       {user && (
         <Button
           leftSection={<IconWallet size={16} />}
@@ -98,6 +98,7 @@ export function WebAppHeader() {
           <IconLogout size={20} />
         </ActionIcon>
       )}
+    </Group>
     </Group>
     <PayModal opened={payModalOpen} onClose={() => setPayModalOpen(false)} />
     </>

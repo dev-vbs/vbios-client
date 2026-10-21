@@ -3,3 +3,15 @@
 /* Shared desktop page system: Services, Profile, Tickets and dialogs */
 .mantine-AppShell-main{background:radial-gradient(circle at 72% -15%,#1a2023 0,transparent 32%),#101112;color:#e5e7e8}.mantine-AppShell-header,.mantine-AppShell-navbar,.mantine-AppShell-footer{background:#171819!important;border-color:#2a2c2d!important}.mantine-Card-root,.mantine-Paper-root{background:#191a1b;border-color:#2a2c2e;box-shadow:none}.mantine-Modal-content{background:#191a1b;color:#e5e7e8}.mantine-Modal-header{background:#191a1b;border-bottom:1px solid #2a2c2e}.mantine-Input-input,.mantine-PasswordInput-input,.mantine-Textarea-input{background:#121314;border-color:#35383a;color:#eceeef}.mantine-Input-input:focus,.mantine-PasswordInput-input:focus,.mantine-Textarea-input:focus{border-color:#4d91ae}.mantine-Button-root[data-variant="filled"]{background:#367f9e}.mantine-Button-root[data-variant="filled"]:hover{background:#4692b2}.mantine-Divider-root{border-color:#2b2d2f}.mantine-Tabs-list{border-color:#303234}.mantine-Tabs-tab{color:#9da0a2}.mantine-Tabs-tab[data-active]{color:#e7e9ea;border-color:#4d91ae}.mantine-Table-table{color:#ddd}.mantine-Badge-root{font-weight:600;letter-spacing:.02em}
 @media (min-width:769px){.mantine-AppShell-main>div{max-width:1530px;margin:0 auto}.mantine-Title-root{letter-spacing:-.035em}.mantine-Card-root{transition:border-color .18s ease,transform .18s ease}.mantine-Card-root:hover{border-color:#3c4144}.mantine-ScrollArea-viewport{scrollbar-color:#3a3d3f transparent}}
+
+/* Mobile cabinet: same visual language as the desktop shell */
+@media (max-width:768px){
+  body{background:linear-gradient(145deg,#151718 0%,#101112 42%,#0e1011 100%)}
+  .mobile-topbar{position:sticky;top:0;z-index:90;padding:12px 16px!important;background:rgba(20,21,22,.92);border-bottom:1px solid #2a2c2e;backdrop-filter:blur(18px)}
+  .mobile-brand img{width:31px;height:31px;object-fit:contain;border-radius:8px}.mobile-brand .mantine-Text-root:first-child{letter-spacing:-.03em}
+  .mobile-topbar .mantine-ActionIcon-root{width:32px;height:32px;border-radius:9px;background:#1b1d1e;color:#c8cbcd}.mobile-topbar .mantine-Button-root{height:32px;background:#203742;color:#d8edf5;border:1px solid #335362}
+  .mantine-Card-root{border-radius:14px!important;background:linear-gradient(140deg,#1b1c1d,#171819)!important;border-color:#2b2e30!important}.mantine-Paper-root{border-radius:12px!important}
+  .mantine-Title-root{font-size:25px!important;letter-spacing:-.045em}.mantine-Text-root{line-height:1.45}.mantine-Button-root{min-height:40px;font-weight:600}.mantine-Input-input,.mantine-PasswordInput-input,.mantine-Textarea-input{min-height:43px;border-radius:10px;background:#121415!important}
+  .mantine-Tabs-tab{min-height:42px}.mantine-Modal-content{margin:12px;border-radius:16px}.mantine-Modal-header{padding:15px 16px}.mantine-Modal-body{padding:16px}
+  .mantine-AppShell-main{padding:0!important}.mantine-AppShell-main>div{padding:16px!important}.mantine-Alert-root{border-radius:12px}
+}
