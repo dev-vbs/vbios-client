@@ -140,6 +140,15 @@ function formatDate(value?: string): string {
   return date.toLocaleString();
 }
 
+function apiErrorMessage(error: unknown, fallback: string): string {
+  const data = (error as { response?: { data?: { error?: unknown; errors?: unknown } } })?.response?.data;
+  if (typeof data?.error === 'string' && data.error.trim()) return data.error;
+  if (Array.isArray(data?.errors)) {
+    const message = data.errors.find((item): item is string => typeof item === 'string' && item.trim().length > 0);
+    if (message) return message;
+  }
+  return fallback;
+}
 function normalizeStatus(status?: string): string {
   return status && KNOWN_STATUSES.has(status) ? status : 'unknown';
 }
@@ -195,9 +204,11 @@ export default function Tickets() {
     }
   };
 
+  const latestMessageId = selectedTicket?.messages?.[selectedTicket.messages.length - 1]?.message_id;
+
   useEffect(() => {
-    scrollToBottom();
-  }, [selectedTicket?.messages]);
+    if (latestMessageId) scrollToBottom();
+  }, [latestMessageId]);
 
   const loadTickets = useCallback(async () => {
     setLoading(true);
@@ -208,10 +219,10 @@ export default function Tickets() {
       setTickets(list);
       const hasWaiting = list.some((ticket) => ticket.status === 'waiting');
       setHasNewTicketMessages(hasWaiting);
-    } catch {
+    } catch (error) {
       notifications.show({
         title: t('common.error'),
-        message: t('tickets.createError'),
+        message: apiErrorMessage(error, t('tickets.createError')),
         color: 'red',
       });
     } finally {
@@ -224,20 +235,51 @@ export default function Tickets() {
   }, [loadTickets]);
 
   useEffect(() => {
-    const refresh = async () => {
-      await loadTickets();
-      if (!selectedTicket?.ticket_id) return;
+    const timer = window.setInterval(() => {
+      if (!document.hidden) void loadTickets();
+    }, 60_000);
+    return () => window.clearInterval(timer);
+  }, [loadTickets]);
+
+  useEffect(() => {
+    const ticketId = selectedTicket?.ticket_id;
+    if (!ticketId) return;
+
+    let inFlight = false;
+    const refreshConversation = async () => {
+      if (document.hidden || inFlight) return;
+      inFlight = true;
       try {
-        const response = await ticketApi.get(selectedTicket.ticket_id);
+        const response = await ticketApi.get(ticketId);
         const data = response.data?.data;
-        if (Array.isArray(data) && data.length > 0) setSelectedTicket(data[0]);
+        const nextTicket = Array.isArray(data) ? data[0] : undefined;
+        if (!nextTicket) return;
+
+        setSelectedTicket((current) => current?.ticket_id === ticketId ? nextTicket : current);
+        setTickets((current) => current.map((ticket) => (
+          ticket.ticket_id === ticketId
+            ? { ...ticket, status: nextTicket.status, updated: nextTicket.updated, messages: nextTicket.messages }
+            : ticket
+        )));
+        setHasNewTicketMessages(nextTicket.status === 'waiting');
       } catch {
-        // Background refresh must not interrupt an open conversation.
+        // A short background refresh must never interrupt the conversation.
+      } finally {
+        inFlight = false;
       }
     };
-    const timer = window.setInterval(refresh, 30_000);
-    return () => window.clearInterval(timer);
-  }, [loadTickets, selectedTicket?.ticket_id]);
+
+    const onVisibilityChange = () => {
+      if (!document.hidden) void refreshConversation();
+    };
+    void refreshConversation();
+    const timer = window.setInterval(refreshConversation, 3_000);
+    document.addEventListener('visibilitychange', onVisibilityChange);
+    return () => {
+      window.clearInterval(timer);
+      document.removeEventListener('visibilitychange', onVisibilityChange);
+    };
+  }, [selectedTicket?.ticket_id, setHasNewTicketMessages]);
 
   const loadServices = async () => {
     if (services.length > 0 || servicesLoading) return;
@@ -317,10 +359,10 @@ export default function Tickets() {
       setNewServiceId(null);
       setNewPaymentId(null);
       await loadTickets();
-    } catch {
+    } catch (error) {
       notifications.show({
         title: t('common.error'),
-        message: t('tickets.createError'),
+        message: apiErrorMessage(error, t('tickets.createError')),
         color: 'red',
       });
     } finally {
@@ -462,10 +504,10 @@ export default function Tickets() {
       }
 
       await loadTickets();
-    } catch {
+    } catch (error) {
       notifications.show({
         title: t('common.error'),
-        message: t('tickets.sendError'),
+        message: apiErrorMessage(error, t('tickets.sendError')),
         color: 'red',
       });
     } finally {
