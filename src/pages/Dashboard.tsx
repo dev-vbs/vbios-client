@@ -47,7 +47,6 @@ export default function Dashboard() {
   useEffect(() => { load(); }, [load]);
 
   const totalSpent = useMemo(() => payments.reduce((sum, item) => sum + Number(item.amount ?? item.sum ?? item.cost ?? 0), 0), [payments]);
-  const activeServices = services.filter((item) => item.status === 'ACTIVE').length;
   const chart = useMemo(() => {
     const points = Array.from({ length: 17 }, (_, i) => {
       const value = payments[i]?.amount ?? payments[i]?.sum ?? 0;
@@ -87,4 +86,5 @@ export default function Dashboard() {
     <button className="support-fab" onClick={() => notifications.show({ message: 'Чат поддержки скоро откроется', color: 'blue' })}><IconHeadset size={18}/> Помощник Token</button>
   </div>;
 }
+
 
