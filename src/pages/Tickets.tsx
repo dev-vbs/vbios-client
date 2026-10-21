@@ -179,6 +179,7 @@ export default function Tickets() {
   const [newPriority, setNewPriority] = useState<string>('normal');
   const [newType, setNewType] = useState<string>('other');
   const [newServiceId, setNewServiceId] = useState<string | null>(null);
+  const [newFiles, setNewFiles] = useState<File[]>([]);
   const [payments, setPayments] = useState<PaymentItem[]>([]);
   const [paymentsLoading, setPaymentsLoading] = useState(false);
   const [newPaymentId, setNewPaymentId] = useState<string | null>(null);
@@ -315,7 +316,7 @@ export default function Tickets() {
   };
 
   const createTicket = async () => {
-    if (!newSubject.trim() || !newMessage.trim()) {
+    if (!newSubject.trim() || (!newMessage.trim() && newFiles.length === 0)) {
       notifications.show({
         title: t('common.error'),
         message: t('tickets.fillRequired'),
@@ -335,12 +336,25 @@ export default function Tickets() {
 
     setCreating(true);
     try {
+      const mediaIds: number[] = [];
+      for (const file of newFiles) {
+        const base64 = await toBase64(file);
+        const response = await ticketApi.uploadMedia({
+          name: file.name,
+          mime_type: file.type || 'application/octet-stream',
+          data: base64,
+        });
+        const raw = response.data?.data;
+        const media = Array.isArray(raw) ? raw[0] : raw;
+        if (media?.id) mediaIds.push(media.id);
+      }
       await ticketApi.create({
         subject: newSubject.trim(),
-        message: newMessage.trim(),
+        message: newMessage.trim() || ' ',
         priority: newPriority as 'low' | 'normal' | 'high' | 'urgent',
         ticket_type: newType as 'service' | 'payment' | 'other',
         ...(newType === 'service' && newServiceId ? { user_service_id: Number(newServiceId) } : {}),
+        ...(mediaIds.length > 0 ? { media_ids: mediaIds } : {}),
       });
 
       notifications.show({
@@ -356,6 +370,7 @@ export default function Tickets() {
       setNewType('other');
       setNewServiceId(null);
       setNewPaymentId(null);
+      setNewFiles([]);
       await loadTickets();
     } catch (error) {
       notifications.show({
@@ -444,6 +459,24 @@ export default function Tickets() {
     if (accepted.length > 0) {
       setReplyFiles((prev) => [...prev, ...accepted]);
     }
+  };
+
+  const onPickNewFiles = (files: File[] | null) => {
+    if (!files || files.length === 0) return;
+    const accepted = files.filter((file) => {
+      if (file.size <= MAX_ATTACHMENT_SIZE) return true;
+      notifications.show({
+        title: t('common.error'),
+        message: t('tickets.fileTooLarge', { name: file.name }),
+        color: 'red',
+      });
+      return false;
+    });
+    if (accepted.length) setNewFiles((current) => [...current, ...accepted]);
+  };
+
+  const removeNewFile = (index: number) => {
+    setNewFiles((current) => current.filter((_, itemIndex) => itemIndex !== index));
   };
 
   const removeReplyFile = (index: number) => {
@@ -987,8 +1020,21 @@ export default function Tickets() {
             maxLength={MAX_MESSAGE_LENGTH}
             autosize
             minRows={5}
-            withAsterisk
           />
+
+          <Stack gap={4}>
+            {newFiles.map((file, index) => (
+              <Group key={`${file.name}_${index}`} justify="space-between" wrap="nowrap">
+                <Text size="sm" lineClamp={1}>{file.name}</Text>
+                <ActionIcon variant="subtle" color="red" onClick={() => removeNewFile(index)} aria-label="Удалить вложение">
+                  <IconTrash size={16} />
+                </ActionIcon>
+              </Group>
+            ))}
+            <FileButton onChange={onPickNewFiles} multiple>
+              {(props) => <Button {...props} variant="light" leftSection={<IconPaperclip size={16} />}>Прикрепить файлы</Button>}
+            </FileButton>
+          </Stack>
 
           <Group justify="flex-end">
             <Button variant="light" onClick={() => setCreateOpen(false)}>{t('common.cancel')}</Button>

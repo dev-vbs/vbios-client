@@ -214,6 +214,7 @@ export const ticketApi = {
     priority?: 'low' | 'normal' | 'high' | 'urgent';
     ticket_type?: 'service' | 'payment' | 'other';
     user_service_id?: number;
+    media_ids?: number[];
   }) => api.put<{ data: TicketItem }>('/user/ticket', data),
   sendMessage: (ticketId: number | string, data: { message: string; media_ids?: number[] }) =>
     api.post<{ data: TicketMessage }>(`/user/ticket/${ticketId}`, data),
