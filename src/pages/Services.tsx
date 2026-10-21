@@ -7,6 +7,7 @@ import { useTranslation } from 'react-i18next';
 import { api, servicesApi, storageApi, userApi } from '../api/client';
 import { notifications } from '@mantine/notifications';
 import QrModal from '../components/QrModal';
+import AppDownloadBlock from '../components/AppDownloadBlock';
 import OrderServiceModal from '../components/OrderServiceModal';
 import ConfirmModal from '../components/ConfirmModal';
 import { config } from '../config';
@@ -61,13 +62,15 @@ const statusColors: Record<string, string> = {
 };
 
 function normalizeCategory(category: string): string {
-  const proxyCategories = new Set((config.PROXY_CATEGORY || '').split(','));
-  const vpnCategories = new Set((config.VPN_CATEGORY || '').split(','));
+  const normalizedCategory = category.trim().toLowerCase();
+  const parseCategories = (value: string | undefined) => new Set((value || '').split(',').map((item) => item.trim().toLowerCase()).filter(Boolean));
+  const proxyCategories = parseCategories(config.PROXY_CATEGORY);
+  const vpnCategories = parseCategories(config.VPN_CATEGORY);
 
-  if (proxyCategories.has(category)) {
+  if (proxyCategories.has(normalizedCategory)) {
     return 'proxy';
   }
-  if (vpnCategories.has(category)) {
+  if (vpnCategories.has(normalizedCategory)) {
     return 'vpn';
   }
 
@@ -432,6 +435,8 @@ function ServiceDetail({ service, onDelete, onChangeTariff }: ServiceDetailProps
   const statusColor = statusColors[service.status] || 'gray';
   const statusLabel = t(`status.${service.status}`, service.status);
   const urlSchema = isProxy && config[`${detectPlatform()}_PROXY_URL_SCHEMA` as keyof typeof config];
+  const showProxySubscription = config.SHOW_PROXY_SUB_LINK === 'true';
+  const showProxyQr = config.SHOW_PROXY_QR === 'true';
 
   return (
     <Stack gap="md">
@@ -508,7 +513,7 @@ function ServiceDetail({ service, onDelete, onChangeTariff }: ServiceDetailProps
                   <Badge color="green" variant="light">{statusLabel}</Badge>
                 </Group>
 
-                {isProxy && subscriptionUrl && (
+                {isProxy && showProxySubscription && subscriptionUrl && (
                   <Paper withBorder p="sm" radius="sm" bg="var(--mantine-color-default-hover)">
                     <Text size="xs" fw={700} tt="uppercase" c="dimmed" mb={6}>{t('services.subscriptionLink')}</Text>
                     <Group wrap="nowrap">
@@ -537,11 +542,15 @@ function ServiceDetail({ service, onDelete, onChangeTariff }: ServiceDetailProps
                 )}
 
                 <Group grow align="stretch">
-                  <Button leftSection={<IconQrcode size={17} />} variant="light" disabled={isProxy ? !subscriptionUrl : !storageData} onClick={() => setQrModalOpen(true)}>{t('services.qrCode')}</Button>
+                  {(!isProxy || showProxyQr) && <Button leftSection={<IconQrcode size={17} />} variant="light" disabled={isProxy ? !subscriptionUrl : !storageData} onClick={() => setQrModalOpen(true)}>{t('services.qrCode')}</Button>}
                   {isProxy ? <Button leftSection={<IconDeviceMobileCog size={17} />} disabled={!subscriptionUrl} onClick={() => urlSchema ? handleOpenUrlSchema() : handleConfigure()}>{t('services.openInApp', { defaultValue: 'Открыть в приложении' })}</Button> : <Button leftSection={<IconDownload size={17} />} disabled={!storageData} onClick={downloadConfig} loading={downloading}>{t('services.downloadConfig')}</Button>}
                 </Group>
 
                 {isProxy && subscriptionUrl && (
+                  <AppDownloadBlock type="proxy" />
+                )}
+
+                {isProxy && showProxySubscription && subscriptionUrl && (
                   <>
                     <Divider />
                     <Text fw={600}>{t('services.howToConnect', { defaultValue: 'Как подключиться' })}</Text>
