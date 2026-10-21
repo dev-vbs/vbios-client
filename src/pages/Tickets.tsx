@@ -223,6 +223,22 @@ export default function Tickets() {
     loadTickets();
   }, [loadTickets]);
 
+  useEffect(() => {
+    const refresh = async () => {
+      await loadTickets();
+      if (!selectedTicket?.ticket_id) return;
+      try {
+        const response = await ticketApi.get(selectedTicket.ticket_id);
+        const data = response.data?.data;
+        if (Array.isArray(data) && data.length > 0) setSelectedTicket(data[0]);
+      } catch {
+        // Background refresh must not interrupt an open conversation.
+      }
+    };
+    const timer = window.setInterval(refresh, 30_000);
+    return () => window.clearInterval(timer);
+  }, [loadTickets, selectedTicket?.ticket_id]);
+
   const loadServices = async () => {
     if (services.length > 0 || servicesLoading) return;
     setServicesLoading(true);
