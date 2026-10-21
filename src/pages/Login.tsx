@@ -2,7 +2,7 @@ import { useEffect, useRef, useState } from 'react';
 import { Card, Text, Stack, Button, ActionIcon, TextInput, PasswordInput, Divider, Title, Center, Modal, Group, Loader, useMantineColorScheme, useComputedColorScheme, Checkbox, Tooltip } from '@mantine/core';
 import { useMediaQuery } from '@mantine/hooks';
 import { useForm, isEmail, hasLength } from '@mantine/form';
-import { IconLogin, IconUserPlus, IconHeadset, IconFingerprint, IconShieldLock, IconBrandTelegram, IconMailForward, IconLock, IconMoon, IconSun} from '@tabler/icons-react';
+import { IconLogin, IconUserPlus, IconHeadset, IconFingerprint, IconShieldLock, IconBrandTelegram, IconMailForward, IconLock, IconMoon, IconSun, IconBrandGoogle, IconBrandGithub, IconBrandVk, IconBrandYandex} from '@tabler/icons-react';
 import { notifications } from '@mantine/notifications';
 import { useTranslation } from 'react-i18next';
 import { auth, passkeyApi, userApi } from '../api/client';
@@ -336,6 +336,12 @@ export default function Login() {
     }
   };
 
+const handleOAuthLogin = (provider: 'yandex' | 'google' | 'vk' | 'github') => {
+    const returnUrl = `${window.location.origin}${window.location.pathname}${window.location.search}${window.location.hash}`;
+    const params = new URLSearchParams({ return_url: returnUrl });
+    window.location.assign(`/shm/v1/oauth2/start/${provider}?${params.toString()}`);
+  };
+
   const handleTelegramOidcAuth = async () => {
     setLoading(true);
     try {
@@ -593,6 +599,14 @@ export default function Login() {
 
           {(!hasTelegramWebAppAuth || showLoginForm) && (
             <>
+              <Divider label="или войдите через" labelPosition="center" />
+              <Group grow gap="xs">
+                <Tooltip label="Войти через Яндекс" withArrow><Button variant="default" px={0} onClick={() => handleOAuthLogin('yandex')} aria-label="Войти через Яндекс"><IconBrandYandex size={20} /></Button></Tooltip>
+                <Tooltip label="Войти через Google" withArrow><Button variant="default" px={0} onClick={() => handleOAuthLogin('google')} aria-label="Войти через Google"><IconBrandGoogle size={20} /></Button></Tooltip>
+                <Tooltip label="Войти через VK" withArrow><Button variant="default" px={0} onClick={() => handleOAuthLogin('vk')} aria-label="Войти через VK"><IconBrandVk size={20} /></Button></Tooltip>
+                <Tooltip label="Войти через GitHub" withArrow><Button variant="default" px={0} onClick={() => handleOAuthLogin('github')} aria-label="Войти через GitHub"><IconBrandGithub size={20} /></Button></Tooltip>
+              </Group>
+
               <form onSubmit={handleSubmit}>
                 <Stack gap="sm">
                   {mode === 'register' && requireEmailRegister ? (
@@ -947,3 +961,4 @@ export default function Login() {
     </Center>
   );
 }
+
