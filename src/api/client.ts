@@ -151,9 +151,9 @@ export const userApi = {
   verifyResetToken: (token: string) => api.get('/user/passwd/reset/verify', { params: { token } }),
   resetPasswordWithToken: (token: string, password: string) => api.post('/user/passwd/reset/verify', { token, password }),
   getServices: () => api.get('/user/service', { params: { limit: 1000 } }),
-  getHwid: (userServiceId: number | string) => api.get(`/user/service/${userServiceId}/hwid`),
-  deleteHwid: (userServiceId: number | string, hwid: string) => api.delete(`/user/service/${userServiceId}/hwid`, { data: { user_service_id: Number(userServiceId), hwid } }),
-  resetHwid: (userServiceId: number | string) => api.post(`/user/service/${userServiceId}/hwid/reset`, { user_service_id: Number(userServiceId) }),
+  getHwid: (userServiceId: number | string) => api.get('/user/service/hwid', { params: { user_service_id: Number(userServiceId) } }),
+  deleteHwid: (userServiceId: number | string, hwid: string) => api.delete('/user/service/hwid', { data: { user_service_id: Number(userServiceId), hwid } }),
+  resetHwid: (userServiceId: number | string) => api.post('/user/service/hwid/reset', { user_service_id: Number(userServiceId) }),
   stopService: (userServiceId: number) => api.post('/user/service/stop', { user_service_id: userServiceId }),
   changeService: (userServiceId: number, serviceId: number, finish_active: number, partial_renew: number) => api.post('/user/service/change', {
     user_service_id: userServiceId,
