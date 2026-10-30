@@ -464,15 +464,6 @@ function ServiceDetail({ service, onDelete, onChangeTariff }: ServiceDetailProps
 
   return (
     <Stack gap="md">
-      <Group justify="space-between">
-        <div>
-          <Text fw={700} size="lg">#{service.user_service_id} - {service.service?.name || service.name || 'Услуга'}</Text>
-          <Badge color={statusColor} variant="light">
-            {statusLabel}
-          </Badge>
-        </div>
-      </Group>
-
       <Tabs value={activeTab} onChange={setActiveTab}>
         <Tabs.List>
           <Tabs.Tab value="info">{t('services.info')}</Tabs.Tab>
