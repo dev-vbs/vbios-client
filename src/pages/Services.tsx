@@ -461,7 +461,7 @@ function ServiceDetail({ service, onDelete, onChangeTariff }: ServiceDetailProps
   const isVpn = category === 'vpn';
   const isProxy = category === 'proxy';
   const isVpnOrProxy = isVpn || isProxy;
-  const supportsHwid = service.status === 'ACTIVE' && isProxy;
+  const supportsHwid = service.status === 'ACTIVE' && (isProxy || /remna|remnawave|vpn-mz|marz/i.test(service.service?.category || ''));
   const statusColor = statusColors[service.status] || 'gray';
   const statusLabel = t(`status.${service.status}`, service.status);
   const urlSchema = isProxy && config[`${detectPlatform()}_PROXY_URL_SCHEMA` as keyof typeof config];
