@@ -474,15 +474,17 @@ function ServiceDetail({ service, onDelete, onChangeTariff }: ServiceDetailProps
     setHwidLoading(true); setHwidError(null);
     try {
       const response = await userApi.getHwid(service.user_service_id);
-      const payload = response.data?.data ?? response.data;
+      let payload = response.data?.data ?? response.data;
+      // SHM may return the Remnawave envelope as response: { total, devices }.
+      if (payload?.response && typeof payload.response === 'object') payload = payload.response;
       const raw = Array.isArray(payload) ? payload : (payload?.devices || payload?.data || payload?.result || []);
       const devices = Array.isArray(raw) ? raw : [];
       setHwidDevices(devices.map((item: any) => ({
         hwid: String(item.hwid || item.id || item.deviceId || item.device_id || ''),
-        name: item.name || item.deviceName || item.platform,
+        name: item.name || item.deviceName || item.deviceModel || item.platform,
         platform: item.platform || item.os,
         createdAt: item.createdAt || item.created_at,
-        lastSeenAt: item.lastSeenAt || item.last_seen_at,
+        lastSeenAt: item.lastSeenAt || item.last_seen_at || item.updatedAt,
       })).filter((item: HwidDevice) => item.hwid));
       setHwidLimit(Number(response.data?.limit || payload?.limit || 0) || null);
     } catch (error: any) {
