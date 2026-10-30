@@ -1211,5 +1211,3 @@ export default function Services() {
     </Stack>
   );
 }
-
-
