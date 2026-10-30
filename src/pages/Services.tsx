@@ -386,7 +386,7 @@ function ServiceDetail({ service, onDelete, onChangeTariff }: ServiceDetailProps
     }
   };
 
-  const category = normalizeCategory(service.service.category);
+  const category = normalizeCategory(service.service?.category || '');
 
   useEffect(() => {
     const updateNetwork = () => setIsOnline(navigator.onLine);
@@ -511,7 +511,7 @@ function ServiceDetail({ service, onDelete, onChangeTariff }: ServiceDetailProps
     <Stack gap="md">
       <Group justify="space-between">
         <div>
-          <Text fw={700} size="lg">#{service.user_service_id} - {service.service.name}</Text>
+          <Text fw={700} size="lg">#{service.user_service_id} - {service.service?.name || service.name || 'Услуга'}</Text>
           <Badge color={statusColor} variant="light">
             {statusLabel}
           </Badge>
