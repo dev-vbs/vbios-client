@@ -386,7 +386,8 @@ function ServiceDetail({ service, onDelete, onChangeTariff }: ServiceDetailProps
     }
   };
 
-  const category = normalizeCategory(service.service?.category || '');
+  const serviceCategory = service.service?.category || (service as UserService & { category?: string }).category || '';
+  const category = normalizeCategory(serviceCategory);
 
   useEffect(() => {
     const updateNetwork = () => setIsOnline(navigator.onLine);
@@ -461,7 +462,7 @@ function ServiceDetail({ service, onDelete, onChangeTariff }: ServiceDetailProps
   const isVpn = category === 'vpn';
   const isProxy = category === 'proxy';
   const isVpnOrProxy = isVpn || isProxy;
-  const supportsHwid = service.status === 'ACTIVE' && (isProxy || /remna|remnawave|vpn-mz|marz/i.test(service.service?.category || ''));
+  const supportsHwid = service.status === 'ACTIVE' && (isVpnOrProxy || /vpn|remna|remnawave|vpn-mz|marz/i.test(serviceCategory));
   const statusColor = statusColors[service.status] || 'gray';
   const statusLabel = t(`status.${service.status}`, service.status);
   const urlSchema = isProxy && config[`${detectPlatform()}_PROXY_URL_SCHEMA` as keyof typeof config];
