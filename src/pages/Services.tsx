@@ -464,7 +464,7 @@ function ServiceDetail({ service, onDelete, onChangeTariff }: ServiceDetailProps
 
   return (
     <Stack gap="md">
-      <Tabs value={activeTab} onChange={setActiveTab}>
+      <Tabs value={activeTab} onChange={setActiveTab} variant="pills" radius="md" styles={{ list: { gap: 8, padding: 6, background: 'var(--mantine-color-default-hover)', borderRadius: 14 }, tab: { flex: 1, minHeight: 44, fontWeight: 600 }, panel: { paddingTop: 24 } }}>
         <Tabs.List>
           <Tabs.Tab value="info">{t('services.info')}</Tabs.Tab>
           {isVpnOrProxy && service.status === 'ACTIVE' && <Tabs.Tab value="config">{t('services.connection')}</Tabs.Tab>}
@@ -804,12 +804,12 @@ function ServiceCard({ service, onClick, isChild = false, isLastChild = false }:
       withBorder
       radius="md"
       p="md"
-      className="service-overview-card" style={{ cursor: 'pointer' }}
+      className="service-overview-card" style={{ cursor: 'pointer', borderInlineStart: `3px solid var(--mantine-color-${statusColor}-6)`, borderRadius: 16, padding: 20 }}
       onClick={onClick}
     >
       <Group justify="space-between">
         <div>
-          <Text fw={500}>#{service.user_service_id} - {service.service.name}</Text>
+          <Text size="xs" c="dimmed" mb={4}>Услуга #{service.user_service_id}</Text><Text fw={600} style={{ overflowWrap: 'anywhere' }}>{service.service.name}</Text>
           {service.expire && (
             <Text size="xs" c="dimmed">
               {new Date(service.expire as string).toLocaleDateString(i18n.language === 'ru' ? 'ru-RU' : 'en-US')}
@@ -988,13 +988,13 @@ export default function Services() {
     if (!detailService) return <Stack className="service-detail-page" gap="md"><Button component={Link} to="/services" variant="subtle" leftSection={<IconArrowLeft size={16} />}>Все услуги</Button><Paper withBorder p="xl" radius="lg"><Title order={3}>Услуга не найдена</Title><Text c="dimmed" mt="xs">Обновите список услуг и попробуйте ещё раз.</Text><Button mt="md" onClick={() => void fetchServices()}>Обновить список</Button></Paper></Stack>;
     const statusLabel = t(`status.${detailService.status}`, detailService.status);
     const expiry = getExpiryState(detailService.expire);
-    return <Stack gap="lg" className="service-detail-page"><Button component={Link} to="/services" variant="subtle" className="service-detail-page__back" leftSection={<IconArrowLeft size={16} />}>Все услуги</Button><Paper withBorder radius="lg" p="xl" className="service-detail-page__summary"><Group justify="space-between" align="flex-start"><div><Text c="dimmed" size="sm">Услуга #{detailService.user_service_id}</Text><Title order={2}>{detailService.service.name}</Title><Text c="dimmed" mt="xs">Управление подпиской, устройствами и тарифом.</Text></div><Stack gap="xs" align="flex-end"><Badge color={statusColors[detailService.status] || 'gray'} size="lg" variant="light">{statusLabel}</Badge>{expiry.label && <Text className={`expiry-indicator expiry-indicator--${expiry.tone}`}><IconCalendarTime size={15} />{expiry.label}</Text>}</Stack></Group></Paper><ServiceDetail service={detailService} onDelete={() => { void fetchServices(); navigate('/services'); }} onChangeTariff={handleChangeTariff} /></Stack>;
+    return <Stack gap="lg" className="service-detail-page"><Button component={Link} to="/services" variant="subtle" className="service-detail-page__back" leftSection={<IconArrowLeft size={16} />}>Все услуги</Button><Paper withBorder radius="lg" p="xl" className="service-detail-page__summary" style={{ borderRadius: 20, borderTop: '3px solid var(--mantine-primary-color-filled)', background: 'var(--mantine-color-body)' }}><Group justify="space-between" align="flex-start"><div><Text c="dimmed" size="sm">Услуга #{detailService.user_service_id}</Text><Title order={2} mt={6} style={{ fontSize: 'clamp(1.35rem, 4vw, 1.9rem)', lineHeight: 1.3, overflowWrap: 'anywhere' }}>{detailService.service.name}</Title><Text c="dimmed" mt="xs">Подключение, срок действия и настройки подписки.</Text></div><Stack gap="xs" align="flex-end"><Badge color={statusColors[detailService.status] || 'gray'} size="lg" variant="light">{statusLabel}</Badge>{expiry.label && <Text className={`expiry-indicator expiry-indicator--${expiry.tone}`}><IconCalendarTime size={15} />{expiry.label}</Text>}</Stack></Group></Paper><ServiceDetail service={detailService} onDelete={() => { void fetchServices(); navigate('/services'); }} onChangeTariff={handleChangeTariff} /></Stack>;
   }
 
   return (
     <Stack gap="lg" className="services-overview">
       <Group className="page-header services-overview__header" justify="space-between">
-        <div><span className="cabinet-breadcrumb">Личный кабинет</span><Title className="page-header__title" order={2}>{t('services.title')}</Title><p className="page-header__description">Подключения, подписки и настройки устройств.</p></div>
+        <div style={{ minWidth: 0 }}><Title className="page-header__title" order={2}>{t('services.title')}</Title><Text c="dimmed" size="sm" mt={6}>Ваши подписки, подключение и управление тарифами.</Text></div>
         <Group>
           <Button
             leftSection={<IconPlus size={16} />}
@@ -1010,7 +1010,7 @@ export default function Services() {
         </Group>
       </Group>
 
-      <TextInput className="services-search" value={search} onChange={(event) => setSearch(event.currentTarget.value)} placeholder="Поиск по названию или номеру услуги" leftSection={<IconSearch size={16} />} />
+      <TextInput size="md" radius="md" className="services-search" value={search} onChange={(event) => setSearch(event.currentTarget.value)} placeholder="Поиск по названию или номеру услуги" leftSection={<IconSearch size={16} />} />
 
       {Object.keys(groupedServices).length === 0 ? (
         <Paper withBorder p="xl" radius="md">
@@ -1132,3 +1132,5 @@ export default function Services() {
     </Stack>
   );
 }
+
+
