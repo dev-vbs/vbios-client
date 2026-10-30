@@ -472,20 +472,28 @@ function ServiceDetail({ service, onDelete, onChangeTariff }: ServiceDetailProps
 
         <Tabs.Panel value="info" pt="md">
           <Stack gap="xs">
-            <Group justify="space-between">
-              <Text size="sm" c="dimmed">{t('services.status')}:</Text>
-              <Badge color={statusColor} variant="light">{statusLabel}</Badge>
-            </Group>
-            <Group justify="space-between">
-              <Text size="sm" c="dimmed">{t('services.cost')}:</Text>
-              <Text size="sm">{service.service.cost} {t('common.currency')}</Text>
-            </Group>
-            {service.expire && (
-              <Group justify="space-between">
-                <Text size="sm" c="dimmed">{t('services.validUntil')}:</Text>
-                <Text size="sm">{new Date(service.expire as string).toLocaleDateString(i18n.language === 'ru' ? 'ru-RU' : 'en-US')}</Text>
-              </Group>
-            )}
+            <Paper withBorder radius="lg" p="lg">
+              <Stack gap="md">
+                <Group justify="space-between" gap="md">
+                  <Text size="sm" c="dimmed">{t('services.status')}</Text>
+                  <Badge color={statusColor} variant="light" size="lg" radius="sm">{statusLabel}</Badge>
+                </Group>
+                <Divider />
+                <Group justify="space-between" gap="md" align="center">
+                  <Group gap="xs" c="dimmed"><IconWallet size={18} /><Text size="sm">{t('services.cost')}</Text></Group>
+                  <Text fw={700} size="xl" style={{ fontVariantNumeric: 'tabular-nums' }}>{service.service.cost} <Text component="span" size="sm" fw={500} c="dimmed">{t('common.currency')}</Text></Text>
+                </Group>
+                {service.expire && (
+                  <>
+                    <Divider />
+                    <Group justify="space-between" gap="md" align="center">
+                      <Group gap="xs" c="dimmed"><IconCalendarTime size={18} /><Text size="sm">{t('services.validUntil')}</Text></Group>
+                      <Text size="sm" fw={600} style={{ fontVariantNumeric: 'tabular-nums' }}>{new Date(service.expire as string).toLocaleDateString(i18n.language === 'ru' ? 'ru-RU' : 'en-US')}</Text>
+                    </Group>
+                  </>
+                )}
+              </Stack>
+            </Paper>
             {service.next && (
               <Group justify="space-between">
                 <Text size="sm" c="dimmed">{t('services.validUntilNext')}:</Text>
@@ -1132,5 +1140,3 @@ export default function Services() {
     </Stack>
   );
 }
-
-
