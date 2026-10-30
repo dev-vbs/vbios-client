@@ -11,8 +11,11 @@ permissions:
 jobs:
   notify-telegram:
     runs-on: ubuntu-latest
+    timeout-minutes: 3
+
     steps:
       - name: Send notification to Telegram
+        shell: bash
         env:
           TELEGRAM_BOT_TOKEN: ${{ secrets.TELEGRAM_BOT_TOKEN }}
           TELEGRAM_CHAT_ID: ${{ secrets.TELEGRAM_CHAT_ID }}
@@ -25,50 +28,99 @@ jobs:
         run: |
           set -euo pipefail
 
-          if [ -z "$TELEGRAM_BOT_TOKEN" ] || [ -z "$TELEGRAM_CHAT_ID" ]; then
-            echo "Не заданы TELEGRAM_BOT_TOKEN или TELEGRAM_CHAT_ID в GitHub Secrets."
+          # Убираем случайные пробелы и переносы из настроек.
+          TELEGRAM_BOT_TOKEN="$(printf '%s' "$TELEGRAM_BOT_TOKEN" | tr -d '[:space:]')"
+          TELEGRAM_CHAT_ID="$(printf '%s' "$TELEGRAM_CHAT_ID" | tr -d '[:space:]')"
+          TELEGRAM_THREAD_ID="$(printf '%s' "$TELEGRAM_THREAD_ID" | tr -d '[:space:]')"
+
+          if [[ -z "$TELEGRAM_BOT_TOKEN" || -z "$TELEGRAM_CHAT_ID" ]]; then
+            echo "::error::Задайте TELEGRAM_BOT_TOKEN и TELEGRAM_CHAT_ID в GitHub Secrets."
             exit 1
           fi
 
-          SHORT_SHA="${COMMIT_SHA:0:7}"
-          MESSAGE=$(cat <<EOF
-          ✅ Обновление кабинета
+          if [[ -n "$TELEGRAM_THREAD_ID" && ! "$TELEGRAM_THREAD_ID" =~ ^[1-9][0-9]*$ ]]; then
+            echo "::error::TELEGRAM_THREAD_ID должен быть положительным числом."
+            exit 1
+          fi
 
-          Репозиторий: ${REPOSITORY}
-          Коммит: ${SHORT_SHA}
-          Автор: ${COMMIT_AUTHOR}
+          RESPONSE_FILE="$(mktemp)"
+          trap 'rm -f "$RESPONSE_FILE"' EXIT
 
-          ${COMMIT_MESSAGE}
+          request() {
+            curl --silent --show-error \
+              --connect-timeout 10 \
+              --max-time 30 \
+              --output "$RESPONSE_FILE" \
+              --write-out '%{http_code}' \
+              -X POST \
+              "https://api.telegram.org/bot${TELEGRAM_BOT_TOKEN}/$1" \
+              -H 'Content-Type: application/json' \
+              --data "$2"
+          }
 
-          Открыть изменения: ${COMMIT_URL}
-          EOF
+          HTTP_CODE="$(request getMe '{}')"
+
+          if [[ "$HTTP_CODE" == "401" ]]; then
+            echo "::error::Telegram отклонил TELEGRAM_BOT_TOKEN. Обновите секрет действующим токеном из BotFather."
+            exit 1
+          fi
+
+          if [[ "$HTTP_CODE" != "200" ]] ||
+             ! jq -e '.ok == true' "$RESPONSE_FILE" >/dev/null; then
+            echo "::error::Не удалось проверить Telegram-бота: HTTP ${HTTP_CODE}."
+            jq -r '.description // "Неизвестная ошибка Telegram"' "$RESPONSE_FILE"
+            exit 1
+          fi
+
+          MESSAGE="$(python3 - <<'PY'
+          import os
+
+          text = (
+              "✅ Обновление кабинета\n\n"
+              f"Репозиторий: {os.environ['REPOSITORY']}\n"
+              f"Коммит: {os.environ['COMMIT_SHA'][:7]}\n"
+              f"Автор: {os.environ['COMMIT_AUTHOR'][:200]}\n\n"
+              f"{os.environ['COMMIT_MESSAGE'][:2500]}\n\n"
+              f"Открыть изменения: {os.environ['COMMIT_URL']}"
           )
+          print(text)
+          PY
+          )"
 
           build_payload() {
-            if [ -n "$1" ]; then
-              jq -n --arg chat_id "$TELEGRAM_CHAT_ID" --arg thread_id "$1" --arg text "$MESSAGE" \
-                '{chat_id: $chat_id, message_thread_id: ($thread_id | tonumber), text: $text, disable_web_page_preview: true}'
-            else
-              jq -n --arg chat_id "$TELEGRAM_CHAT_ID" --arg text "$MESSAGE" \
-                '{chat_id: $chat_id, text: $text, disable_web_page_preview: true}'
-            fi
+            jq -n \
+              --arg chat_id "$TELEGRAM_CHAT_ID" \
+              --arg thread_id "$1" \
+              --arg text "$MESSAGE" \
+              '{
+                chat_id: $chat_id,
+                text: $text,
+                link_preview_options: {is_disabled: true}
+              } + (
+                if $thread_id == "" then {}
+                else {message_thread_id: ($thread_id | tonumber)}
+                end
+              )'
           }
 
-          send_message() {
-            curl --silent --show-error --output /tmp/telegram-response.json --write-out '%{http_code}' \
-              -X POST "https://api.telegram.org/bot${TELEGRAM_BOT_TOKEN}/sendMessage" \
-              -H 'Content-Type: application/json' \
-              --data "$1"
-          }
+          HTTP_CODE="$(request sendMessage "$(build_payload "$TELEGRAM_THREAD_ID")")"
 
-          HTTP_CODE=$(send_message "$(build_payload "$TELEGRAM_THREAD_ID")")
-          if [ "$HTTP_CODE" = "400" ] && grep -q 'TOPIC_CLOSED' /tmp/telegram-response.json; then
-            echo "Указанная тема Telegram закрыта; отправляем сообщение в основную группу."
-            HTTP_CODE=$(send_message "$(build_payload '')")
+          if [[ "$HTTP_CODE" == "400" && -n "$TELEGRAM_THREAD_ID" ]]; then
+            DESCRIPTION="$(jq -r '.description // ""' "$RESPONSE_FILE")"
+
+            case "${DESCRIPTION,,}" in
+              *topic_closed*|*"topic closed"*|*"message thread not found"*)
+                echo "Тема недоступна; отправляем в основную группу."
+                HTTP_CODE="$(request sendMessage "$(build_payload '')")"
+                ;;
+            esac
           fi
 
-          if [ "$HTTP_CODE" != "200" ]; then
-            echo "Telegram API вернул HTTP ${HTTP_CODE}."
-            cat /tmp/telegram-response.json
+          if [[ "$HTTP_CODE" != "200" ]] ||
+             ! jq -e '.ok == true' "$RESPONSE_FILE" >/dev/null; then
+            echo "::error::Ошибка отправки Telegram: HTTP ${HTTP_CODE}."
+            jq -r '.description // "Неизвестная ошибка Telegram"' "$RESPONSE_FILE"
             exit 1
           fi
+
+          echo "Уведомление отправлено."
