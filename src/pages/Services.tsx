@@ -39,7 +39,6 @@ interface ServiceInfo {
   name: string;
 }
 
-interface HwidDevice { hwid: string; name?: string; platform?: string; createdAt?: string; lastSeenAt?: string; }
 
 interface UserService {
   user_service_id: number;
@@ -180,11 +179,6 @@ function ServiceDetail({ service, onDelete, onChangeTariff }: ServiceDetailProps
   const [payAmount, setPayAmount] = useState<number | string>(0);
   const [paySystemsLoading, setPaySystemsLoading] = useState(false);
   const [paying, setPaying] = useState(false);
-  const [hwidDevices, setHwidDevices] = useState<HwidDevice[]>([]);
-  const [hwidLimit, setHwidLimit] = useState<number | null>(null);
-  const [hwidLoading, setHwidLoading] = useState(false);
-  const [hwidAction, setHwidAction] = useState<string | null>(null);
-  const [hwidError, setHwidError] = useState<string | null>(null);
 
   const downloadConfig = async () => {
     if (!storageData) return;
@@ -462,53 +456,11 @@ function ServiceDetail({ service, onDelete, onChangeTariff }: ServiceDetailProps
   const isVpn = category === 'vpn';
   const isProxy = category === 'proxy';
   const isVpnOrProxy = isVpn || isProxy;
-  const supportsHwid = service.status === 'ACTIVE' && (isVpnOrProxy || /vpn|remna|remnawave|vpn-mz|marz/i.test(serviceCategory));
   const statusColor = statusColors[service.status] || 'gray';
   const statusLabel = t(`status.${service.status}`, service.status);
   const urlSchema = isProxy && config[`${detectPlatform()}_PROXY_URL_SCHEMA` as keyof typeof config];
   const showProxySubscription = config.SHOW_PROXY_SUB_LINK === 'true';
   const showProxyQr = config.SHOW_PROXY_QR === 'true';
-
-  const loadHwid = async () => {
-    if (!supportsHwid) return;
-    setHwidLoading(true); setHwidError(null);
-    try {
-      const response = await userApi.getHwid(service.user_service_id);
-      let payload = response.data?.data ?? response.data;
-      // SHM may return the Remnawave envelope as response: { total, devices }.
-      if (payload?.response && typeof payload.response === 'object') payload = payload.response;
-      const raw = Array.isArray(payload) ? payload : (payload?.devices || payload?.data || payload?.result || []);
-      const devices = Array.isArray(raw) ? raw : [];
-      setHwidDevices(devices.map((item: any) => ({
-        hwid: String(item.hwid || item.id || item.deviceId || item.device_id || ''),
-        name: item.name || item.deviceName || item.deviceModel || item.platform,
-        platform: item.platform || item.os,
-        createdAt: item.createdAt || item.created_at,
-        lastSeenAt: item.lastSeenAt || item.last_seen_at || item.updatedAt,
-      })).filter((item: HwidDevice) => item.hwid));
-      setHwidLimit(Number(response.data?.limit || payload?.limit || 0) || null);
-    } catch (error: any) {
-      setHwidError(error?.response?.data?.error || 'Не удалось получить список устройств.');
-    } finally { setHwidLoading(false); }
-  };
-
-  useEffect(() => { void loadHwid(); }, [service.user_service_id, supportsHwid]);
-
-  const deleteHwid = async (hwid: string) => {
-    if (!window.confirm('Удалить это устройство?')) return;
-    setHwidAction(hwid);
-    try { await userApi.deleteHwid(service.user_service_id, hwid); await loadHwid(); notifications.show({ title: 'Готово', message: 'Устройство удалено.', color: 'green' }); }
-    catch (error: any) { notifications.show({ title: 'Ошибка', message: error?.response?.data?.error || 'Не удалось удалить устройство.', color: 'red' }); }
-    finally { setHwidAction(null); }
-  };
-
-  const resetHwid = async () => {
-    if (!hwidDevices.length || !window.confirm(`Удалить все устройства (${hwidDevices.length})?`)) return;
-    setHwidAction('all');
-    try { await userApi.resetHwid(service.user_service_id); await loadHwid(); notifications.show({ title: 'Готово', message: 'Все устройства удалены.', color: 'green' }); }
-    catch (error: any) { notifications.show({ title: 'Ошибка', message: error?.response?.data?.error || 'Не удалось выполнить сброс.', color: 'red' }); }
-    finally { setHwidAction(null); }
-  };
 
   return (
     <Stack gap="md">
@@ -520,28 +472,6 @@ function ServiceDetail({ service, onDelete, onChangeTariff }: ServiceDetailProps
           </Badge>
         </div>
       </Group>
-
-      {supportsHwid && (
-        <Paper withBorder p="md" radius="md">
-          <Group justify="space-between" mb="xs">
-            <Group gap="xs"><IconDeviceMobileCog size={18} /><Text fw={600}>Устройства HWID</Text></Group>
-            <Group gap="xs">
-              <Button size="xs" variant="light" onClick={() => void loadHwid()} loading={hwidLoading}>Обновить</Button>
-              <Button size="xs" color="red" variant="light" onClick={() => void resetHwid()} loading={hwidAction === 'all'} disabled={!hwidDevices.length}>Сбросить все</Button>
-            </Group>
-          </Group>
-          <Text size="xs" c="dimmed" mb="sm">Удаление устройства освобождает место для нового подключения.{hwidLimit ? ` Лимит: ${hwidDevices.length}/${hwidLimit}.` : ''}</Text>
-          {hwidError && <Alert color="red" mb="sm">{hwidError}</Alert>}
-          {hwidLoading ? <Group justify="center" py="sm"><Loader size="sm" /></Group> : hwidDevices.length ? (
-            <Stack gap="xs">{hwidDevices.map((device) => (
-              <Group key={device.hwid} justify="space-between" wrap="nowrap" p="xs" style={{ borderTop: '1px solid var(--mantine-color-default-border)' }}>
-                <div style={{ minWidth: 0 }}><Text size="sm" fw={500} lineClamp={1}>{device.name || device.platform || 'Устройство'}</Text><Code fz="xs" style={{ wordBreak: 'break-all' }}>{device.hwid}</Code></div>
-                <Button size="xs" color="red" variant="subtle" onClick={() => void deleteHwid(device.hwid)} loading={hwidAction === device.hwid}>Удалить</Button>
-              </Group>
-            ))}</Stack>
-          ) : <Text size="sm" c="dimmed">Подключённых устройств нет.</Text>}
-        </Paper>
-      )}
 
       <Tabs value={activeTab} onChange={setActiveTab}>
         <Tabs.List>
