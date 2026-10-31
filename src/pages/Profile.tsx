@@ -371,15 +371,18 @@ export default function Profile() {
     try {
       await auth.telegramWidgetAuth({
         ...telegramUser,
-        uid: profile.user_id,
         bind_to_profile: 1,
         register_if_not_exists: 0,
       });
       setTelegramWidgetOpen(false);
       await loadTelegramSettings();
       notifications.show({ title: t('common.success'), message: t('auth.telegramBind'), color: 'green' });
-    } catch {
-      notifications.show({ title: t('common.error'), message: t('auth.telegramBindError'), color: 'red' });
+    } catch (error) {
+      const serverError = axios.isAxiosError(error) ? error.response?.data?.error : null;
+      const message = typeof serverError === 'string' ? serverError
+        : error instanceof Error && !axios.isAxiosError(error) ? error.message
+        : t('auth.telegramBindError');
+      notifications.show({ title: t('common.error'), message, color: 'red' });
     } finally {
       setTelegramLoading(false);
     }
