@@ -975,3 +975,5 @@ const handleOAuthLogin = (provider: 'yandex' | 'google' | 'vk' | 'github') => {
   );
 }
 
+
+import './Pages.css';
