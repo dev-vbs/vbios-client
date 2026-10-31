@@ -48,3 +48,4 @@ export default function Dashboard() {
       <section className="cabinet-panel payments-panel"><div className="panel-title"><div><h2>Последние платежи</h2><p>Операции по вашему аккаунту.</p></div><Link to="/profile">История платежей <IconArrowRight size={16} /></Link></div>{payments.length === 0 ? <div className="panel-placeholder">История платежей появится после первого пополнения.</div> : <div className="payment-list">{payments.map((payment, index) => <div className="payment-row" key={`${payment.created || payment.date || index}-${index}`}><div className="payment-icon"><IconCreditCard size={18} /></div><div><strong>Пополнение баланса</strong><span>{formatDate(payment.created || payment.date)}</span></div><b>+{rubles(paymentAmount(payment))} ₽</b></div>)}</div>}</section>
     <PayModal opened={payModalOpen} onClose={() => setPayModalOpen(false)} /></>;
 }
+import './Pages.css';
