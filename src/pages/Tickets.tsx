@@ -1090,3 +1090,5 @@ export default function Tickets() {
     </Stack>
   );
 }
+
+import './Pages.css';
