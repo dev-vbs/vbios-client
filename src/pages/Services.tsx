@@ -64,7 +64,7 @@ const statusColors: Record<string, string> = {
 };
 
 function normalizeCategory(category: string): string {
-  const normalizedCategory = category.trim().toLowerCase();
+  const normalizedCategory = String(category ?? '').trim().toLowerCase();
   const parseCategories = (value: string | undefined) => new Set((value || '').split(',').map((item) => item.trim().toLowerCase()).filter(Boolean));
   const proxyCategories = parseCategories(config.PROXY_CATEGORY);
   const vpnCategories = parseCategories(config.VPN_CATEGORY);
@@ -815,24 +815,24 @@ function ServiceCard({ service, onClick, isChild = false, isLastChild = false }:
       className="service-overview-card" style={{ cursor: 'pointer', borderInlineStart: `3px solid var(--mantine-color-${statusColor}-6)`, borderRadius: 16, padding: 20 }}
       onClick={onClick}
     >
-      <Group justify="space-between">
-        <div>
-          <Text size="xs" c="dimmed" mb={4}>Услуга #{service.user_service_id}</Text><Text fw={600} style={{ overflowWrap: 'anywhere' }}>{service.service.name}</Text>
-          {service.expire && (
-            <Text size="xs" c="dimmed">
-              {new Date(service.expire as string).toLocaleDateString(i18n.language === 'ru' ? 'ru-RU' : 'en-US')}
-            </Text>
-          )}
-        </div>
-        <Group gap="sm">
-          {service.service.cost > 0 && (
-            <Text size="sm" c="dimmed">{service.service.cost} {t('common.currency')}</Text>
-          )}
-          <Badge color={statusColor} variant="light">
-            {statusLabel}
-          </Badge>
+      <Stack gap="sm">
+        <Group justify="space-between" align="flex-start" gap="md">
+          <div style={{ minWidth: 0 }}>
+            <Text size="xs" c="dimmed" mb={4}>Услуга #{service.user_service_id}</Text>
+            <Text fw={700} style={{ overflowWrap: 'anywhere' }}>{service.service.name}</Text>
+          </div>
+          <Badge color={statusColor} variant="light" size="lg" radius="sm">{statusLabel}</Badge>
         </Group>
-      </Group>
+        <Divider />
+        <Group justify="space-between" gap="md">
+          <Text size="sm" c="dimmed">Стоимость</Text>
+          <Text fw={700}>{service.service.cost > 0 ? `${service.service.cost} ${t('common.currency')}` : '—'}</Text>
+        </Group>
+        <Group justify="space-between" gap="md">
+          <Text size="sm" c="dimmed">Действует до</Text>
+          <Text size="sm" fw={600}>{service.expire ? new Date(service.expire as string).toLocaleDateString(i18n.language === 'ru' ? 'ru-RU' : 'en-US') : 'Не указан'}</Text>
+        </Group>
+      </Stack>
     </Card>
   );
 }
@@ -863,13 +863,14 @@ export default function Services() {
     if (!background) setLoading(true);
     try {
       const response = await api.get('/user/service', { params: { limit: 1000 } });
-      const raw: UserService[] = response.data.data || [];
-      const data: UserService[] = raw.map((item: UserService & { category?: string; cost?: string | number; name?: string }) => ({
+      const raw: UserService[] = response.data?.data;
+      if (!Array.isArray(raw)) throw new Error('Invalid services response');
+      const data: UserService[] = raw.filter((item) => item && typeof item === 'object' && item.user_service_id != null).map((item: UserService & { category?: string; cost?: string | number; name?: string }) => ({
         ...item,
-        service: item.service ?? {
-          category: item.category ?? '',
-          cost: typeof item.cost === 'string' ? parseFloat(item.cost) || 0 : (item.cost ?? 0),
-          name: item.name ?? '',
+        service: {
+          category: String(item.service?.category ?? item.category ?? ''),
+          cost: Number(item.service?.cost ?? item.cost ?? 0) || 0,
+          name: String(item.service?.name ?? item.name ?? 'Услуга'),
         },
       }));
 
@@ -888,11 +889,11 @@ export default function Services() {
       });
 
       setServices(rootServices);
-      saveOfflineServices(data);
+      try { saveOfflineServices(data); } catch { /* Storage may be unavailable in private browsing. */ }
       return rootServices;
     } catch (error) {
       console.error('Failed to fetch services:', error);
-      const offline = readOfflineServices() as UserService[];
+      const offline = (readOfflineServices() as UserService[]).filter((item) => item && typeof item === 'object' && item.user_service_id != null).map((item) => ({ ...item, service: { category: String(item.service?.category ?? ''), name: String(item.service?.name ?? item.name ?? 'Услуга'), cost: Number(item.service?.cost ?? 0) || 0 } }));
       const offlineMap = new Map<number, UserService>();
       offline.forEach((item) => offlineMap.set(item.user_service_id, { ...item, children: [] }));
       const roots: UserService[] = [];
@@ -1017,6 +1018,27 @@ export default function Services() {
           </Button>
         </Group>
       </Group>
+
+      <Card withBorder radius="lg" p="lg" style={{ background: 'var(--mantine-primary-color-light)' }}>
+        <Group justify="space-between" align="flex-start">
+          <div>
+            <Title order={3} size="h4">Состояние услуг</Title>
+            <Text size="sm" c="dimmed" mt={4}>Откройте услугу, чтобы подключиться или управлять подпиской.</Text>
+          </div>
+          <Badge color="cyan" variant="light">{flatServices.filter((item) => item.status === 'ACTIVE').length}/{flatServices.length} активны</Badge>
+        </Group>
+        <Stack gap="sm" mt="md">
+          <Group justify="space-between">
+            <Group gap="sm"><IconCheck size={18} color="var(--mantine-color-green-6)" /><Text size="sm">Активные услуги</Text></Group>
+            <Text size="sm" fw={600}>{flatServices.filter((item) => item.status === 'ACTIVE').length}</Text>
+          </Group>
+          <Divider />
+          <Group justify="space-between">
+            <Group gap="sm"><IconCreditCard size={18} color="var(--mantine-color-orange-6)" /><Text size="sm">Ожидают оплаты</Text></Group>
+            <Text size="sm" fw={600}>{flatServices.filter((item) => item.status === 'NOT PAID').length}</Text>
+          </Group>
+        </Stack>
+      </Card>
 
       <TextInput size="md" radius="md" className="services-search" value={search} onChange={(event) => setSearch(event.currentTarget.value)} placeholder="Поиск по названию или номеру услуги" leftSection={<IconSearch size={16} />} />
 
