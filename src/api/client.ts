@@ -75,12 +75,16 @@ export const auth = {
     register_if_not_exists?: number;
   }) => {
     const partnerId = getPartnerCookie();
+    const bindingSession = userData.bind_to_profile ? getCookie() : null;
+    if (userData.bind_to_profile && !bindingSession) {
+      throw new Error('Сессия истекла. Войдите в кабинет заново перед привязкой Telegram.');
+    }
     const response = await api.post('/telegram/web/auth', {
       ...userData,
       profile: config.TELEGRAM_BOT_AUTH_PROFILE,
       ...(partnerId && { partner_id: partnerId }),
       ...(userData.bind_to_profile && { bind_to_profile: userData.bind_to_profile }),
-      ...(userData.uid && { uid: userData.uid }),
+      ...(bindingSession && { session_id: bindingSession }),
       ...(userData.register_if_not_exists && { register_if_not_exists: userData.register_if_not_exists }),
     });
     const sessionId = response.data?.session_id || response.data?.id;
