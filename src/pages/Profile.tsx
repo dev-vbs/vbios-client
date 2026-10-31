@@ -694,7 +694,7 @@ export default function Profile() {
                     value={formData.login2}
                     readOnly
                     placeholder="Не указан"
-                    description="Дополнительный логин из биллинга, включая Telegram ID."
+                    description="Telegram ID."
                   />
                 </Grid.Col>
                 <Grid.Col span={{ base: 12, sm: 6 }}>
