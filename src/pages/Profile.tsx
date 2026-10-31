@@ -74,6 +74,7 @@ export default function Profile() {
   const [savingProfile, setSavingProfile] = useState(false);
   const [formData, setFormData] = useState({ full_name: '', phone: '', login2: '' });
   const [telegramUsername, setTelegramUsername] = useState<string | null>(null);
+  const [telegramId, setTelegramId] = useState<string | null>(null);
   const [telegramLoading, setTelegramLoading] = useState(false);
   const [telegramWaitingOpen, setTelegramWaitingOpen] = useState(false);
   const [payModalOpen, setPayModalOpen] = useState(false);
@@ -134,7 +135,14 @@ export default function Profile() {
       ]);
       const raw = telegramResponse.data?.data ?? telegramResponse.data;
       const data = Array.isArray(raw) ? raw[0] : raw;
-      setTelegramUsername(data?.username || null);
+      const profileName = config.TELEGRAM_BOT_AUTH_PROFILE || config.TELEGRAM_WEBAPP_PROFILE;
+      const entries = data && typeof data === 'object' ? Object.values(data) : [];
+      const hasId = (value: any) => value && typeof value === 'object'
+        && /^\d+$/.test(String(value.user_id ?? value.chat_id ?? ''));
+      const selected = data?.[profileName] || (hasId(data) ? data : entries.find(hasId));
+      const id = selected?.user_id ?? selected?.chat_id;
+      setTelegramId(id == null ? null : String(id));
+      setTelegramUsername(selected?.username || null);
     } catch {
     } finally {
       setTelegramLoading(false);
@@ -563,11 +571,11 @@ export default function Profile() {
 
 
       <Card className="profile-card profile-completeness" withBorder radius="lg" p="lg" mb="md">
-        <Group justify="space-between" align="flex-start"><div><Title order={3} size="h4">Готовность профиля</Title><Text size="sm" c="dimmed" mt={4}>Заполните контакты, чтобы получать уведомления и быстрее обращаться в поддержку.</Text></div><Badge color="cyan" variant="light">{[profile.phone, profileEmail, telegramUsername].filter(Boolean).length}/3 настроено</Badge></Group>
+        <Group justify="space-between" align="flex-start"><div><Title order={3} size="h4">Готовность профиля</Title><Text size="sm" c="dimmed" mt={4}>Заполните контакты, чтобы получать уведомления и быстрее обращаться в поддержку.</Text></div><Badge color="cyan" variant="light">{[profile.phone, profileEmail, telegramUsername || telegramId].filter(Boolean).length}/3 настроено</Badge></Group>
         <Stack gap="xs" mt="md">
           <Group justify="space-between"><Group gap="sm"><IconPhone size={18} color={profile.phone ? '#46c47b' : '#d8a94b'} /><Text size="sm">{profile.phone ? 'Телефон добавлен' : 'Добавьте номер телефона'}</Text></Group>{!profile.phone && <Button size="xs" variant="light" onClick={() => setEditing(true)}>Заполнить</Button>}</Group>
           <Group justify="space-between"><Group gap="sm"><IconMail size={18} color={profileEmail && emailVerified ? '#46c47b' : '#d8a94b'} /><Text size="sm">{profileEmail ? (emailVerified ? 'Email подтверждён' : 'Подтвердите email') : 'Добавьте email'}</Text></Group>{(!profileEmail || !emailVerified) && <Button size="xs" variant="light" onClick={openEmailModal}>{profileEmail ? 'Проверить' : 'Добавить'}</Button>}</Group>
-          {(config.ALLOW_TELEGRAM_PIN === 'true' || hasTelegramWidget) && <Group justify="space-between"><Group gap="sm"><IconBrandTelegram size={18} color={telegramUsername ? '#46c47b' : '#d8a94b'} /><Text size="sm">{telegramUsername ? 'Telegram подключён' : 'Подключите Telegram'}</Text></Group>{!telegramUsername && <Button size="xs" variant="light" onClick={handleTelegramOidcBind}>Подключить</Button>}</Group>}
+          {(config.ALLOW_TELEGRAM_PIN === 'true' || hasTelegramWidget) && <Group justify="space-between"><Group gap="sm"><IconBrandTelegram size={18} color={(telegramUsername || telegramId) ? '#46c47b' : '#d8a94b'} /><Text size="sm">{(telegramUsername || telegramId) ? 'Telegram подключён' : 'Подключите Telegram'}</Text></Group>{!telegramUsername && !telegramId && <Button size="xs" variant="light" onClick={handleTelegramOidcBind}>Подключить</Button>}</Group>}
           <Group gap="sm"><IconAlertCircle size={18} color="#83d5ea" /><Text size="sm">Безопасность и способы входа доступны ниже.</Text></Group>
         </Stack>
       </Card>
@@ -691,10 +699,10 @@ export default function Profile() {
                   <TextInput
                     label={t('profile.login2')}
                     leftSection={<IconBrandTelegram size={16} />}
-                    value={formData.login2}
+                    value={formData.login2 || telegramId || ''}
                     readOnly
                     placeholder="Не указан"
-                    description="Telegram ID."
+                    description="Дополнительный логин из биллинга, включая Telegram ID."
                   />
                 </Grid.Col>
                 <Grid.Col span={{ base: 12, sm: 6 }}>
@@ -845,7 +853,7 @@ export default function Profile() {
             <Text fw={500}>{t('profile.telegram')}</Text>
             {telegramLoading ? (
               <Skeleton width={100} height={24} />
-            ) : telegramUsername ? (
+            ) : (telegramUsername || telegramId) ? (
               <Button size="xs" variant="light" color="red" onClick={() => setUnbindConfirmOpen(true)}>
                 {t('profile.telegramUnbind')}
               </Button>
@@ -859,9 +867,9 @@ export default function Profile() {
             <IconBrandTelegram size={24} color="#0088cc" />
             {telegramLoading ? (
               <Skeleton width={150} height={20} />
-            ) : telegramUsername ? (
+            ) : (telegramUsername || telegramId) ? (
               <div>
-                <Text size="sm">@{telegramUsername}</Text>
+                <Text size="sm">{telegramUsername ? `@${telegramUsername}` : `Telegram ID: ${telegramId}`}</Text>
                 <Text size="xs" c="dimmed">{t('profile.telegramLinked')}</Text>
               </div>
             ) : (
