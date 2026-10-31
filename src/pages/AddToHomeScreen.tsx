@@ -192,3 +192,5 @@ export default function AddToHomeScreen() {
     </>
   );
 }
+
+import './Pages.css';
