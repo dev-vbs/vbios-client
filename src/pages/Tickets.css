@@ -1,56 +1,64 @@
-.tickets-page{max-width:1144px}.tickets-page .mantine-Card-root{border-color:#2a3235!important;background:#171a1b!important;box-shadow:none}.tickets-page .mantine-Card-root:hover{border-color:#3a5962!important}.tickets-page .mantine-ScrollArea-root{background:#141617}.tickets-page .mantine-Textarea-input:focus,.tickets-page .mantine-Input-input:focus{border-color:#64cbe8;box-shadow:0 0 0 2px rgba(100,203,232,.12)}.tickets-page .mantine-UnstyledButton-root:hover{background:#1c2426}.tickets-page .mantine-Badge-root{border:1px solid rgba(117,204,230,.25)}@media(max-width:768px){.tickets-page{padding-bottom:110px}.tickets-page .page-header{margin-bottom:2px}.tickets-page .page-header .mantine-Button-root{flex:none}.tickets-page .mantine-Card-root{border-radius:13px}}
-
-/* Ticket conversation is a focused workspace on every screen size. */
-.tickets-page .mantine-UnstyledButton-root { border-radius: 14px; transition: transform .16s ease, background-color .16s ease; }
-.tickets-page .mantine-UnstyledButton-root:hover { transform: translateY(-1px); }
-.tickets-page .mantine-Modal-content { border: 1px solid rgba(100, 203, 232, .18); }
-.tickets-page .mantine-Modal-header { border-bottom: 1px solid rgba(255,255,255,.07); }
-.tickets-page .mantine-Textarea-input { min-height: 112px; border-radius: 12px; }
-.tickets-page .mantine-Select-input, .tickets-page .mantine-TextInput-input { border-radius: 10px; }
-@media (max-width: 768px) {
-  .tickets-page .mantine-Stack-root { min-width: 0; }
-  .tickets-page .mantine-ScrollArea-root { min-height: 360px; }
-  .tickets-page .mantine-Modal-content { border-radius: 0; }
-  .tickets-page .mantine-Button-root { min-height: 42px; }
+/* Theme-aware support inbox and conversation. */
+.tickets-page { max-width: 1144px; min-width: 0; }
+.tickets-page .mantine-Card-root {
+  background: var(--mantine-color-body);
+  border-color: var(--mantine-color-default-border);
+  border-radius: 16px;
+  box-shadow: none;
 }
-
-/* Support workspace: list, conversation and reply form use a focused card layout. */
-.tickets-page .page-header { margin-bottom: 4px; }
-.tickets-page .mantine-Card-root { border-radius: 18px !important; box-shadow: var(--ui-shadow); }
-.tickets-page .mantine-Card-root > .mantine-Group-root:first-child { padding-bottom: 12px; border-bottom: 1px solid var(--ui-border); }
-.tickets-page .mantine-ScrollArea-root { border: 1px solid var(--ui-border); border-radius: 13px; padding: 4px; }
-.tickets-page .mantine-UnstyledButton-root { color: var(--ui-text); }
-.tickets-page .mantine-UnstyledButton-root[data-active="true"] { background: var(--ui-accent-soft); }
-.tickets-page .mantine-Textarea-input { min-height: 124px; padding: 13px; }
-.tickets-page .mantine-Textarea-wrapper + .mantine-Group-root { margin-top: 10px; }
-.tickets-page .mantine-Badge-root { font-weight: 700; }
-.tickets-page .mantine-Modal-content { background: var(--ui-surface); }
-@media (max-width: 768px) {
-  .tickets-page .mantine-Card-root { border-radius: 15px !important; }
-  .tickets-page .mantine-Card-root > .mantine-Group-root:first-child { gap: 10px; }
-  .tickets-page .mantine-ScrollArea-root { border-radius: 11px; }
+.tickets-page .mantine-Button-root { border-radius: 10px; }
+.ticket-layout { min-width: 0; }
+.ticket-list-panel { flex-shrink: 0; }
+.ticket-chat-panel, .ticket-conversation, .ticket-conversation .mantine-Stack-root { min-width: 0; }
+.ticket-list-panel .mantine-UnstyledButton-root { width: 100%; }
+.ticket-list-item {
+  border-radius: 0 !important;
+  border: 0;
+  border-bottom: 1px solid var(--mantine-color-default-border) !important;
+  padding: 16px !important;
+  transition: background-color .15s ease;
 }
-
-/* Ticket inbox: compact list on the left, focused conversation on the right. */
-.ticket-layout { min-height: 560px; }
-.ticket-list-panel, .ticket-chat-panel { background: var(--ui-surface) !important; }
-.ticket-list-panel .mantine-Input-input { border-radius: 18px 18px 0 0 !important; color: var(--ui-text); }
-.ticket-list-item { width: 100%; border-radius: 0 !important; border-inline: 0 !important; border-top: 0 !important; transition: background .16s ease, border-color .16s ease; }
-.ticket-list-item:hover { background: var(--ui-surface-hover) !important; }
-.ticket-list-item--selected { box-shadow: inset 3px 0 0 var(--ui-accent); }
-.ticket-list-item--waiting { background: color-mix(in srgb, var(--ui-accent-soft) 70%, var(--ui-surface)) !important; }
-.ticket-conversation__header { padding: 2px 2px 11px; }
-.ticket-conversation .mantine-ScrollArea-root { background: var(--ui-page); padding: 12px; }
-.ticket-message { border-radius: 14px !important; border-color: var(--ui-border) !important; box-shadow: none !important; }
-.ticket-message--user { border-color: color-mix(in srgb, var(--ui-accent) 42%, var(--ui-border)) !important; }
-.ticket-message--user .mantine-ThemeIcon-root { color: var(--ui-accent-strong); }
-.ticket-reply-box { padding-top: 4px; }
-.ticket-reply-box .mantine-Textarea-input { min-height: 92px; padding: 13px 70px 13px 13px; resize: vertical; }
-.ticket-reply-box .mantine-ActionIcon-root { border-radius: 9px; }
-.ticket-mobile-list .ticket-list-item { border: 1px solid var(--ui-border) !important; border-radius: 14px !important; margin-bottom: 8px; }
-@media (max-width: 768px) {
-  .ticket-layout { min-height: 0; }
-  .ticket-conversation .mantine-ScrollArea-root { padding: 10px; }
-  .ticket-message { max-width: 86% !important; }
-  .ticket-reply-box .mantine-Textarea-input { min-height: 104px; }
+.ticket-list-item:hover { background: var(--mantine-color-default-hover) !important; }
+.ticket-list-item--selected {
+  background: var(--mantine-primary-color-light) !important;
+  box-shadow: inset 3px 0 var(--mantine-primary-color-filled);
 }
+.ticket-list-item--waiting .mantine-Text-root:first-child { color: var(--mantine-primary-color-light-color); }
+.tickets-page .mantine-UnstyledButton-root:focus-visible { outline: 2px solid var(--mantine-primary-color-filled); outline-offset: -2px; }
+.ticket-conversation__header { padding: 4px 4px 8px; gap: 12px; }
+.ticket-conversation__header > .mantine-Group-root { flex: 1; }
+.ticket-conversation .mantine-ScrollArea-root {
+  background: var(--mantine-color-default-hover);
+  border-radius: 14px;
+  padding: 12px;
+  min-height: 160px;
+}
+.ticket-message {
+  min-width: 0;
+  border-radius: 16px !important;
+  border-color: var(--mantine-color-default-border) !important;
+}
+.ticket-message--user { background: var(--mantine-primary-color-light) !important; border-bottom-right-radius: 4px !important; }
+.ticket-message--admin { background: var(--mantine-color-body) !important; border-bottom-left-radius: 4px !important; }
+.ticket-message img, .ticket-message video { max-width: 100%; border-radius: 10px; }
+.ticket-reply-box { padding-top: 8px; }
+.ticket-reply-box .mantine-Textarea-input {
+  min-height: 80px;
+  max-height: 240px;
+  overflow-y: auto;
+  padding: 12px 78px 32px 12px;
+  border-radius: 14px;
+}
+.tickets-page .mantine-Input-input:focus { border-color: var(--mantine-primary-color-filled); }
+.tickets-page .mantine-TextInput-input, .tickets-page .mantine-Select-input { border-radius: 10px; }
+.ticket-mobile-list .ticket-list-item { border: 1px solid var(--mantine-color-default-border); border-radius: 14px !important; }
+@media (max-width: 768px) {
+  .tickets-page { padding-bottom: 24px; }
+  .tickets-page .page-header { flex-wrap: wrap; gap: 16px; }
+  .ticket-conversation { min-width: 0; }
+  .ticket-message { max-width: 92% !important; }
+  .ticket-conversation__header { align-items: flex-start; }
+  .ticket-conversation .mantine-ScrollArea-root { padding: 8px; }
+  .ticket-reply-box { padding-bottom: env(safe-area-inset-bottom); }
+}
+@media (prefers-reduced-motion: reduce) { .ticket-list-item { transition: none; } }
