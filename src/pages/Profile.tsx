@@ -5,9 +5,9 @@ import { IconUser, IconPhone, IconCopy, IconCheck, IconBrandTelegram, IconCredit
 import { notifications } from '@mantine/notifications';
 import { useClipboard } from '@mantine/hooks';
 import { useTranslation } from 'react-i18next';
-import { auth, userApi, telegramApi, userEmailApi, referralsApi } from '../api/client';
+import { api, userApi, telegramApi, userEmailApi, referralsApi } from '../api/client';
 import TelegramLoginButton, { type TelegramUser } from '../components/TelegramLoginButton';
-import { encodePartnerIdBase64url } from '../api/cookie';
+import { encodePartnerIdBase64url, getCookie } from '../api/cookie';
 import PayModal from '../components/PayModal';
 import PromoModal from '../components/PromoModal';
 import SecuritySettings from '../components/security/SecuritySettings';
@@ -79,6 +79,7 @@ export default function Profile() {
   const [telegramLoading, setTelegramLoading] = useState(false);
   const [telegramWaitingOpen, setTelegramWaitingOpen] = useState(false);
   const [telegramWidgetOpen, setTelegramWidgetOpen] = useState(false);
+  const [telegramBindError, setTelegramBindError] = useState<string | null>(null);
   const [payModalOpen, setPayModalOpen] = useState(false);
   const [payModalAmount, setPayModalAmount] = useState<number | undefined>(undefined);
   const [promoModalOpen, setPromoModalOpen] = useState(false);
@@ -320,6 +321,7 @@ export default function Profile() {
     event.preventDefault();
     if (!profile) return;
     if (hasTelegramWidget) {
+      setTelegramBindError(null);
       setTelegramWidgetOpen(true);
       return;
     }
@@ -368,20 +370,38 @@ export default function Profile() {
   const handleTelegramWidgetBind = async (telegramUser: TelegramUser) => {
     if (!profile || telegramLoading) return;
     setTelegramLoading(true);
+    setTelegramBindError(null);
     try {
-      await auth.telegramWidgetAuth({
+      const sessionId = getCookie();
+      if (!sessionId) throw new Error('Сессия истекла. Войдите в кабинет заново.');
+      // Binding must not run login's session replacement or referral processing.
+      const response = await api.post('/telegram/web/auth', {
         ...telegramUser,
+        profile: config.TELEGRAM_BOT_AUTH_PROFILE,
+        session_id: sessionId,
         bind_to_profile: 1,
+        bind_only_if_new: 1,
         register_if_not_exists: 0,
       });
-      setTelegramWidgetOpen(false);
+      const body = response.data?.data ?? response.data;
+      const result = Array.isArray(body) ? body[0] : body;
+      if (result?.error) throw new Error(String(result.error));
+      if (result?.msg !== 'Successfully bound to Telegram') {
+        throw new Error('Сервер не подтвердил привязку Telegram. Проверьте ответ POST /telegram/web/auth.');
+      }
       await loadTelegramSettings();
+      setTelegramWidgetOpen(false);
       notifications.show({ title: t('common.success'), message: t('auth.telegramBind'), color: 'green' });
     } catch (error) {
-      const serverError = axios.isAxiosError(error) ? error.response?.data?.error : null;
+      const body = axios.isAxiosError(error) ? error.response?.data : null;
+      const data = body?.data;
+      const result = Array.isArray(data) ? data[0] : data;
+      const serverError = body?.error || body?.message || result?.error || result?.message;
       const message = typeof serverError === 'string' ? serverError
         : error instanceof Error && !axios.isAxiosError(error) ? error.message
+        : axios.isAxiosError(error) ? `Ошибка привязки: HTTP ${error.response?.status ?? 'нет соединения'}. Сервер не вернул описание ошибки.`
         : t('auth.telegramBindError');
+      setTelegramBindError(message);
       notifications.show({ title: t('common.error'), message, color: 'red' });
     } finally {
       setTelegramLoading(false);
@@ -600,6 +620,7 @@ export default function Profile() {
       <Modal opened={telegramWidgetOpen} onClose={() => { if (!telegramLoading) setTelegramWidgetOpen(false); }} title="Привязка Telegram" centered>
         <Stack gap="md">
           <Text size="sm" c="dimmed">Подтвердите свой аккаунт через Telegram. Привязка выполняется к текущему профилю кабинета.</Text>
+          {telegramBindError && <Alert color="red" title="Привязка не выполнена" role="alert">{telegramBindError}</Alert>}
           {telegramLoading ? <Center><Loader size="sm" /></Center> : <TelegramLoginButton botName={config.TELEGRAM_BOT_NAME} onAuth={handleTelegramWidgetBind} />}
         </Stack>
       </Modal>
