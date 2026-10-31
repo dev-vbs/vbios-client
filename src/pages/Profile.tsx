@@ -69,6 +69,7 @@ export default function Profile() {
   const emailBlocked = config.EMAIL_REQUIRED === 'true' && isEmailLoaded && !storeEmail;
   const [profile, setProfile] = useState<UserProfile | null>(null);
   const [loading, setLoading] = useState(true);
+  const [profileError, setProfileError] = useState(false);
   const [editing, setEditing] = useState(false);
   const [savingProfile, setSavingProfile] = useState(false);
   const [formData, setFormData] = useState({ full_name: '', phone: '', login2: '' });
@@ -131,7 +132,9 @@ export default function Profile() {
         telegramApi.getSettings(),
         new Promise<never>((_, reject) => setTimeout(() => reject(new Error('telegram settings timeout')), 10000)),
       ]);
-      setTelegramUsername(telegramResponse.data.username || null);
+      const raw = telegramResponse.data?.data ?? telegramResponse.data;
+      const data = Array.isArray(raw) ? raw[0] : raw;
+      setTelegramUsername(data?.username || null);
     } catch {
     } finally {
       setTelegramLoading(false);
@@ -144,12 +147,24 @@ export default function Profile() {
         const response = await userApi.getProfile();
         const responseData = response.data.data;
         const data = Array.isArray(responseData) ? responseData[0] : responseData;
+        if (!data?.user_id) throw new Error('Invalid profile response');
         setProfile(data);
+        setUser(data);
         setFormData({
           full_name: data.full_name || '',
           phone: data.phone || '',
           login2: data.login2 || '',
         });
+        await Promise.allSettled([
+          (async () => {
+            const emailResponse = await userEmailApi.getEmail();
+            const raw = emailResponse.data?.data;
+            const email = Array.isArray(raw) ? raw[0] : raw;
+            setUserEmail(email?.email || null);
+            setUserEmailVerified(Number(email?.email_verified) === 1 ? 1 : 0);
+          })(),
+          loadTelegramSettings(),
+        ]);
         try {
           const forecastResponse = await userApi.getForecast();
           const forecastData = forecastResponse.data.data;
@@ -165,6 +180,8 @@ export default function Profile() {
           setReferralsCount(referralsItem?.total ?? 0);
         } catch {
         }
+      } catch {
+        setProfileError(true);
       } finally {
         setLoading(false);
       }
@@ -528,6 +545,9 @@ export default function Profile() {
     }
   };
 
+  if (!loading && (profileError || !profile)) {
+    return <Alert color="red" title="Не удалось загрузить профиль"><Text size="sm">Проверьте соединение и повторите загрузку.</Text><Button mt="md" variant="light" onClick={() => window.location.reload()}>Повторить</Button></Alert>;
+  }
   if (loading || !profile) {
     return (
       <Center h="50vh">
