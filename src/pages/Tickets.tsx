@@ -704,7 +704,7 @@ export default function Tickets() {
         <ScrollArea style={{ flex: 1 }} offsetScrollbars viewportRef={messagesViewportRef}>
           <Stack gap="sm" pr="xs">
             {(selectedTicket.messages || []).map((message) => {
-              const isAdmin = Boolean(message.is_admin);
+              const isAdmin = String(message.is_admin) === 'true' || String(message.is_admin) === '1';
               return (
                 <Card
                   key={message.message_id}
@@ -726,10 +726,10 @@ export default function Tickets() {
                     >
                       <IconMessageCircle size={14} />
                     </ThemeIcon>
-                    <Text size="xs" c="dimmed">{formatDate(message.created)}</Text>
+                    <Text size="xs" fw={600}>{isAdmin ? t('tickets.supportAuthor', { defaultValue: 'Поддержка' }) : t('tickets.youAuthor', { defaultValue: 'Вы' })}</Text><Text size="xs" c="dimmed">{formatDate(message.created)}</Text>
                   </Group>
 
-                  <Text size="sm" style={{ whiteSpace: 'pre-wrap' }}>{message.message}</Text>
+                  <Text size="sm" style={{ whiteSpace: 'pre-wrap', overflowWrap: 'anywhere' }}>{message.message}</Text>
 
                   {message.media && message.media.length > 0 && (
                     <Stack gap={6} mt="sm">
@@ -761,6 +761,8 @@ export default function Tickets() {
                     <ActionIcon
                       variant="subtle"
                       color="red"
+                      aria-label="Удалить вложение"
+                      disabled={sending}
                       onClick={() => removeReplyFile(index)}
                       size="sm"
                     >
@@ -781,6 +783,7 @@ export default function Tickets() {
                   event.preventDefault();
                   if (!sending) void sendMessage();
                 }}
+                aria-label={t('tickets.messagePlaceholder')}
                 maxLength={MAX_MESSAGE_LENGTH}
                 autosize
                 minRows={1}
@@ -789,7 +792,7 @@ export default function Tickets() {
               <Group gap={4} style={{ position: 'absolute', bottom: 7, right: 8 }}>
                 <FileButton onChange={onPickFiles} multiple>
                   {(props) => (
-                    <ActionIcon {...props} variant="subtle" color="gray" size="sm" aria-label="Прикрепить файл">
+                    <ActionIcon {...props} disabled={sending} variant="subtle" color="gray" size="sm" aria-label="Прикрепить файл">
                       <IconPaperclip size={16} />
                     </ActionIcon>
                   )}
@@ -856,7 +859,7 @@ export default function Tickets() {
           </Stack>
         )
       ) : (
-        <Group className="ticket-layout" align="stretch" grow={false} wrap="nowrap" style={{ height: 'calc(100vh - 226px)' }}>
+        <Group className="ticket-layout" align="stretch" grow={false} wrap="nowrap" style={{ height: 'calc(100dvh - 226px)', minHeight: 520 }}>
           <Card className="ticket-list-panel" withBorder radius="lg" p={0} style={{ width: 320, display: 'flex', flexDirection: 'column' }}>
             <Stack gap="0" style={{ height: '100%' }}>
               <TextInput
