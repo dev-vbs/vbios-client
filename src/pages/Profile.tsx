@@ -5,7 +5,8 @@ import { IconUser, IconPhone, IconCopy, IconCheck, IconBrandTelegram, IconCredit
 import { notifications } from '@mantine/notifications';
 import { useClipboard } from '@mantine/hooks';
 import { useTranslation } from 'react-i18next';
-import { userApi, telegramApi, userEmailApi, referralsApi } from '../api/client';
+import { auth, userApi, telegramApi, userEmailApi, referralsApi } from '../api/client';
+import TelegramLoginButton, { type TelegramUser } from '../components/TelegramLoginButton';
 import { encodePartnerIdBase64url } from '../api/cookie';
 import PayModal from '../components/PayModal';
 import PromoModal from '../components/PromoModal';
@@ -77,6 +78,7 @@ export default function Profile() {
   const [telegramId, setTelegramId] = useState<string | null>(null);
   const [telegramLoading, setTelegramLoading] = useState(false);
   const [telegramWaitingOpen, setTelegramWaitingOpen] = useState(false);
+  const [telegramWidgetOpen, setTelegramWidgetOpen] = useState(false);
   const [payModalOpen, setPayModalOpen] = useState(false);
   const [payModalAmount, setPayModalAmount] = useState<number | undefined>(undefined);
   const [promoModalOpen, setPromoModalOpen] = useState(false);
@@ -317,6 +319,10 @@ export default function Profile() {
   const handleTelegramOidcBind = async (event: any) => {
     event.preventDefault();
     if (!profile) return;
+    if (hasTelegramWidget) {
+      setTelegramWidgetOpen(true);
+      return;
+    }
 
     setTelegramWaitingOpen(true);
     try {
@@ -356,6 +362,26 @@ export default function Profile() {
         message: t('auth.telegramBindError'),
         color: 'red',
       });
+    }
+  };
+
+  const handleTelegramWidgetBind = async (telegramUser: TelegramUser) => {
+    if (!profile || telegramLoading) return;
+    setTelegramLoading(true);
+    try {
+      await auth.telegramWidgetAuth({
+        ...telegramUser,
+        uid: profile.user_id,
+        bind_to_profile: 1,
+        register_if_not_exists: 0,
+      });
+      setTelegramWidgetOpen(false);
+      await loadTelegramSettings();
+      notifications.show({ title: t('common.success'), message: t('auth.telegramBind'), color: 'green' });
+    } catch {
+      notifications.show({ title: t('common.error'), message: t('auth.telegramBindError'), color: 'red' });
+    } finally {
+      setTelegramLoading(false);
     }
   };
 
@@ -568,6 +594,12 @@ export default function Profile() {
 
   return (
     <Stack gap="lg" className="profile-page">
+      <Modal opened={telegramWidgetOpen} onClose={() => { if (!telegramLoading) setTelegramWidgetOpen(false); }} title="Привязка Telegram" centered>
+        <Stack gap="md">
+          <Text size="sm" c="dimmed">Подтвердите свой аккаунт через Telegram. Привязка выполняется к текущему профилю кабинета.</Text>
+          {telegramLoading ? <Center><Loader size="sm" /></Center> : <TelegramLoginButton botName={config.TELEGRAM_BOT_NAME} onAuth={handleTelegramWidgetBind} />}
+        </Stack>
+      </Modal>
       <header className="page-header"><div><span className="cabinet-breadcrumb">Личный кабинет</span><Title className="page-header__title" order={2}>{t('profile.title')}</Title><p className="page-header__description">Управляйте данными аккаунта, безопасностью и оплатой.</p></div></header>
 
 
