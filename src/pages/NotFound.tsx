@@ -25,3 +25,5 @@ function NotFound() {
 }
 
 export default NotFound;
+
+import './Pages.css';
