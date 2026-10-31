@@ -21,7 +21,7 @@ const RESEND_STORAGE_KEY = 'email_verify_last_sent';
 interface UserProfile {
   user_id: number;
   login: string;
-  login2: string;
+  login2: string | number | null;
   full_name?: string;
   phone?: string;
   balance: number;
@@ -153,7 +153,7 @@ export default function Profile() {
         setFormData({
           full_name: data.full_name || '',
           phone: data.phone || '',
-          login2: data.login2 || '',
+          login2: data.login2 == null ? '' : String(data.login2),
         });
         await Promise.allSettled([
           (async () => {
@@ -272,6 +272,7 @@ export default function Profile() {
         ...current,
         full_name: freshProfile.full_name || '',
         phone: freshProfile.phone || '',
+        login2: freshProfile.login2 == null ? '' : String(freshProfile.login2),
       }));
       setEditing(false);
       notifications.show({
@@ -294,7 +295,7 @@ export default function Profile() {
 
   const cancelEditing = () => {
     if (!profile) return;
-    setFormData({ full_name: profile.full_name || '', phone: profile.phone || '', login2: profile.login2 || '' });
+    setFormData({ full_name: profile.full_name || '', phone: profile.phone || '', login2: profile.login2 == null ? '' : String(profile.login2) });
     setEditing(false);
   };
 
@@ -691,8 +692,9 @@ export default function Profile() {
                     label={t('profile.login2')}
                     leftSection={<IconBrandTelegram size={16} />}
                     value={formData.login2}
-                    onChange={(e) => setFormData({ ...formData, login2: e.target.value })}
-                    disabled={!editing}
+                    readOnly
+                    placeholder="Не указан"
+                    description="Дополнительный логин из биллинга, включая Telegram ID."
                   />
                 </Grid.Col>
                 <Grid.Col span={{ base: 12, sm: 6 }}>
