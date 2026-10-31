@@ -988,3 +988,5 @@ export default function Profile() {
 }
 
 
+
+import './Pages.css';
