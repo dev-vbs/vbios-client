@@ -364,6 +364,7 @@ export default function Profile() {
     try {
       await telegramApi.unbindAccount();
       setTelegramUsername(null);
+      setTelegramId(null);
       setUnbindConfirmOpen(false);
       notifications.show({
         title: t('common.success'),
@@ -697,12 +698,12 @@ export default function Profile() {
               <Grid>
                 <Grid.Col span={{ base: 12, sm: 6 }}>
                   <TextInput
-                    label={t('profile.login2')}
+                    label="Telegram ID"
                     leftSection={<IconBrandTelegram size={16} />}
-                    value={formData.login2 || telegramId || ''}
+                    value={telegramId || ''}
                     readOnly
-                    placeholder="Не указан"
-                    description="Дополнительный логин из биллинга, включая Telegram ID."
+                    placeholder={telegramLoading ? 'Загружаем…' : 'Аккаунт не привязан'}
+                    description="ID привязанного аккаунта. Изменение доступно через подтверждённую привязку в разделе Telegram ниже."
                   />
                 </Grid.Col>
                 <Grid.Col span={{ base: 12, sm: 6 }}>
@@ -870,6 +871,7 @@ export default function Profile() {
             ) : (telegramUsername || telegramId) ? (
               <div>
                 <Text size="sm">{telegramUsername ? `@${telegramUsername}` : `Telegram ID: ${telegramId}`}</Text>
+                {telegramUsername && telegramId && <Text size="xs" c="dimmed">Telegram ID: {telegramId}</Text>}
                 <Text size="xs" c="dimmed">{t('profile.telegramLinked')}</Text>
               </div>
             ) : (
