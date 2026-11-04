@@ -6,7 +6,7 @@ import { useForm, isEmail, hasLength } from '@mantine/form';
 import { IconLogin, IconUserPlus, IconHeadset, IconFingerprint, IconShieldLock, IconBrandTelegram, IconMailForward, IconLock, IconMoon, IconSun} from '@tabler/icons-react';
 import { notifications } from '@mantine/notifications';
 import { useTranslation } from 'react-i18next';
-import { auth, passkeyApi, userApi } from '../api/client';
+import { auth, passkeyApi, userApi, telegramSessionId } from '../api/client';
 import { setCookie, getResetTokenCookie, removeResetTokenCookie, parseAndSaveResetToken } from '../api/cookie';
 import { useStore } from '../store/useStore';
 import TelegramLoginButton, { TelegramUser } from '../components/TelegramLoginButton';
@@ -388,7 +388,7 @@ export default function Login() {
     try {
       const profile = config.TELEGRAM_WEBAPP_PROFILE || '';
       const authResponse = await auth.telegramWebAppAuth(telegramWebApp.initData, profile);
-      const sessionId = authResponse.data?.session_id || authResponse.data?.id;
+      const sessionId = telegramSessionId(authResponse.data);
       if (!sessionId) {
         notifications.show({ title: t('common.error'), message: t('auth.telegramAuthError'), color: 'red' });
         setShowLoginForm(true);

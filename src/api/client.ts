@@ -2,6 +2,15 @@ import axios from 'axios';
 import { getCookie, setCookie, removeCookie, extendCookie, getPartnerCookie, removePartnerCookie } from './cookie';
 import { config } from '../config';
 
+export function telegramSessionId(body: any): string | null {
+  const payload = body?.data ?? body;
+  const item = Array.isArray(payload) ? payload[0] : payload;
+  const error = body?.error || item?.error;
+  if (error) throw new Error(typeof error === 'string' ? error : 'Telegram отклонил авторизацию.');
+  const value = item?.session_id ?? item?.id;
+  return typeof value === 'string' && value.trim() ? value : null;
+}
+
 export const api = axios.create({
   baseURL: '/shm/v1',
   withCredentials: true,
@@ -87,8 +96,9 @@ export const auth = {
       ...(bindingSession && { session_id: bindingSession }),
       ...(userData.register_if_not_exists && { register_if_not_exists: userData.register_if_not_exists }),
     });
-    const sessionId = response.data?.session_id || response.data?.id;
-    if (sessionId) {
+    const sessionId = telegramSessionId(response.data);
+    if (!userData.bind_to_profile && !sessionId) throw new Error('SHM не вернул сессию Telegram.');
+    if (sessionId && !userData.bind_to_profile) {
       setCookie(sessionId);
       if (partnerId) {
         removePartnerCookie();
@@ -123,7 +133,8 @@ export const auth = {
       ...(partnerId && { partner_id: partnerId }),
     });
     const response = await api.get(`/telegram/webapp/auth?${params.toString()}`);
-    const sessionId = response.data?.session_id || response.data?.id;
+    const sessionId = telegramSessionId(response.data);
+    if (!sessionId) throw new Error('SHM не вернул сессию Telegram Web App.');
     if (sessionId) {
       setCookie(sessionId);
       if (partnerId) {
