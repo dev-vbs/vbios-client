@@ -91,9 +91,15 @@ declare global {
 
 function getConfig(): AppConfig {
   const runtimeConfig = window.__APP_CONFIG__;
+  const runtimeName = runtimeConfig?.APP_NAME?.trim();
+  const buildName = import.meta.env.VITE_APP_NAME?.trim();
+  // The container's default name must not hide a configured build-time name.
+  const appName = runtimeName && runtimeName !== 'SHM Client'
+    ? runtimeName
+    : buildName || runtimeName || 'SHM Client';
 
   return {
-    APP_NAME: runtimeConfig?.APP_NAME || import.meta.env.VITE_APP_NAME || 'SHM Client',
+    APP_NAME: appName,
     APP_DESCRIPTION: runtimeConfig?.APP_DESCRIPTION || import.meta.env.VITE_APP_DESCRIPTION || undefined,
     LOGO_URL: runtimeConfig?.LOGO_URL || import.meta.env.VITE_LOGO_URL || `${import.meta.env.BASE_URL}favicon.jpg`,
     TELEGRAM_BOT_NAME: runtimeConfig?.TELEGRAM_BOT_NAME || import.meta.env.VITE_TELEGRAM_BOT_NAME || undefined,
@@ -102,7 +108,7 @@ function getConfig(): AppConfig {
     TELEGRAM_BOT_AUTH_PROFILE: runtimeConfig?.TELEGRAM_BOT_AUTH_PROFILE || import.meta.env.VITE_TELEGRAM_BOT_AUTH_PROFILE || 'telegram_bot',
     TELEGRAM_WEBAPP_AUTH_ENABLE: runtimeConfig?.TELEGRAM_WEBAPP_AUTH_ENABLE || import.meta.env.VITE_TELEGRAM_WEBAPP_AUTH_ENABLE || 'false',
     TELEGRAM_WEBAPP_AUTO_AUTH_ENABLE: runtimeConfig?.TELEGRAM_WEBAPP_AUTO_AUTH_ENABLE || import.meta.env.VITE_TELEGRAM_WEBAPP_AUTO_AUTH_ENABLE || 'false',
-    TELEGRAM_WEBAPP_PROFILE: runtimeConfig?.TELEGRAM_WEBAPP_PROFILE || import.meta.env.VITE_TELEGRAM_WEBAPP_PROFILE || undefined,
+    TELEGRAM_WEBAPP_PROFILE: runtimeConfig?.TELEGRAM_WEBAPP_PROFILE || import.meta.env.VITE_TELEGRAM_WEBAPP_PROFILE || 'telegram_bot',
     SUPPORT_LINK: runtimeConfig?.SUPPORT_LINK || import.meta.env.VITE_SUPPORT_LINK || undefined,
     PRIVACY_POLICY_URL: runtimeConfig?.PRIVACY_POLICY_URL || import.meta.env.VITE_PRIVACY_POLICY_URL || undefined,
     RETURN_POLICY_URL: runtimeConfig?.RETURN_POLICY_URL || import.meta.env.VITE_RETURN_POLICY_URL || undefined,

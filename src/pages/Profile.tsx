@@ -1,3 +1,4 @@
+import AccountProfilePanel from '../components/AccountProfilePanel';
 import axios from 'axios';
 import { useState, useEffect, useCallback } from 'react';
 import { Card, Badge, Text, Stack, Group, Divider, Grid, Button, TextInput, Tooltip, ActionIcon, Avatar, Title, Modal, Loader, Center, Collapse, Alert, Skeleton, useMantineColorScheme } from '@mantine/core';
@@ -568,6 +569,7 @@ export default function Profile() {
 
   return (
     <Stack gap="lg" className="profile-page">
+      <AccountProfilePanel />
 
       <header className="page-header"><div><span className="cabinet-breadcrumb">Личный кабинет</span><Title className="page-header__title" order={2}>{t('profile.title')}</Title><p className="page-header__description">Управляйте данными аккаунта, безопасностью и оплатой.</p></div></header>
 

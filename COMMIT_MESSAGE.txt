@@ -1,0 +1,12 @@
+feat: redesign VPN cabinet and clarify purchase flow
+
+- Replace desktop sidebar with horizontal VPN navigation and account header
+- Add balance, operations and current notifications pages
+- Add direct tariff selection and explain choose-pay-connect steps
+- Improve mobile cards, profile, login and support conversation layout
+- Keep HWID controls removed from Services
+- Preserve SHM payment, ordering and authentication integrations
+- Add GHCR workflow, deployment example and project documentation
+
+Known limits: profile sessions API is a separate server extension;
+notification delivery preferences are not wired to existing SHM templates.

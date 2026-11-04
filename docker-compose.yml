@@ -1,23 +1,12 @@
 services:
-  shm-client:
-    image: danuk/shm-client-2:latest
+  client:
+    image: ghcr.io/dev-vbs/vbios-client:latest
     ports:
-      - "3001:80"
-    volumes:
-      - ./docs:/app/docs
-      # Optional
-      # - "./logo.png:/app/logo.png"
-      # - "./favicon.ico:/app/favicon.ico"
-      # - "./favicon-16x16.png:/app/favicon-16x16.png"
-      # - "./favicon-32x32.png:/app/favicon-32x32.png"
-      # - "./apple-touch-icon.png:/app/apple-touch-icon.png"
-      # - "./web-app-manifest-192x192.png:/app/icon-192.png"
-      # - "./web-app-manifest-512x512.png:/app/icon-512.png"
+      - '127.0.0.1:3001:80'
     environment:
-      SHM_URL: "https://api.mydomain.com"
-      APP_NAME: "My Company"
-      APP_DESCRIPTION: "My Company Description"
-      PRIVACY_POLICY_URL: /docs/privacy.pdf
-      # Optional
-      # LOGO_URL: "logo.png"
+      SHM_URL: ${SHM_URL:?Set SHM_URL in .env}
+      APP_NAME: ${APP_NAME:-vBios}
+      APP_DESCRIPTION: ${APP_DESCRIPTION:-Личный кабинет VPN}
+    volumes:
+      - ./docs:/app/docs:ro
     restart: unless-stopped

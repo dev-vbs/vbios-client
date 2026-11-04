@@ -842,6 +842,7 @@ export default function Services() {
   const [services, setServices] = useState<UserService[]>([]);
   const [loading, setLoading] = useState(true);
   const [orderModalOpened, { open: openOrderModal, close: closeOrderModal }] = useDisclosure(false);
+  useEffect(() => { if (new URLSearchParams(window.location.search).get('order') === '1') openOrderModal(); }, [openOrderModal]);
   const [changeModalOpened, { open: openChangeModal, close: closeChangeModal }] = useDisclosure(false);
   const [changeService, setChangeService] = useState<UserService | null>(null);
   const refreshAttemptsRef = useRef(0);

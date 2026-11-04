@@ -35,3 +35,9 @@ coverage/
 vite.config-s.ts
 /public/config.js
 build.sh
+
+.env.*
+!.env.example
+!.env.deploy.example
+*.tsbuildinfo
+vbios-client-main/

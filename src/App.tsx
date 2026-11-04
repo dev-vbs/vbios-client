@@ -1,10 +1,12 @@
+import NotificationsPage from './pages/NotificationsPage';
 import '@mantine/core/styles.css';
+import { BalancePage, OperationsPage } from './pages/AccountSections';
 import '@mantine/notifications/styles.css';
 import { useEffect, useState } from 'react';
 import { MantineProvider, Group, Text, Button, Modal, TextInput, Stack, DirectionProvider, Center, Loader, Box, localStorageColorSchemeManager } from '@mantine/core';
 import { Notifications } from '@mantine/notifications';
 import { useMediaQuery, useHotkeys } from '@mantine/hooks';
-import { BrowserRouter, Routes, Route, Navigate, useLocation, useNavigate, useSearchParams } from 'react-router-dom';
+import { BrowserRouter, Routes, Route, Navigate, Link, useLocation, useNavigate, useSearchParams } from 'react-router-dom';
 
 import { useTranslation } from 'react-i18next';
 import { useStore } from './store/useStore';
@@ -252,15 +254,15 @@ function AppContent() {
         {emailRequiredModal}
         {verifyRequiredModal}
         {versionModal}
-        <Box style={{ minHeight: '100vh', paddingBottom: 'calc(88px + env(safe-area-inset-bottom, 0px))' }}>
-          <WebAppHeader />
+        <Box className="vpn-cabinet vpn-mobile" style={{ minHeight: '100vh', paddingBottom: 'calc(88px + env(safe-area-inset-bottom, 0px))' }}>
+          <WebAppHeader /><nav className="vpn-tabs" style={{ margin: '12px 16px' }} aria-label="Дополнительные разделы"><Link to="/balance">Баланс</Link><Link to="/operations">Операции</Link><Link to="/notifications">Уведомления</Link></nav>
           <Box className="mobile-route-shell">
             <Routes>
               <Route path="/" element={<Dashboard />} />
               <Route path="/services" element={<Services />} />
               <Route path="/services/:serviceId" element={<Services />} />
               <Route path="/profile" element={<Profile />} />
-              <Route path="/tickets" element={<Tickets />} />
+              <Route path="/tickets" element={<Tickets />} /><Route path="/balance" element={<BalancePage />} /><Route path="/operations" element={<OperationsPage />} /><Route path="/notifications" element={<NotificationsPage />} />
               <Route path="*" element={<NotFound />} />
             </Routes>
           </Box>
@@ -286,7 +288,7 @@ function AppContent() {
           <Route path="/services" element={<Services />} />
               <Route path="/services/:serviceId" element={<Services />} />
           <Route path="/profile" element={<Profile />} />
-          <Route path="/tickets" element={<Tickets />} />
+          <Route path="/tickets" element={<Tickets />} /><Route path="/balance" element={<BalancePage />} /><Route path="/operations" element={<OperationsPage />} /><Route path="/notifications" element={<NotificationsPage />} />
           <Route path="*" element={<NotFound />} />
         </Routes>
       </CabinetLayout>
