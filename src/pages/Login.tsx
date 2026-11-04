@@ -1,8 +1,9 @@
+import './Login.css';
 import { useEffect, useRef, useState } from 'react';
 import { Card, Text, Stack, Button, ActionIcon, TextInput, PasswordInput, Divider, Title, Center, Modal, Group, Loader, useMantineColorScheme, useComputedColorScheme, Checkbox, Tooltip } from '@mantine/core';
 import { useMediaQuery } from '@mantine/hooks';
 import { useForm, isEmail, hasLength } from '@mantine/form';
-import { IconLogin, IconUserPlus, IconHeadset, IconFingerprint, IconShieldLock, IconBrandTelegram, IconMailForward, IconLock, IconMoon, IconSun, IconBrandGoogle, IconBrandGithub, IconBrandVk, IconBrandYandex} from '@tabler/icons-react';
+import { IconLogin, IconUserPlus, IconHeadset, IconFingerprint, IconShieldLock, IconBrandTelegram, IconMailForward, IconLock, IconMoon, IconSun} from '@tabler/icons-react';
 import { notifications } from '@mantine/notifications';
 import { useTranslation } from 'react-i18next';
 import { auth, passkeyApi, userApi } from '../api/client';
@@ -14,7 +15,6 @@ import { useTelegramWebApp } from '../hooks/useTelegramWebApp';
 import LanguageSwitcher from '../components/LanguageSwitcher';
 import DocumentModal from '../components/DocumentModal';
 import { hasTelegramOidcAuth, hasTelegramWebAppAutoAuth, hasTelegramWidget, hasTelegramWebAppAuth } from '../constants/webapp';
-import './Login.css';
 
 function isPdf(value: string) {
   return value.toLowerCase().endsWith('.pdf');
@@ -99,10 +99,10 @@ export default function Login() {
           }
           return hasLength({ min: 6 }, t('auth.loginTooShort'))(value);
         }
-        return value.trim() ? null : t('auth.fillAllFields');
+        return null;
       },
       password: (value) => {
-        if (modeRef.current !== 'register') return value ? null : t('auth.fillAllFields');
+        if (modeRef.current !== 'register') return null;
         return hasLength({ min: 6 }, t('auth.passwordTooShort'))(value);
       },
       confirmPassword: (value, values) => {
@@ -111,7 +111,7 @@ export default function Login() {
       },
     },
   });
-  const isWebAuthnSupported = window.isSecureContext && !!window.PublicKeyCredential && !!navigator.credentials;
+  const isWebAuthnSupported = !!window.PublicKeyCredential;
   const { telegramWebApp } = useTelegramWebApp();
   const autoAuthTriggeredRef = useRef(false);
   const autoAuthAttemptKey = 'tg_webapp_auto_auth_attempted';
@@ -213,11 +213,6 @@ export default function Login() {
       return;
     }
 
-    if (resetLoading) return;
-    if (newPasswordData.password.length < 6) {
-      notifications.show({ title: t('common.error'), message: t('auth.passwordTooShort'), color: 'red' });
-      return;
-    }
     setResetLoading(true);
     try {
       const response = await userApi.resetPasswordWithToken(resetToken, newPasswordData.password);
@@ -225,30 +220,29 @@ export default function Login() {
 
       if (msg === 'Password reset successful') {
         notifications.show({ title: t('common.success'), message: t('auth.passwordResetSuccess'), color: 'green' });
-        removeResetTokenCookie();
-        setResetToken(null);
-        setShowNewPasswordForm(false);
-        setNewPasswordData({ password: '', confirmPassword: '' });
       } else {
         notifications.show({ title: t('common.error'), message: t('auth.invalidResetToken'), color: 'red' });
       }
     } catch {
       notifications.show({ title: t('common.error'), message: t('auth.invalidResetToken'), color: 'red' });
     } finally {
+      removeResetTokenCookie();
+      setResetToken(null);
+      setShowNewPasswordForm(false);
+      setNewPasswordData({ password: '', confirmPassword: '' });
       setResetLoading(false);
     }
   };
 
   const handleLogin = async (otpTokenParam?: string) => {
-    if (loading || passkeyLoading) return;
-    if (!form.values.login.trim() || !form.values.password) {
+    if (!form.values.login || !form.values.password) {
       notifications.show({ title: t('common.error'), message: t('auth.fillAllFields'), color: 'red' });
       return;
     }
 
     setLoading(true);
     try {
-      const result = await auth.login(form.values.login.trim(), form.values.password, otpTokenParam);
+      const result = await auth.login(form.values.login, form.values.password, otpTokenParam);
 
       if (result.otpRequired) {
         setShowOtp(true);
@@ -343,12 +337,6 @@ export default function Login() {
     }
   };
 
-const handleOAuthLogin = (provider: 'yandex' | 'google' | 'vk' | 'github') => {
-    const returnUrl = `${window.location.origin}${window.location.pathname}${window.location.search}${window.location.hash}`;
-    const params = new URLSearchParams({ return_url: returnUrl });
-    window.location.assign(`/shm/v1/oauth2/start/${provider}?${params.toString()}`);
-  };
-
   const handleTelegramOidcAuth = async () => {
     setLoading(true);
     try {
@@ -398,7 +386,7 @@ const handleOAuthLogin = (provider: 'yandex' | 'google' | 'vk' | 'github') => {
 
     setLoading(true);
     try {
-      const profile = config.TELEGRAM_WEBAPP_PROFILE;
+      const profile = config.TELEGRAM_WEBAPP_PROFILE || '';
       const authResponse = await auth.telegramWebAppAuth(telegramWebApp.initData, profile);
       const sessionId = authResponse.data?.session_id || authResponse.data?.id;
       if (!sessionId) {
@@ -426,16 +414,15 @@ const handleOAuthLogin = (provider: 'yandex' | 'google' | 'vk' | 'github') => {
   };
 
   const handleResetPassword = async () => {
-    if (resetLoading) return;
-    if (!loginOrEmail.trim()) {
+    if (!loginOrEmail) {
       notifications.show({ title: t('common.error'), message: t('auth.resetEnterLogin'), color: 'red' });
       return;
     }
 
     setResetLoading(true);
     try {
-      const loginResponse = await userApi.resetPassword({ login: loginOrEmail.trim() }).catch(() => null);
-      const loginMsg = loginResponse?.data?.data?.[0]?.msg || loginResponse?.data?.data?.msg;
+      const loginResponse = await userApi.resetPassword({ login: loginOrEmail });
+      const loginMsg = loginResponse.data?.data?.[0]?.msg || loginResponse.data?.data?.msg;
       if (loginMsg === 'Successful') {
         notifications.show({ title: t('common.success'), message: t('auth.resetSuccess'), color: 'green' });
         setShowResetPassword(false);
@@ -443,7 +430,7 @@ const handleOAuthLogin = (provider: 'yandex' | 'google' | 'vk' | 'github') => {
         return;
       }
 
-      const emailResponse = await userApi.resetPassword({ email: loginOrEmail.trim() });
+      const emailResponse = await userApi.resetPassword({ email: loginOrEmail });
       const emailMsg = emailResponse.data?.data?.[0]?.msg || emailResponse.data?.data?.msg;
       if (emailMsg === 'Successful') {
         notifications.show({ title: t('common.success'), message: t('auth.resetSuccess'), color: 'green' });
@@ -516,15 +503,15 @@ const handleOAuthLogin = (provider: 'yandex' | 'google' | 'vk' | 'github') => {
 
   const handleSupportLink = () => {
     if (config.SUPPORT_LINK) {
-      window.open(config.SUPPORT_LINK, '_blank', 'noopener,noreferrer');
+      window.open(config.SUPPORT_LINK, '_blank');
     }
   };
 
   return (
-    <Center className="auth-screen" style={{ minHeight: '100svh', padding: isMobile ? '20px 16px 88px' : '32px', position: 'relative', background: 'radial-gradient(circle at 50% 0%, rgba(34, 139, 230, 0.15), transparent 42%), var(--mantine-color-body)' }}>
-      <Card className="auth-card" withBorder radius="xl" p={isMobile ? 'lg' : 'xl'} w={440} shadow="xl" style={{ width: 'min(100%, 440px)', borderColor: 'var(--mantine-color-default-border)', backdropFilter: 'blur(12px)' }}>
+    <Center className="auth-screen" style={{ minHeight: '100svh', paddingTop: 16, paddingBottom: isMobile ? 72 : 16, position: 'relative' }}>
+      <Card className="auth-card" withBorder radius="md" p="xl" w={400}>
         <Stack gap="lg">
-          <Group justify="space-between" align="center" wrap="nowrap">
+          <Group justify="space-between" align="center">
             <div style={{ flex: 1, display: 'flex', justifyContent: 'flex-start' }}>
               <ThemeToggle />
             </div>
@@ -533,10 +520,10 @@ const handleOAuthLogin = (provider: 'yandex' | 'google' | 'vk' | 'github') => {
                 <img
                   src={config.LOGO_URL}
                   alt=""
-                  style={{ height: 36, width: 36, objectFit: 'contain', flexShrink: 0, borderRadius: 10 }}
+                  style={{ height: 28, width: 28, objectFit: 'contain', flexShrink: 0 }}
                 />
               )}
-              <Title order={2} ta="center" style={{ letterSpacing: '-0.02em' }}>{config.APP_NAME}</Title>
+              <Title order={2} ta="center">{config.APP_NAME}</Title>
             </Group>
             <div style={{ flex: 1, display: 'flex', justifyContent: 'flex-end' }}>
               <LanguageSwitcher />
@@ -546,9 +533,9 @@ const handleOAuthLogin = (provider: 'yandex' | 'google' | 'vk' | 'github') => {
           {config.APP_DESCRIPTION && (
             <Text size="sm" c="dimmed" ta="center" style={{ flex: 'auto' }}>{config.APP_DESCRIPTION}</Text>
           )}
-          <Title order={3} ta="center" style={{ lineHeight: 1.25, letterSpacing: '-0.015em' }}>
-            {mode === 'login' ? t('auth.loginTitle') : t('auth.registerTitle')}
-          </Title>
+          <Text size="sm" c="dimmed" ta="center">
+              {mode === 'login' ? t('auth.loginTitle') : t('auth.registerTitle')}
+          </Text>
 
           {hasTelegramWebAppAuth && !showLoginForm && (
             <>
@@ -607,16 +594,7 @@ const handleOAuthLogin = (provider: 'yandex' | 'google' | 'vk' | 'github') => {
 
           {(!hasTelegramWebAppAuth || showLoginForm) && (
             <>
-              <Divider label={t('auth.loginWithProviders')} labelPosition="center" />
-              <Group grow gap="xs">
-                <Tooltip label={t('auth.loginWithYandex')} withArrow><Button variant="default" px={0} onClick={() => handleOAuthLogin('yandex')} aria-label={t('auth.loginWithYandex')}><IconBrandYandex size={20} /></Button></Tooltip>
-                <Tooltip label={t('auth.loginWithGoogle')} withArrow><Button variant="default" px={0} onClick={() => handleOAuthLogin('google')} aria-label={t('auth.loginWithGoogle')}><IconBrandGoogle size={20} /></Button></Tooltip>
-                <Tooltip label={t('auth.loginWithVk')} withArrow><Button variant="default" px={0} onClick={() => handleOAuthLogin('vk')} aria-label={t('auth.loginWithVk')}><IconBrandVk size={20} /></Button></Tooltip>
-                <Tooltip label={t('auth.loginWithGithub')} withArrow><Button variant="default" px={0} onClick={() => handleOAuthLogin('github')} aria-label={t('auth.loginWithGithub')}><IconBrandGithub size={20} /></Button></Tooltip>
-              </Group>
-
-              <form onSubmit={handleSubmit} aria-busy={loading || passkeyLoading}>
-                <fieldset disabled={loading || passkeyLoading} style={{ border: 0, padding: 0, margin: 0, minWidth: 0 }}>
+              <form onSubmit={handleSubmit}>
                 <Stack gap="sm">
                   {mode === 'register' && requireEmailRegister ? (
                     <TextInput
@@ -754,21 +732,20 @@ const handleOAuthLogin = (provider: 'yandex' | 'google' | 'vk' | 'github') => {
                     </Button>
                   )}
                 </Stack>
-                </fieldset>
               </form>
 
               <Text size="sm" ta="center">
                 {mode === 'login' ? (
                   <>
                     {t('auth.noAccount')}{' '}
-                    <Text component="button" type="button" c="blue" className="auth-text-button" onClick={() => { setMode('register'); form.clearErrors(); }}>
+                    <Text component="span" c="blue" style={{ cursor: 'pointer' }} onClick={() => { setMode('register'); form.clearErrors(); }}>
                       {t('auth.register')}
                     </Text>
                   </>
                 ) : (
                   <>
                     {t('auth.hasAccount')}{' '}
-                    <Text component="button" type="button" c="blue" className="auth-text-button" onClick={() => { setMode('login'); form.clearErrors(); }}>
+                    <Text component="span" c="blue" style={{ cursor: 'pointer' }} onClick={() => { setMode('login'); form.clearErrors(); }}>
                       {t('auth.login')}
                     </Text>
                   </>
@@ -777,7 +754,7 @@ const handleOAuthLogin = (provider: 'yandex' | 'google' | 'vk' | 'github') => {
 
               {mode === 'login' && (
                 <Text size="sm" ta="center">
-                  <Text component="button" type="button" c="blue" className="auth-text-button" onClick={() => setShowResetPassword(true)}>
+                  <Text component="span" c="blue" style={{ cursor: 'pointer' }} onClick={() => setShowResetPassword(true)}>
                     {t('auth.forgotPassword')}
                   </Text>
                 </Text>
@@ -824,9 +801,6 @@ const handleOAuthLogin = (provider: 'yandex' | 'google' | 'vk' | 'github') => {
             placeholder="000000"
             value={otpToken}
             onChange={(e) => setOtpToken(e.target.value.replace(/\D/g, '').slice(0, 8))}
-            inputMode="numeric"
-            autoComplete="one-time-code"
-            onKeyDown={(event) => { if (event.key === 'Enter' && !loading) { event.preventDefault(); void handleOtpSubmit(); } }}
             maxLength={8}
             autoFocus
           />
@@ -974,6 +948,3 @@ const handleOAuthLogin = (provider: 'yandex' | 'google' | 'vk' | 'github') => {
     </Center>
   );
 }
-
-
-import './Pages.css';
