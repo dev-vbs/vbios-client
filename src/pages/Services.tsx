@@ -1,3 +1,4 @@
+import DataLoadStatus from '../components/DataLoadStatus';
 import { useState, useEffect, useRef } from 'react';
 import { useNavigate, useParams, Link } from 'react-router-dom';
 import { Card, Timeline, Text, Stack, Group, Badge, Button, Divider, ActionIcon, Loader, Center, Paper, Title, Tabs, Code, Tooltip, Accordion, Box, Select, NumberInput, Pagination, Alert, TextInput, Skeleton } from '@mantine/core';
@@ -840,6 +841,10 @@ function ServiceCard({ service, onClick, isChild = false, isLastChild = false }:
 export default function Services() {
   const { serviceId } = useParams();
   const [services, setServices] = useState<UserService[]>([]);
+  const loadedRef = useRef(false);
+  const [loadError, setLoadError] = useState(false);
+  const [updatedAt, setUpdatedAt] = useState<Date | null>(null);
+  const [refreshing, setRefreshing] = useState(false);
   const [loading, setLoading] = useState(true);
   const [orderModalOpened, { open: openOrderModal, close: closeOrderModal }] = useDisclosure(false);
   useEffect(() => { if (new URLSearchParams(window.location.search).get('order') === '1') openOrderModal(); }, [openOrderModal]);
@@ -861,7 +866,8 @@ export default function Services() {
   };
 
   const fetchServices = async (background = false) => {
-    if (!background) setLoading(true);
+    if (!background && !loadedRef.current) setLoading(true);
+    setRefreshing(true);
     try {
       const response = await api.get('/user/service', { params: { limit: 1000 } });
       const raw: UserService[] = response.data?.data;
@@ -890,10 +896,13 @@ export default function Services() {
       });
 
       setServices(rootServices);
+      loadedRef.current = true; setLoadError(false); setUpdatedAt(new Date());
       try { saveOfflineServices(data); } catch { /* Storage may be unavailable in private browsing. */ }
       return rootServices;
     } catch (error) {
       console.error('Failed to fetch services:', error);
+      setLoadError(true);
+      if (loadedRef.current) return services;
       const offline = (readOfflineServices() as UserService[]).filter((item) => item && typeof item === 'object' && item.user_service_id != null).map((item) => ({ ...item, service: { category: String(item.service?.category ?? ''), name: String(item.service?.name ?? item.name ?? 'Услуга'), cost: Number(item.service?.cost ?? 0) || 0 } }));
       const offlineMap = new Map<number, UserService>();
       offline.forEach((item) => offlineMap.set(item.user_service_id, { ...item, children: [] }));
@@ -902,7 +911,7 @@ export default function Services() {
       setServices(roots);
       return roots;
     } finally {
-      if (!background) setLoading(false);
+      setLoading(false); setRefreshing(false);
     }
   };
 
@@ -990,6 +999,8 @@ export default function Services() {
     return acc;
   }, {} as Record<string, UserService[]>);
 
+  if (loadError && !services.length && !loading) return <Stack><DataLoadStatus loading={refreshing} error="Не удалось загрузить услуги" updatedAt={updatedAt} onRetry={() => void fetchServices()} /></Stack>;
+
   if (loading) {
     return <Stack gap="sm" className="services-overview services-skeletons"><Skeleton height={86} radius="lg" /><Skeleton height={66} radius="lg" /><Skeleton height={148} radius="lg" /><Skeleton height={148} radius="lg" /></Stack>;
   }
@@ -1003,6 +1014,7 @@ export default function Services() {
 
   return (
     <Stack gap="lg" className="services-overview">
+      <DataLoadStatus loading={refreshing} error={loadError && "Не удалось обновить услуги"} updatedAt={updatedAt} onRetry={() => void fetchServices()} />
       <Group className="page-header services-overview__header" justify="space-between">
         <div style={{ minWidth: 0 }}><Title className="page-header__title" order={2}>{t('services.title')}</Title><Text c="dimmed" size="sm" mt={6}>Ваши подписки, подключение и управление тарифами.</Text></div>
         <Group>

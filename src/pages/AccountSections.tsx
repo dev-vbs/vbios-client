@@ -1,6 +1,7 @@
+import DataLoadStatus from '../components/DataLoadStatus';
 import { useEffect, useState } from 'react';
 import { Link } from 'react-router-dom';
-import { Alert, Badge, Button, Group, Loader, Stack, Text, Title } from '@mantine/core';
+import { Badge, Button, Group, Loader, Stack, Text, Title } from '@mantine/core';
 import { userApi } from '../api/client';
 import { IconArrowRight, IconCreditCard } from '@tabler/icons-react';
 import PayModal from '../components/PayModal';
@@ -28,6 +29,8 @@ function PaymentList() {
   const [page, setPage] = useState(0);
   const [hasMore, setHasMore] = useState(false);
   const [retry, setRetry] = useState(0);
+  const [updatedAt, setUpdatedAt] = useState<Date | null>(null);
+  const [loadedPage, setLoadedPage] = useState(0);
   useEffect(() => {
     let active = true;
     setLoading(true); setError(false);
@@ -37,6 +40,7 @@ function PaymentList() {
       if (!active) return;
       setHasMore(data.length > 10);
       setItems(data.slice(0, 10));
+      setUpdatedAt(new Date()); setLoadedPage(page);
     }).catch(() => { if (active) setError(true); }).finally(() => { if (active) setLoading(false); });
     return () => { active = false; };
   }, [page, retry]);
@@ -46,7 +50,8 @@ function PaymentList() {
     return Number.isNaN(date.getTime()) ? 'Дата не указана' : date.toLocaleString('ru-RU', { day: 'numeric', month: 'long', year: 'numeric', hour: '2-digit', minute: '2-digit' });
   };
   return <section className="vpn-finance-panel"><Group justify="space-between" mb="lg"><Title order={2}>Пополнения баланса</Title><Badge variant="light">Сначала новые</Badge></Group>
-    {loading ? <Group justify="center" py="xl"><Loader size="sm" /><Text c="dimmed" size="sm">Загружаем платежи…</Text></Group> : error ? <Alert color="red" title="Не удалось загрузить пополнения"><Button variant="light" color="red" size="xs" mt="sm" onClick={() => setRetry(value => value + 1)}>Повторить</Button></Alert> : !items.length ? <Text c="dimmed" py="xl" ta="center">На этой странице пополнений нет.</Text> : <Stack gap="sm">{items.map((item, index) => <Group key={item.id ?? `${item.date}-${index}`} gap="md" wrap="wrap" style={{ padding: 18, border: '1px solid var(--mantine-color-default-border)', borderRadius: 14 }}><IconCreditCard size={23} color="var(--mantine-color-green-6)" /><div style={{ flex: 1, minWidth: 150 }}><Text fw={600} size="sm">Пополнение баланса{item.id != null ? ` #${item.id}` : ''}</Text><Text c="dimmed" size="xs" mt={4}>{dateLabel(item.date || item.created)}</Text>{item.pay_system_id && <Text c="dimmed" size="xs" mt={3}>Способ оплаты: {item.pay_system_id}</Text>}</div><Text fw={700} c="green" style={{ whiteSpace: 'nowrap', fontVariantNumeric: 'tabular-nums' }}>+{new Intl.NumberFormat('ru-RU', { maximumFractionDigits: 2 }).format(Number(item.money) || 0)} ₽</Text></Group>)}</Stack>}
-    <Group justify="space-between" mt="lg"><Button variant="default" disabled={page === 0 || loading} onClick={() => setPage(value => value - 1)}>Назад</Button><Text size="sm" c="dimmed">Страница {page + 1}</Text><Button variant="light" disabled={!hasMore || loading || error} onClick={() => setPage(value => value + 1)}>Далее</Button></Group>
+    <DataLoadStatus loading={loading} error={error && 'Не удалось загрузить пополнения'} updatedAt={updatedAt} onRetry={() => setRetry(value => value + 1)} />
+    {loading && !updatedAt ? <Group justify="center" py="xl"><Loader size="sm" /><Text c="dimmed">Загружаем платежи…</Text></Group> : !items.length ? (!error && updatedAt ? <Text c="dimmed" py="xl">На этой странице пополнений нет.</Text> : null) : <Stack gap="sm">{items.map((item, index) => <Group key={item.id ?? `${item.date}-${index}`} gap="md" wrap="wrap" style={{ padding: 18, border: '1px solid var(--mantine-color-default-border)', borderRadius: 14 }}><IconCreditCard size={23} color="var(--mantine-color-green-6)" /><div style={{ flex: 1, minWidth: 150 }}><Text fw={600} size="sm">Пополнение баланса{item.id != null ? ` #${item.id}` : ''}</Text><Text c="dimmed" size="xs" mt={4}>{dateLabel(item.date || item.created)}</Text>{item.pay_system_id && <Text c="dimmed" size="xs" mt={3}>Способ оплаты: {item.pay_system_id}</Text>}</div><Text fw={700} c="green" style={{ whiteSpace: 'nowrap', fontVariantNumeric: 'tabular-nums' }}>+{new Intl.NumberFormat('ru-RU', { maximumFractionDigits: 2 }).format(Number(item.money) || 0)} ₽</Text></Group>)}</Stack>}
+    <Group justify="space-between" mt="lg"><Button variant="default" disabled={loadedPage === 0 || loading} onClick={() => setPage(loadedPage - 1)}>Назад</Button><Text size="sm" c="dimmed">Страница {loadedPage + 1}</Text><Button variant="light" disabled={!hasMore || loading || error} onClick={() => setPage(loadedPage + 1)}>Далее</Button></Group>
   </section>;
 }

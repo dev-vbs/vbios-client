@@ -1,5 +1,6 @@
+import DataLoadStatus from './DataLoadStatus';
 import { useState, useEffect } from 'react';
-import { Alert, Button, Group, Modal, Stack, Text, Center, Loader, Paper, Pagination, LoadingOverlay, ScrollArea } from '@mantine/core';
+import { Group, Modal, Stack, Text, Center, Loader, Paper, Pagination, LoadingOverlay, ScrollArea } from '@mantine/core';
 import './Experience.css';
 import { useTranslation } from 'react-i18next';
 import { userApi } from '../api/client';
@@ -22,6 +23,8 @@ const PER_PAGE = 10;
 export default function PayHistoryModal({ opened, onClose }: PayHistoryModalProps) {
   const [payments, setPayments] = useState<Payment[]>([]);
   const [error, setError] = useState(false);
+  const [updatedAt, setUpdatedAt] = useState<Date | null>(null);
+  const [loadedPage, setLoadedPage] = useState(1);
   const [initialLoading, setInitialLoading] = useState(false);
   const [tableLoading, setTableLoading] = useState(false);
   const [page, setPage] = useState(1);
@@ -36,7 +39,7 @@ export default function PayHistoryModal({ opened, onClose }: PayHistoryModalProp
     field?: string,
     direction?: 'asc' | 'desc',
   ) => {
-    if (isInitial) setInitialLoading(true);
+    if (isInitial && !updatedAt) setInitialLoading(true);
     else setTableLoading(true);
     setError(false);
     try {
@@ -49,6 +52,7 @@ export default function PayHistoryModal({ opened, onClose }: PayHistoryModalProp
       });
       if (!Array.isArray(response.data?.data)) throw new Error('Invalid payments response');
       setPayments(response.data.data);
+      setUpdatedAt(new Date()); setLoadedPage(p);
       if (typeof response.data.items === 'number') {
         setTotalItems(response.data.items);
       }
@@ -110,7 +114,7 @@ export default function PayHistoryModal({ opened, onClose }: PayHistoryModalProp
       classNames={{ content: 'experience-modal', header: 'experience-modal__header' }}
     >
       <Text size="sm" c="dimmed" mb="lg">Здесь отображаются зачисленные пополнения. Списания за подписки доступны в разделе «Операции».</Text>
-      {error && <Alert color="red" mb="md" title="Не удалось загрузить платежи"><Button variant="light" color="red" size="xs" mt="xs" onClick={() => void fetchPayments(page, true, sortField, sortDirection)}>Повторить</Button></Alert>}
+      <DataLoadStatus loading={initialLoading || tableLoading} error={error && 'Не удалось загрузить платежи'} updatedAt={updatedAt} onRetry={() => void fetchPayments(page, false, sortField, sortDirection)} />
       {initialLoading ? (
         <Center h={200}>
           <Loader size="lg" />
@@ -123,7 +127,7 @@ export default function PayHistoryModal({ opened, onClose }: PayHistoryModalProp
         </Paper>
       ) : (
         <Stack gap="md">
-          <Group justify="space-between"><Text size="sm" c="dimmed">Пополнения · страница {page}</Text><Text size="sm" fw={600}>На этой странице: {new Intl.NumberFormat(i18n.language).format(payments.reduce((sum, p) => sum + Number(p.money || 0), 0))} {t('common.currency')}</Text></Group>
+          <Group justify="space-between"><Text size="sm" c="dimmed">Пополнения · страница {loadedPage}</Text><Text size="sm" fw={600}>На этой странице: {new Intl.NumberFormat(i18n.language).format(payments.reduce((sum, p) => sum + Number(p.money || 0), 0))} {t('common.currency')}</Text></Group>
           <Paper withBorder radius="md" style={{ overflow: 'hidden', position: 'relative' }}>
             <LoadingOverlay visible={tableLoading} overlayProps={{ blur: 1 }} />
             <ScrollArea>

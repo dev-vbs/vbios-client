@@ -1,3 +1,4 @@
+import DataLoadStatus from './DataLoadStatus';
 import { useState, useEffect } from 'react';
 import './Experience.css';
 import { useTranslation } from 'react-i18next';
@@ -12,6 +13,7 @@ interface OrderService {
   name: string;
   category: string;
   cost: number;
+  config?: { hwidDeviceLimit?: number; hwid_device_limit?: number };
   partial_renew?: boolean;
   real_cost: number;
   real_cost_with_bonuses:  number;
@@ -91,6 +93,10 @@ export default function OrderServiceModal({
   const { t } = useTranslation();
   const [services, setServices] = useState<OrderService[]>([]);
   const [loading, setLoading] = useState(true);
+  const [loadError, setLoadError] = useState(false);
+  const [updatedAt, setUpdatedAt] = useState<Date | null>(null);
+  const [balanceReady, setBalanceReady] = useState(false);
+  const [balanceError, setBalanceError] = useState(false);
   const [selectedService, setSelectedService] = useState<OrderService | null>(null);
   const [ordering, setOrdering] = useState(false);
   const [userBalance, setUserBalance] = useState<number>(0);
@@ -106,10 +112,13 @@ export default function OrderServiceModal({
   const canDeferChange = isChangeMode && currentService?.status === 'ACTIVE';
 
   const getEffectiveCost = (service: OrderService): number => {
-    if (config.ORDER_COST_WITH_BONUSES === 'true') return Number(service.real_cost_with_bonuses || 0);
-    if (config.ORDER_COST_DISCOUNT === 'true') return Number(service.real_cost || 0);
-    return Number(service.cost || 0);
+    const value = config.ORDER_COST_WITH_BONUSES === 'true'
+      ? service.real_cost_with_bonuses ?? service.real_cost ?? service.cost
+      : config.ORDER_COST_DISCOUNT === 'true' ? service.real_cost ?? service.cost : service.cost;
+    return value == null || String(value).trim() === '' ? Number.NaN : Number(value);
   };
+
+  const deviceLimit = (service: OrderService) => { const value = service.config?.hwidDeviceLimit ?? service.config?.hwid_device_limit; return value != null && Number.isInteger(Number(value)) && Number(value) > 0 ? Number(value) : null; };
 
   const getTopUpAmount = (service: OrderService, balance: number): number => {
     return Math.max(0, Math.ceil((getEffectiveCost(service) - balance) * 100) / 100);
@@ -152,10 +161,11 @@ export default function OrderServiceModal({
     try {
       const response = await userApi.getProfile();
       const userData = response.data.data?.[0] || response.data.data;
-      setUserBalance(userData?.balance || 0);
+      if (userData?.balance == null || !Number.isFinite(Number(userData.balance))) throw new Error("Invalid balance");
+      setUserBalance(Number(userData.balance));
+      setBalanceReady(true); setBalanceError(false);
       setUserBonus(userData?.bonus || 0);
-    } catch {
-    }
+    } catch { setBalanceError(true); setBalanceReady(false); }
   };
 
   const fetchServices = async () => {
@@ -164,7 +174,8 @@ export default function OrderServiceModal({
       const response = await servicesApi.order_list(
         config.SERVICE_CHANGE_ALL_CATEGORY === 'false' && isChangeMode && currentService?.category ? { category: currentService.category } : undefined
       );
-      const data: OrderService[] = response.data.data || [];
+      if (!Array.isArray(response.data?.data)) throw new Error("Invalid tariffs response");
+      const data: OrderService[] = response.data.data;
       const filtered = isChangeMode && currentService?.service_id
         ? data.filter(service => service.service_id !== currentService.service_id)
         : data;
@@ -185,8 +196,10 @@ export default function OrderServiceModal({
           default:          return 0;
         }
       });
-      setServices(sorted);
+      setServices(sorted); setLoadError(false); setUpdatedAt(new Date());
+      setSelectedService(previous => previous ? sorted.find(item => item.service_id === previous.service_id) ?? null : null);
     } catch (error) {
+      setLoadError(true);
       notifications.show({
         title: t('common.error'),
         message: t('order.loadError'),
@@ -220,7 +233,7 @@ export default function OrderServiceModal({
   };
 
   const handleOrder = async () => {
-    if (!selectedService) return;
+    if (!selectedService || !Number.isFinite(getEffectiveCost(selectedService)) || loadError || (!isChangeMode && !balanceReady)) return;
 
     setOrdering(true);
     try {
@@ -246,7 +259,7 @@ export default function OrderServiceModal({
   };
 
   const handleOrderAndPay = async () => {
-    if (!selectedService) return;
+    if (!selectedService || !Number.isFinite(getEffectiveCost(selectedService)) || loadError || (!isChangeMode && !balanceReady)) return;
 
     const paySystem = paySystems.find(ps => ps.name === selectedPaySystem);
     if (!paySystem) {
@@ -376,7 +389,8 @@ export default function OrderServiceModal({
       scrollAreaComponent={ScrollArea.Autosize}
     >
       {!isChangeMode && <div className="experience-order-steps" aria-label="Этапы заказа"><span className={!selectedService ? 'is-current' : ''}>1. Выберите тариф</span><span className={selectedService ? 'is-current' : ''}>2. Проверьте условия</span><span>3. Подключите VPN</span></div>}
-      {loading ? (
+      <DataLoadStatus loading={loading} error={loadError && "Не удалось загрузить тарифы"} updatedAt={updatedAt} onRetry={() => void fetchServices()} />
+      {loading && !updatedAt ? (
         <Center h={200}>
           <Loader size="lg" />
         </Center>
@@ -416,7 +430,7 @@ export default function OrderServiceModal({
                       </Text>
                     )}
                     <Text fw={600} size="lg" color={selectedService.cost > getEffectiveCost(selectedService) ? 'green' : undefined}>
-                      {getEffectiveCost(selectedService)} ₽
+                      {Number.isFinite(getEffectiveCost(selectedService)) ? `${getEffectiveCost(selectedService)} ₽` : "Цена не получена"}
                     </Text>
                   </Group>
                   {selectedService.cost > getEffectiveCost(selectedService) && (
@@ -435,7 +449,9 @@ export default function OrderServiceModal({
             </Stack>
           </Paper>
 
-          {isChangeMode ? (
+          {deviceLimit(selectedService) != null && <Paper withBorder p="md" radius="md"><Text size="sm" c="dimmed">Разрешено устройств</Text><Text fw={700}>{deviceLimit(selectedService)}</Text></Paper>}
+          <Paper withBorder p="md" radius="md"><Text size="sm" c="dimmed">{isChangeMode ? 'Стоимость выбранного тарифа' : 'Итого за тариф'}</Text><Text fw={750} size="xl">{Number.isFinite(getEffectiveCost(selectedService)) ? `${Number.isFinite(getEffectiveCost(selectedService)) ? `${getEffectiveCost(selectedService)} ₽` : "Цена не получена"}` : 'Цена не получена'}</Text><Text size="xs" c="dimmed">{isChangeMode ? 'Перерасчёт при смене выполняет биллинг.' : 'Пополнение баланса ниже — отдельный платёж для оплаты тарифа.'}</Text></Paper>
+          {!isChangeMode && (!balanceReady || balanceError) ? <Alert color="yellow" title="Баланс не получен"><Button variant="light" onClick={() => void fetchUserBalance()}>Повторить</Button></Alert> : isChangeMode ? (
             <Stack gap="sm">
               {config.ALLOW_SERVICE_CHANGE_FORCE === 'false' && canDeferChange && (
                 <Checkbox
@@ -454,6 +470,7 @@ export default function OrderServiceModal({
                 leftSection={<IconCheck size={18} />}
                 onClick={handleChange}
                 loading={ordering}
+                disabled={loadError || !Number.isFinite(getEffectiveCost(selectedService))}
               >
                 {t('services.changeService')}
               </Button>
@@ -483,6 +500,7 @@ export default function OrderServiceModal({
                   leftSection={<IconCheck size={18} />}
                   onClick={handleOrder}
                   loading={ordering}
+                disabled={loadError || !Number.isFinite(getEffectiveCost(selectedService))}
                 >
                   {t('order.orderFor', { amount: getEffectiveCost(selectedService) })}
                 </Button>
@@ -530,7 +548,7 @@ export default function OrderServiceModal({
                     leftSection={<IconCreditCard size={18} />}
                     onClick={handleOrderAndPay}
                     loading={ordering}
-                    disabled={!selectedPaySystem || paySystemsLoading}
+                    disabled={loadError || !balanceReady || !Number.isFinite(getEffectiveCost(selectedService)) || !selectedPaySystem || paySystemsLoading}
                   >
                     {t('order.orderAndPay', { amount: payAmount })}
                   </Button>
@@ -539,7 +557,7 @@ export default function OrderServiceModal({
             </>
           )}
         </Stack>
-      ) : services.length === 0 ? (
+      ) : services.length === 0 && loadError ? <Text c="dimmed">Тарифы временно недоступны.</Text> : services.length === 0 ? (
         <Center h={200}>
           <Text c="dimmed">{t('order.noServicesAvailable')}</Text>
         </Center>
@@ -568,6 +586,7 @@ export default function OrderServiceModal({
                     <Group justify="space-between">
                       <div>
                         <Text fw={500}>{service.name}</Text>
+                        {deviceLimit(service) != null && <Badge variant="light" mt="xs">Устройств: {deviceLimit(service)}</Badge>}
                         {service.descr && (
                           <Text size="sm" c="dimmed" lineClamp={3}>
                             {service.descr}
@@ -581,7 +600,7 @@ export default function OrderServiceModal({
                           </Text>
                         )}
                         <Text fw={600} color={service.cost > getEffectiveCost(service) ? 'green' : undefined}>
-                          {getEffectiveCost(service)} ₽
+                          {Number.isFinite(getEffectiveCost(service)) ? `${getEffectiveCost(service)} ₽` : "Цена не получена"}
                         </Text>
                         <Text size="xs" c="dimmed">
                           / {formatPeriod(service.period, t)}
