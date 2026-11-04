@@ -62,3 +62,13 @@
   .ticket-reply-box { padding-bottom: env(safe-area-inset-bottom); }
 }
 @media (prefers-reduced-motion: reduce) { .ticket-list-item { transition: none; } }
+.ticket-list-panel .mantine-Input-input { min-height:48px; }
+.ticket-list-item .mantine-Text-root:first-child { padding-right:12px; }
+.ticket-conversation__header { padding:8px 4px 14px; }
+.ticket-message { padding:16px!important; line-height:1.65; }
+.ticket-message .mantine-Text-root { overflow-wrap:anywhere; }
+.ticket-message--user { border-color:var(--mantine-primary-color-light)!important; }
+.ticket-reply-box { border-top:1px solid var(--mantine-color-default-border);padding-top:14px; }
+.ticket-reply-box .mantine-ActionIcon-root { min-width:30px;min-height:30px; }
+.ticket-reply-box .mantine-Textarea-input { padding-right:86px; }
+@media(max-width:768px){.tickets-page .page-header>div{width:100%}.ticket-message{max-width:94%!important;padding:12px!important}.ticket-conversation__header>.mantine-Group-root{flex-basis:100%}}

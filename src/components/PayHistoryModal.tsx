@@ -1,5 +1,6 @@
 import { useState, useEffect } from 'react';
-import { Modal, Stack, Text, Center, Loader, Paper, Pagination, LoadingOverlay, ScrollArea } from '@mantine/core';
+import { Alert, Button, Group, Modal, Stack, Text, Center, Loader, Paper, Pagination, LoadingOverlay, ScrollArea } from '@mantine/core';
+import './Experience.css';
 import { useTranslation } from 'react-i18next';
 import { userApi } from '../api/client';
 import DataTable, { Column } from './DataTable';
@@ -20,12 +21,13 @@ const PER_PAGE = 10;
 
 export default function PayHistoryModal({ opened, onClose }: PayHistoryModalProps) {
   const [payments, setPayments] = useState<Payment[]>([]);
+  const [error, setError] = useState(false);
   const [initialLoading, setInitialLoading] = useState(false);
   const [tableLoading, setTableLoading] = useState(false);
   const [page, setPage] = useState(1);
   const [totalItems, setTotalItems] = useState(0);
-  const [sortField, setSortField] = useState<string>('');
-  const [sortDirection, setSortDirection] = useState<'asc' | 'desc'>('asc');
+  const [sortField, setSortField] = useState<string>('date');
+  const [sortDirection, setSortDirection] = useState<'asc' | 'desc'>('desc');
   const { t, i18n } = useTranslation();
 
   const fetchPayments = async (
@@ -36,6 +38,7 @@ export default function PayHistoryModal({ opened, onClose }: PayHistoryModalProp
   ) => {
     if (isInitial) setInitialLoading(true);
     else setTableLoading(true);
+    setError(false);
     try {
       const offset = (p - 1) * PER_PAGE;
       const response = await userApi.getPayments({
@@ -44,12 +47,13 @@ export default function PayHistoryModal({ opened, onClose }: PayHistoryModalProp
         ...(field ? { sort_field: field, sort_direction: direction || sortDirection } : {}),
         filter: { money: { '>': 0 } },
       });
-      setPayments(response.data.data || []);
+      if (!Array.isArray(response.data?.data)) throw new Error('Invalid payments response');
+      setPayments(response.data.data);
       if (typeof response.data.items === 'number') {
         setTotalItems(response.data.items);
       }
     } catch {
-      // silent
+      setError(true);
     } finally {
       setInitialLoading(false);
       setTableLoading(false);
@@ -59,9 +63,9 @@ export default function PayHistoryModal({ opened, onClose }: PayHistoryModalProp
   useEffect(() => {
     if (!opened) return;
     setPage(1);
-    setSortField('');
-    setSortDirection('asc');
-    fetchPayments(1, true);
+    setSortField('date');
+    setSortDirection('desc');
+    fetchPayments(1, true, 'date', 'desc');
   }, [opened]);
 
   useEffect(() => {
@@ -102,12 +106,16 @@ export default function PayHistoryModal({ opened, onClose }: PayHistoryModalProp
       onClose={onClose}
       title={t('profile.payHistory')}
       size="lg"
+      centered
+      classNames={{ content: 'experience-modal', header: 'experience-modal__header' }}
     >
+      <Text size="sm" c="dimmed" mb="lg">Здесь отображаются зачисленные пополнения. Списания за подписки доступны в разделе «Операции».</Text>
+      {error && <Alert color="red" mb="md" title="Не удалось загрузить платежи"><Button variant="light" color="red" size="xs" mt="xs" onClick={() => void fetchPayments(page, true, sortField, sortDirection)}>Повторить</Button></Alert>}
       {initialLoading ? (
         <Center h={200}>
           <Loader size="lg" />
         </Center>
-      ) : payments.length === 0 ? (
+      ) : payments.length === 0 && !error ? (
         <Paper p="xl" radius="md">
           <Center>
             <Text c="dimmed">{t('payments.historyEmpty')}</Text>
@@ -115,6 +123,7 @@ export default function PayHistoryModal({ opened, onClose }: PayHistoryModalProp
         </Paper>
       ) : (
         <Stack gap="md">
+          <Group justify="space-between"><Text size="sm" c="dimmed">Пополнения · страница {page}</Text><Text size="sm" fw={600}>На этой странице: {new Intl.NumberFormat(i18n.language).format(payments.reduce((sum, p) => sum + Number(p.money || 0), 0))} {t('common.currency')}</Text></Group>
           <Paper withBorder radius="md" style={{ overflow: 'hidden', position: 'relative' }}>
             <LoadingOverlay visible={tableLoading} overlayProps={{ blur: 1 }} />
             <ScrollArea>

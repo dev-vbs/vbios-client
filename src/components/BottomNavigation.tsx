@@ -16,6 +16,8 @@ export function BottomNavigation() {
 
   return (
     <Box
+      component="nav"
+      aria-label="Навигация кабинета"
       style={{
         position: 'fixed',
         bottom: 10,
@@ -50,10 +52,15 @@ export function BottomNavigation() {
             const isItemBlocked = false;
             return (
               <Box
+                component="button"
+                type="button"
+                aria-current={isActive ? 'page' : undefined}
                 key={item.path}
                 onClick={() => handleClick(item.path)}
                 style={{
                   display: 'flex',
+                  border: 0,
+                  font: 'inherit',
                   flexDirection: 'column',
                   alignItems: 'center',
                   justifyContent: 'center',

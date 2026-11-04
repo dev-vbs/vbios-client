@@ -1,4 +1,5 @@
 import { useState, useEffect } from 'react';
+import './Experience.css';
 import { useTranslation } from 'react-i18next';
 import { Modal, Stack, Text, Card, Group, Badge, Loader, Center, Button, Paper, Divider, Select, NumberInput, Alert, Checkbox, ScrollArea } from '@mantine/core';
 import { IconArrowLeft, IconCreditCard, IconCheck, IconWallet } from '@tabler/icons-react';
@@ -370,8 +371,11 @@ export default function OrderServiceModal({
           : (isChangeMode ? t('services.changeServiceTitle') : t('order.title'))
       }
       size="lg"
+      centered
+      classNames={{ content: 'experience-modal experience-order', header: 'experience-modal__header' }}
       scrollAreaComponent={ScrollArea.Autosize}
     >
+      {!isChangeMode && <div className="experience-order-steps" aria-label="Этапы заказа"><span className={!selectedService ? 'is-current' : ''}>1. Выберите тариф</span><span className={selectedService ? 'is-current' : ''}>2. Проверьте условия</span><span>3. Подключите VPN</span></div>}
       {loading ? (
         <Center h={200}>
           <Loader size="lg" />
@@ -550,6 +554,11 @@ export default function OrderServiceModal({
                 {group.services.map((service) => (
                   <Card
                     key={service.service_id}
+                    className="experience-tariff"
+                    role="button"
+                    tabIndex={0}
+                    aria-label={`Выбрать тариф ${service.name}`}
+                    onKeyDown={(event) => { if (event.key === 'Enter' || event.key === ' ') { event.preventDefault(); setSelectedService(service); } }}
                     withBorder
                     radius="md"
                     p="sm"
@@ -560,7 +569,7 @@ export default function OrderServiceModal({
                       <div>
                         <Text fw={500}>{service.name}</Text>
                         {service.descr && (
-                          <Text size="xs" c="dimmed" lineClamp={1}>
+                          <Text size="sm" c="dimmed" lineClamp={3}>
                             {service.descr}
                           </Text>
                         )}

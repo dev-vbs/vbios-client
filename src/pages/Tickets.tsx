@@ -832,7 +832,16 @@ export default function Tickets() {
         </Button>
       </Group>
 
-      {isMobile ? (
+      {!loading && activeTickets.length === 0 && closedTickets.length === 0 ? (
+        <Card withBorder radius="lg" p="xl">
+          <Stack align="center" gap="md" py={48}>
+            <ThemeIcon size={56} radius="xl" variant="light"><IconMessageCircle size={28} /></ThemeIcon>
+            <Text fw={700} size="xl" ta="center">Как мы можем помочь?</Text>
+            <Text c="dimmed" size="sm" ta="center" maw={430}>Опишите вопрос и укажите услугу. Можно приложить скриншот, видео или файл — вся переписка останется в обращении.</Text>
+            <Button leftSection={<IconPlus size={17} />} onClick={openCreate} size="md">Создать первое обращение</Button>
+          </Stack>
+        </Card>
+      ) : isMobile ? (
         loading ? (
           <Center py="xl">
             <Loader size="md" />
