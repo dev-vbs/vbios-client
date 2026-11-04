@@ -1,6 +1,7 @@
-import { useState } from 'react';
+import { useEffect, useState } from 'react';
 import { Link } from 'react-router-dom';
-import { Button, Group, Stack, Text, Title } from '@mantine/core';
+import { Alert, Badge, Button, Group, Loader, Stack, Text, Title } from '@mantine/core';
+import { userApi } from '../api/client';
 import { IconArrowRight, IconCreditCard } from '@tabler/icons-react';
 import PayModal from '../components/PayModal';
 import PromoModal from '../components/PromoModal';
@@ -16,5 +17,36 @@ export function BalancePage() {
 export function OperationsPage() {
   const [payments, setPayments] = useState(false);
   const [withdrawals, setWithdrawals] = useState(false);
-  return <Stack gap="xl"><header><Title order={1}>История операций</Title><Text c="dimmed" mt="sm">Пополнения и списания по вашему аккаунту.</Text></header><section className="vpn-finance-panel"><Title order={2}>Движение средств</Title><Text c="dimmed" mt="sm">Откройте историю пополнений или списаний. В таблице доступны суммы и даты операций.</Text><Group mt="xl"><Button onClick={() => setPayments(true)}>Пополнения баланса</Button><Button variant="default" onClick={() => setWithdrawals(true)}>Списания за услуги</Button></Group></section><PayHistoryModal opened={payments} onClose={() => setPayments(false)} /><WithdrawHistoryModal opened={withdrawals} onClose={() => setWithdrawals(false)} /></Stack>;
+  return <Stack gap="xl"><header><Title order={1}>История операций</Title><Text c="dimmed" mt="sm">Пополнения и списания по вашему аккаунту.</Text></header><PaymentList /><section className="vpn-finance-panel"><Title order={2}>Подробная история</Title><Text c="dimmed" mt="sm">Посмотрите все пополнения или списания за подписки.</Text><Group mt="xl"><Button onClick={() => setPayments(true)}>Все пополнения</Button><Button variant="default" onClick={() => setWithdrawals(true)}>Списания за услуги</Button></Group></section><PayHistoryModal opened={payments} onClose={() => setPayments(false)} /><WithdrawHistoryModal opened={withdrawals} onClose={() => setWithdrawals(false)} /></Stack>;
+}
+
+type PaymentEntry = { id?: number; money: number | string; date?: string; created?: string; pay_system_id?: string };
+function PaymentList() {
+  const [items, setItems] = useState<PaymentEntry[]>([]);
+  const [loading, setLoading] = useState(true);
+  const [error, setError] = useState(false);
+  const [page, setPage] = useState(0);
+  const [hasMore, setHasMore] = useState(false);
+  const [retry, setRetry] = useState(0);
+  useEffect(() => {
+    let active = true;
+    setLoading(true); setError(false);
+    void userApi.getPayments({ limit: 11, offset: page * 10, sort_field: 'date', sort_direction: 'desc', filter: { money: { '>': 0 } } }).then(response => {
+      const data = response.data?.data;
+      if (!Array.isArray(data)) throw new Error('Invalid payments response');
+      if (!active) return;
+      setHasMore(data.length > 10);
+      setItems(data.slice(0, 10));
+    }).catch(() => { if (active) setError(true); }).finally(() => { if (active) setLoading(false); });
+    return () => { active = false; };
+  }, [page, retry]);
+  const dateLabel = (value?: string) => {
+    if (!value) return 'Дата не указана';
+    const date = new Date(value.replace(' ', 'T'));
+    return Number.isNaN(date.getTime()) ? 'Дата не указана' : date.toLocaleString('ru-RU', { day: 'numeric', month: 'long', year: 'numeric', hour: '2-digit', minute: '2-digit' });
+  };
+  return <section className="vpn-finance-panel"><Group justify="space-between" mb="lg"><Title order={2}>Пополнения баланса</Title><Badge variant="light">Сначала новые</Badge></Group>
+    {loading ? <Group justify="center" py="xl"><Loader size="sm" /><Text c="dimmed" size="sm">Загружаем платежи…</Text></Group> : error ? <Alert color="red" title="Не удалось загрузить пополнения"><Button variant="light" color="red" size="xs" mt="sm" onClick={() => setRetry(value => value + 1)}>Повторить</Button></Alert> : !items.length ? <Text c="dimmed" py="xl" ta="center">На этой странице пополнений нет.</Text> : <Stack gap="sm">{items.map((item, index) => <Group key={item.id ?? `${item.date}-${index}`} gap="md" wrap="wrap" style={{ padding: 18, border: '1px solid var(--mantine-color-default-border)', borderRadius: 14 }}><IconCreditCard size={23} color="var(--mantine-color-green-6)" /><div style={{ flex: 1, minWidth: 150 }}><Text fw={600} size="sm">Пополнение баланса{item.id != null ? ` #${item.id}` : ''}</Text><Text c="dimmed" size="xs" mt={4}>{dateLabel(item.date || item.created)}</Text>{item.pay_system_id && <Text c="dimmed" size="xs" mt={3}>Способ оплаты: {item.pay_system_id}</Text>}</div><Text fw={700} c="green" style={{ whiteSpace: 'nowrap', fontVariantNumeric: 'tabular-nums' }}>+{new Intl.NumberFormat('ru-RU', { maximumFractionDigits: 2 }).format(Number(item.money) || 0)} ₽</Text></Group>)}</Stack>}
+    <Group justify="space-between" mt="lg"><Button variant="default" disabled={page === 0 || loading} onClick={() => setPage(value => value - 1)}>Назад</Button><Text size="sm" c="dimmed">Страница {page + 1}</Text><Button variant="light" disabled={!hasMore || loading || error} onClick={() => setPage(value => value + 1)}>Далее</Button></Group>
+  </section>;
 }
