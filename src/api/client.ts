@@ -240,8 +240,15 @@ export const ticketApi = {
     api.delete<{ data: TicketItem }>(`/user/ticket/${ticketId}`),
   uploadMedia: (data: { name: string; data: string; mime_type?: string }) =>
     api.put<{ data: TicketMedia }>('/user/ticket/media', data),
-  downloadMedia: (id: number | string) =>
-    api.get<Blob>(`/user/ticket/media/${id}`, { responseType: 'blob' }),
+  downloadMedia: async (id: number | string): Promise<{ data: Blob }> => {
+    const response = await api.get<{ data: { data: string; mime_type?: string } | { data: string; mime_type?: string }[] }>(`/user/ticket/media/${id}`);
+    const payload = response.data?.data;
+    const media = Array.isArray(payload) ? payload[0] : payload;
+    if (!media || typeof media.data !== 'string') throw new Error('Не удалось загрузить вложение');
+    const binary = atob(media.data);
+    const bytes = Uint8Array.from(binary, (char) => char.charCodeAt(0));
+    return { data: new Blob([bytes], { type: media.mime_type || 'application/octet-stream' }) };
+  },
 };
 
 export const userEmailApi = {
