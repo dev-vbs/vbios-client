@@ -48,14 +48,19 @@ function MediaPreview({ media, onPreview, onDownload }: { media: TicketMedia; on
 
   useEffect(() => {
     if (!isPreviewable) return;
-    let url: string;
+    let url: string | undefined;
+    let cancelled = false;
+    setFailed(false);
+    setObjectUrl(null);
     ticketApi.downloadMedia(media.id)
       .then((res) => {
+        if (cancelled) return;
         url = URL.createObjectURL(res.data);
         setObjectUrl(url);
       })
-      .catch(() => setFailed(true));
+      .catch(() => { if (!cancelled) setFailed(true); });
     return () => {
+      cancelled = true;
       if (url) URL.revokeObjectURL(url);
     };
   }, [media.id, isPreviewable]);
@@ -112,6 +117,8 @@ interface PaymentItem {
 }
 
 const MAX_ATTACHMENT_SIZE = 5 * 1024 * 1024;
+const IMAGE_TYPES = new Set(['image/jpeg', 'image/png', 'image/webp', 'image/gif']);
+const IMAGE_ACCEPT = 'image/jpeg,image/png,image/webp,image/gif';
 const MAX_MESSAGE_LENGTH = 2000;
 const KNOWN_STATUSES = new Set(['open', 'in_progress', 'waiting', 'closed', 'archived']);
 
@@ -346,11 +353,12 @@ export default function Tickets() {
         });
         const raw = response.data?.data;
         const media = Array.isArray(raw) ? raw[0] : raw;
-        if (media?.id) mediaIds.push(media.id);
+        if (!media?.id) throw new Error('Не удалось сохранить изображение');
+        mediaIds.push(media.id);
       }
       await ticketApi.create({
         subject: newSubject.trim(),
-        message: newMessage.trim() || ' ',
+        message: newMessage.trim() || 'Прикреплено изображение',
         priority: newPriority as 'low' | 'normal' | 'high' | 'urgent',
         ticket_type: newType as 'service' | 'payment' | 'other',
         ...(newType === 'service' && newServiceId ? { user_service_id: Number(newServiceId) } : {}),
@@ -445,6 +453,10 @@ export default function Tickets() {
 
     const accepted: File[] = [];
     for (const file of files) {
+      if (!IMAGE_TYPES.has(file.type)) {
+        notifications.show({ title: 'Формат изображения', message: 'Выберите JPEG, PNG, WebP или GIF до 5 МБ.', color: 'red' });
+        continue;
+      }
       if (file.size > MAX_ATTACHMENT_SIZE) {
         notifications.show({
           title: t('common.error'),
@@ -464,6 +476,10 @@ export default function Tickets() {
   const onPickNewFiles = (files: File[] | null) => {
     if (!files || files.length === 0) return;
     const accepted = files.filter((file) => {
+      if (!IMAGE_TYPES.has(file.type)) {
+        notifications.show({ title: 'Формат изображения', message: 'Выберите JPEG, PNG, WebP или GIF до 5 МБ.', color: 'red' });
+        return false;
+      }
       if (file.size <= MAX_ATTACHMENT_SIZE) return true;
       notifications.show({
         title: t('common.error'),
@@ -515,13 +531,12 @@ export default function Tickets() {
         });
         const raw = response.data?.data;
         const media = Array.isArray(raw) ? raw[0] : raw;
-        if (media?.id) {
-          mediaIds.push(media.id);
-        }
+        if (!media?.id) throw new Error('Не удалось сохранить изображение');
+        mediaIds.push(media.id);
       }
 
       await ticketApi.sendMessage(selectedTicket.ticket_id, {
-        message: replyMessage.trim() || ' ',
+        message: replyMessage.trim() || 'Прикреплено изображение',
         ...(mediaIds.length > 0 ? { media_ids: mediaIds } : {}),
       });
 
@@ -790,9 +805,9 @@ export default function Tickets() {
                 styles={{ input: { paddingRight: 68 } }}
               />
               <Group gap={4} style={{ position: 'absolute', bottom: 7, right: 8 }}>
-                <FileButton onChange={onPickFiles} multiple>
+                <FileButton onChange={onPickFiles} accept={IMAGE_ACCEPT} multiple>
                   {(props) => (
-                    <ActionIcon {...props} disabled={sending} variant="subtle" color="gray" size="sm" aria-label="Прикрепить файл">
+                    <ActionIcon {...props} disabled={sending} variant="subtle" color="gray" size="sm" aria-label="Прикрепить изображение">
                       <IconPaperclip size={16} />
                     </ActionIcon>
                   )}
@@ -1040,6 +1055,7 @@ export default function Tickets() {
           />
 
           <Stack gap={4}>
+            <Text size="xs" c="dimmed">JPEG, PNG, WebP или GIF — до 5 МБ на изображение.</Text>
             {newFiles.map((file, index) => (
               <Group key={`${file.name}_${index}`} justify="space-between" wrap="nowrap">
                 <Text size="sm" lineClamp={1}>{file.name}</Text>
@@ -1048,8 +1064,8 @@ export default function Tickets() {
                 </ActionIcon>
               </Group>
             ))}
-            <FileButton onChange={onPickNewFiles} multiple>
-              {(props) => <Button {...props} variant="light" leftSection={<IconPaperclip size={16} />}>Прикрепить файлы</Button>}
+            <FileButton onChange={onPickNewFiles} accept={IMAGE_ACCEPT} multiple>
+              {(props) => <Button {...props} variant="light" leftSection={<IconPaperclip size={16} />}>Прикрепить изображения</Button>}
             </FileButton>
           </Stack>
 
